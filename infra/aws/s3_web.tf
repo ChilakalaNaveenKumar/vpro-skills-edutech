@@ -63,7 +63,12 @@ resource "aws_cloudfront_distribution" "web" {
   # (which does leave the network) needs to be encrypted, and it already
   # is via CloudFront's own default certificate.
   origin {
-    domain_name = aws_eip.app.public_ip
+    # CloudFront custom origins must be a DNS name, not a bare IP address
+    # ("InvalidArgument: The parameter origin name cannot be an IP
+    # address") - aws_eip.app.public_dns is the DNS name AWS already
+    # assigns to this Elastic IP (ec2-<ip>.<region>.compute.amazonaws.com),
+    # which still resolves to the same address.
+    domain_name = aws_eip.app.public_dns
     origin_id   = "ec2-api"
 
     custom_origin_config {
