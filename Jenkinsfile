@@ -194,7 +194,23 @@ pipeline {
                         npm ci
                         echo "VITE_API_BASE_URL=https://${CLOUDFRONT_DOMAIN}" > .env
                         npm run build
-                        aws s3 sync dist/ "s3://${WEB_BUCKET_NAME}" --delete
+                        # Two-pass sync so index.html (which points at the
+                        # current hashed bundle) is never cached by browsers:
+                        # hashed files under assets/ are content-addressed, so
+                        # they're safe to cache forever; index.html and the
+                        # other root files (favicons, logos) are marked
+                        # no-cache so browsers always revalidate on load.
+                        # Without this, a CloudFront invalidation only clears
+                        # the CDN's edge cache - a visitor's own browser can
+                        # keep serving a stale index.html (and therefore an
+                        # old bundle, missing whatever just shipped) until it
+                        # naturally expires or they hard-refresh.
+                        aws s3 sync dist/ "s3://${WEB_BUCKET_NAME}" --delete \
+                            --cache-control "public, max-age=31536000, immutable" \
+                            --exclude "*" --include "assets/*"
+                        aws s3 sync dist/ "s3://${WEB_BUCKET_NAME}" --delete \
+                            --cache-control "no-cache" \
+                            --exclude "assets/*"
                         aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
                     '''
                 }
