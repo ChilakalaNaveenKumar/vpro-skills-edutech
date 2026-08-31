@@ -81,6 +81,39 @@ resource "aws_iam_role_policy" "ecr_push_pull" {
   })
 }
 
+# Lets the instance itself deploy the web app (S3 sync + CloudFront
+# invalidation) as part of the Jenkins pipeline, instead of that step
+# only being runnable from a human's own AWS-configured laptop. Scoped to
+# exactly the one web bucket and the one CloudFront distribution this
+# project owns - not every bucket/distribution in the account.
+resource "aws_iam_role_policy" "web_deploy" {
+  name = "${var.project_name}-web-deploy"
+  role = aws_iam_role.instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket",
+        ]
+        Resource = [
+          aws_s3_bucket.web.arn,
+          "${aws_s3_bucket.web.arn}/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "cloudfront:CreateInvalidation"
+        Resource = aws_cloudfront_distribution.web.arn
+      },
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "app" {
   name = "${var.project_name}-instance-profile"
   role = aws_iam_role.instance.name

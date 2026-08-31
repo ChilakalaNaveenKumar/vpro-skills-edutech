@@ -124,10 +124,13 @@ ngrok, it has its own stable address as long as this EC2 instance exists.
    `docs/CICD.md` Part 2 describes (just via SSM instead of a local
    `docker compose exec` - see the note below), and finish setup.
 2. **Manage Jenkins -> System -> Global properties -> Environment
-   variables**, add two:
-   - `ECR_REPOSITORY_URL` = the `ecr_repository_url` value from
-     `terraform output`
+   variables**, add five (all five values come straight out of
+   `terraform output` in `infra/aws/`, run in Part 1):
+   - `ECR_REPOSITORY_URL` = the `ecr_repository_url` value
    - `AWS_REGION` = the region you deployed into (`us-east-1` by default)
+   - `CLOUDFRONT_DOMAIN` = the `cloudfront_domain` value
+   - `WEB_BUCKET_NAME` = the `web_bucket_name` value
+   - `CLOUDFRONT_DISTRIBUTION_ID` = the `cloudfront_distribution_id` value
 3. Add the GitHub credential Jenkins needs to check out the repo, same as
    `docs/CICD.md` Part 3's GitHub entry (skip the Docker Hub one entirely
    unless you still want that optional push - AWS deployment doesn't need
@@ -175,23 +178,32 @@ sudo docker compose -f docker/docker-compose.aws.yml exec backend \
 
 ## Part 4 - Deploying the web app
 
-The web app isn't part of the Jenkins pipeline in this first pass (small
-enough to add later the same way) - deploy it by hand for now, from your
-own Mac Terminal:
+Fully automatic, as of the Jenkinsfile's "Deploy: web app" stage - every
+build rebuilds `web/` (pointed at the CloudFront domain, so the browser
+never has to call the backend over plain HTTP - see the "Mixed content"
+note below) and publishes it to S3 + CloudFront, authenticated by the
+instance's own IAM role. There is nothing to run by hand here anymore;
+this section is kept only in case you ever need to reproduce the same
+steps manually (e.g. debugging a bad build) - from the instance itself
+(via SSM) or your own Mac with the AWS CLI configured:
 
 ```
 cd web
-echo "VITE_API_BASE_URL=http://<app_public_ip>" > .env
+echo "VITE_API_BASE_URL=https://<cloudfront_domain from terraform output>" > .env
 npm run build
 aws s3 sync dist/ s3://<web_bucket_name from terraform output> --delete
 aws cloudfront create-invalidation --distribution-id <cloudfront_distribution_id> --paths "/*"
 ```
 
-Same build-time-vs-deploy-time gotcha already documented in
-`docs/SETUP.md`: `VITE_API_BASE_URL` has to be right *before* `npm run
-build`, not set afterward. Your app is then live at
-`https://<cloudfront_domain from terraform output>` with real HTTPS,
-automatically, on CloudFront's own domain.
+Note `VITE_API_BASE_URL` points at the **CloudFront domain**, not the
+EC2 instance's plain-HTTP address - the API is reachable at
+`https://<cloudfront_domain>/api/*` too (routed to the instance by the
+`/api/*` behavior in `infra/aws/s3_web.tf`), and every browser blocks a
+HTTPS page calling a plain-HTTP API as "mixed content". Same
+build-time-vs-deploy-time gotcha already documented in `docs/SETUP.md`:
+`VITE_API_BASE_URL` has to be right *before* `npm run build`, not set
+afterward. Your app is live at `https://<cloudfront_domain from terraform
+output>` with real HTTPS, automatically, on CloudFront's own domain.
 
 ## Part 5 - Adding a domain and HTTPS on the app server later
 

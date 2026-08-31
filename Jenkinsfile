@@ -173,6 +173,33 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy: web app') {
+            // Builds and publishes web/ to S3 + CloudFront on every
+            // build, right here on the instance - so a plain `git push`
+            // is the only step needed for the website too, not a manual
+            // `npm run build` + `aws s3 sync` run by hand from someone's
+            // own laptop. Needs three Jenkins global environment
+            // variables set once (Manage Jenkins > System > Global
+            // properties, same place as ECR_REPOSITORY_URL/AWS_REGION -
+            // see docs/AWS_DEPLOYMENT.md): CLOUDFRONT_DOMAIN,
+            // WEB_BUCKET_NAME, CLOUDFRONT_DISTRIBUTION_ID (all three from
+            // `terraform output` in infra/aws/). Authenticated by this
+            // instance's own IAM role (infra/aws/iam.tf's
+            // aws_iam_role_policy.web_deploy) - no AWS key stored here.
+            steps {
+                dir('web') {
+                    sh '''
+                        set -e
+                        npm ci
+                        echo "VITE_API_BASE_URL=https://${CLOUDFRONT_DOMAIN}" > .env
+                        npm run build
+                        aws s3 sync dist/ "s3://${WEB_BUCKET_NAME}" --delete
+                        aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
+                    '''
+                }
+            }
+        }
     }
 
     post {
