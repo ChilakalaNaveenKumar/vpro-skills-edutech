@@ -14,6 +14,28 @@ import type { AssessmentAdmin, BulkUploadResult, QuestionAdmin, QuestionOptionIn
 
 const LABELS = ['A', 'B', 'C', 'D'] as const
 
+// Bulk-upload client-side validation (2026-08-31): the file input's
+// accept=".xlsx" is only a picker *hint* - browsers/OSes don't reliably
+// enforce it (some file managers let users pick "All files" anyway,
+// drag-and-drop bypasses it entirely), so it was possible to select a
+// non-.xlsx file, or an empty/huge one, and only find out after a round
+// trip to the server. Validate immediately on selection instead, with a
+// specific message for each failure instead of a generic "upload failed".
+const BULK_UPLOAD_MAX_BYTES = 5 * 1024 * 1024 // 5 MB - generous for a question bank
+
+function validateBulkUploadFile(file: File): string | null {
+  if (!file.name.toLowerCase().endsWith('.xlsx')) {
+    return `"${file.name}" is not an .xlsx file - download the template and fill that in.`
+  }
+  if (file.size === 0) {
+    return `"${file.name}" is empty.`
+  }
+  if (file.size > BULK_UPLOAD_MAX_BYTES) {
+    return `"${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB) - the limit is 5 MB.`
+  }
+  return null
+}
+
 // Same "extract the backend's actual error text" pattern as
 // AdminBatchesPage.tsx's getErrorMessage - a 400 here (bad file type,
 // wrong columns, file-level parse failure) carries a specific, useful
@@ -188,6 +210,11 @@ export default function AdminAssessmentQuestionsPage() {
       setBulkError('Choose an Excel (.xlsx) file first - use "Download template" if you need one.')
       return
     }
+    const validationError = validateBulkUploadFile(bulkFile)
+    if (validationError) {
+      setBulkError(validationError)
+      return
+    }
     setIsBulkUploading(true)
     try {
       const result = await bulkUploadQuestions(assessmentIdNum, bulkFile)
@@ -277,7 +304,24 @@ export default function AdminAssessmentQuestionsPage() {
               ref={bulkFileInputRef}
               type="file"
               accept=".xlsx"
-              onChange={(e) => setBulkFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null
+                setBulkResult(null)
+                if (!file) {
+                  setBulkFile(null)
+                  setBulkError(null)
+                  return
+                }
+                const validationError = validateBulkUploadFile(file)
+                if (validationError) {
+                  setBulkFile(null)
+                  setBulkError(validationError)
+                  if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
+                  return
+                }
+                setBulkFile(file)
+                setBulkError(null)
+              }}
               className="mt-1 w-full text-sm"
             />
           </div>

@@ -48,10 +48,17 @@ export async function bulkUploadQuestions(
 ): Promise<BulkUploadResult> {
   const formData = new FormData()
   formData.append('file', file)
+  // Deliberately NOT setting a Content-Type header here (2026-08-31 fix):
+  // a hardcoded 'multipart/form-data' has no boundary= parameter, which
+  // stops the browser from generating its own - axios/XHR only fills in
+  // the boundary automatically when it's the one setting the header. The
+  // request still "sent" with a manual header, but FastAPI/python-multipart
+  // can't parse a boundary-less body, so every upload failed server-side.
+  // Letting axios see the FormData and set the header itself (with a real
+  // boundary) is what actually makes multipart uploads work.
   const response = await apiClient.post<BulkUploadResult>(
     `/api/admin/questions/assessments/${assessmentId}/bulk-upload`,
     formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return response.data
 }
