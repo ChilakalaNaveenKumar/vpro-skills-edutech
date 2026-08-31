@@ -28,7 +28,7 @@ def _validate_four_options(options: list[QuestionOptionIn]) -> list[QuestionOpti
 
 
 class QuestionCreate(BaseModel):
-    topic_id: int
+    assessment_id: int
     question_text: str = Field(min_length=1)
     status: EntityStatus = EntityStatus.ACTIVE
     options: list[QuestionOptionIn]
@@ -71,7 +71,7 @@ class QuestionAdminPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    topic_id: int
+    assessment_id: int
     question_text: str
     status: EntityStatus
     options: list[QuestionOptionAdminPublic]

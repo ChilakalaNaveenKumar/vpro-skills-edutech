@@ -5,16 +5,23 @@ const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visibl
 
 // Shared chrome for the admin section (Phase 8; brand/responsive/focus
 // polish added in Phase 9, recolored + given a "back to site" link post-
-// launch - see docs/ARCHITECTURE.md's "Design system" section). Topics and
-// Questions aren't nav items here - they're reached by drilling in from
-// Batches/Topics respectively. The Courses tab itself was removed
-// 2026-08-31 (the admin picks a course from a fixed dropdown when
-// creating a batch instead of managing courses as their own section) -
-// /admin/courses and /admin/courses/:courseId/topics still work, just
-// without a top-level nav link; "Manage Topics" is reached from each
-// batch card on the Batches page instead.
+// launch - see docs/ARCHITECTURE.md's "Design system" section). Topics
+// aren't a nav item here - reached by drilling in from Batches. The
+// Courses tab itself was removed 2026-08-31 (the admin picks a course
+// from a fixed dropdown when creating a batch instead of managing
+// courses as their own section) - /admin/courses and
+// /admin/courses/:courseId/topics still work, just without a top-level
+// nav link; "Manage Topics" is reached from each batch card on the
+// Batches page instead. Assessments (2026-08-31) IS a top-level nav item,
+// unlike Topics/Questions before it - it's a standalone, reusable bank of
+// question sets an admin creates independently of any one topic, then
+// attaches to whichever topics need it (see
+// app/assessments/models.py's docstring), so it needs its own place to
+// be found and managed rather than only being reached by drilling into a
+// topic.
 const NAV_ITEMS = [
   { to: '/admin/batches', label: 'Batches' },
+  { to: '/admin/assessments', label: 'Assessments' },
   { to: '/admin/students', label: 'Students' },
   { to: '/admin/results', label: 'Results' },
 ]

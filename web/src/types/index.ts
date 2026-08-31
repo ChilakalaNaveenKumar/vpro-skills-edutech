@@ -68,6 +68,9 @@ export interface Topic {
   name: string
   topic_order: number
   status: EntityStatus
+  // The attached reusable Assessment, if any (2026-08-31) - null means
+  // this topic has nothing attached yet.
+  assessment_id: number | null
 }
 
 // Mirrors backend/app/assessments/schemas.py's student-facing shapes -
@@ -203,6 +206,38 @@ export interface TopicUpdate {
   name?: string
   topic_order?: number
   status?: EntityStatus
+  // Attach (an id) or detach (explicit null) a reusable Assessment.
+  // Omit the field entirely to leave the current attachment untouched.
+  assessment_id?: number | null
+}
+
+// Mirrors backend/app/assessments/schemas.py's AssessmentCreate/
+// AssessmentUpdate/AssessmentAdminPublic (2026-08-31) - the admin CRUD
+// shapes for the standalone, reusable Assessment entity. Distinct from
+// the `Assessment` interface above, which is the student-facing
+// take-endpoint shape (keyed by topic, never carries a name/id of its
+// own beyond the topic it was fetched through).
+export interface AssessmentCreate {
+  name: string
+  description?: string | null
+  status?: EntityStatus
+}
+
+export interface AssessmentUpdate {
+  name?: string
+  description?: string | null
+  status?: EntityStatus
+}
+
+export interface AssessmentAdmin {
+  id: number
+  name: string
+  description: string | null
+  status: EntityStatus
+  question_count: number
+  // How many topics currently have this assessment attached - the reuse
+  // count shown in the admin Assessments list.
+  topic_count: number
 }
 
 // Mirrors backend/app/questions/schemas.py's QuestionOptionIn/QuestionCreate/
@@ -216,7 +251,7 @@ export interface QuestionOptionInput {
 }
 
 export interface QuestionCreate {
-  topic_id: number
+  assessment_id: number
   question_text: string
   status?: EntityStatus
   options: QuestionOptionInput[]
@@ -237,7 +272,7 @@ export interface QuestionOptionAdmin {
 
 export interface QuestionAdmin {
   id: number
-  topic_id: number
+  assessment_id: number
   question_text: string
   status: EntityStatus
   options: QuestionOptionAdmin[]

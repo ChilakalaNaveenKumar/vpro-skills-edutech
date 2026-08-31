@@ -42,7 +42,12 @@ class ResultPublic(BaseModel):
 
     @classmethod
     def from_attempt(cls, attempt: "AssessmentAttempt") -> "ResultPublic":
-        topic = attempt.assessment.topic
+        # `attempt.topic` (2026-08-31), not `attempt.assessment.topic` -
+        # an assessment can now be attached to more than one topic (see
+        # app/assessments/models.py's docstring), so the topic/course an
+        # attempt belongs to is read directly off the attempt itself,
+        # captured at submission time.
+        topic = attempt.topic
         return cls(
             attempt_id=attempt.id,
             topic_id=topic.id,

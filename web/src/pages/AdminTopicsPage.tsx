@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { getCourse } from '../services/coursesService'
+import { listAssessments } from '../services/assessmentsAdminService'
 import { createTopic, deleteTopic, listCourseTopics, updateTopic } from '../services/topicsService'
-import type { Course, Topic } from '../types'
+import type { AssessmentAdmin, Course, Topic } from '../types'
 
 const EMPTY_FORM = { name: '', topic_order: 1 }
 
@@ -17,8 +18,10 @@ export default function AdminTopicsPage() {
 
   const [course, setCourse] = useState<Course | null>(null)
   const [topics, setTopics] = useState<Topic[]>([])
+  const [assessments, setAssessments] = useState<AssessmentAdmin[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [attachError, setAttachError] = useState<string | null>(null)
 
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [createForm, setCreateForm] = useState(EMPTY_FORM)
@@ -33,10 +36,11 @@ export default function AdminTopicsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   function loadData() {
-    Promise.all([getCourse(courseIdNum), listCourseTopics(courseIdNum)])
-      .then(([courseData, topicsData]) => {
+    Promise.all([getCourse(courseIdNum), listCourseTopics(courseIdNum), listAssessments()])
+      .then(([courseData, topicsData, assessmentsData]) => {
         setCourse(courseData)
         setTopics(topicsData)
+        setAssessments(assessmentsData)
         setCreateForm({ name: '', topic_order: topicsData.length + 1 })
         setLoadError(false)
       })
@@ -89,6 +93,20 @@ export default function AdminTopicsPage() {
     loadData()
   }
 
+  // Attach (an id) or detach ("") a reusable Assessment (2026-08-31) -
+  // this never touches any other topic's own attachment to the same
+  // assessment, which is what makes the assessment reusable rather than
+  // "moved" - see app/topics/router.py's update_topic docstring.
+  async function handleAssessmentChange(topic: Topic, rawValue: string) {
+    setAttachError(null)
+    try {
+      await updateTopic(topic.id, { assessment_id: rawValue === '' ? null : Number(rawValue) })
+      loadData()
+    } catch {
+      setAttachError(`Could not update the assessment attached to "${topic.name}".`)
+    }
+  }
+
   async function handleDelete(topic: Topic) {
     setDeleteError(null)
     if (!window.confirm(`Delete "${topic.name}"? This cannot be undone.`)) return
@@ -98,7 +116,7 @@ export default function AdminTopicsPage() {
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 409) {
         setDeleteError(
-          `"${topic.name}" has questions with existing assessment answers and cannot be deleted.`,
+          `"${topic.name}" has recorded student assessment attempts and cannot be deleted.`,
         )
       } else {
         setDeleteError(`Could not delete "${topic.name}".`)
@@ -163,6 +181,7 @@ export default function AdminTopicsPage() {
       )}
 
       {deleteError && <p className="mt-4 text-sm text-red-600">{deleteError}</p>}
+      {attachError && <p className="mt-4 text-sm text-red-600">{attachError}</p>}
 
       {topics.length === 0 && <p className="mt-6 text-gray-600">No topics yet.</p>}
 
@@ -221,12 +240,33 @@ export default function AdminTopicsPage() {
                         {topic.status}
                       </span>
                     </h3>
-                    <Link
-                      to={`/admin/topics/${topic.id}/questions`}
-                      className="mt-2 inline-block text-sm font-medium text-brand-600 underline hover:text-brand-700"
-                    >
-                      Manage Questions
-                    </Link>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <label htmlFor={`assessment-picker-${topic.id}`} className="text-sm text-gray-600">
+                        Assessment:
+                      </label>
+                      <select
+                        id={`assessment-picker-${topic.id}`}
+                        value={topic.assessment_id ?? ''}
+                        onChange={(e) => handleAssessmentChange(topic, e.target.value)}
+                        className="rounded border border-gray-300 px-2 py-1 text-sm"
+                      >
+                        <option value="">Not attached</option>
+                        {assessments.map((assessment) => (
+                          <option key={assessment.id} value={assessment.id}>
+                            {assessment.name} ({assessment.question_count} question
+                            {assessment.question_count === 1 ? '' : 's'})
+                          </option>
+                        ))}
+                      </select>
+                      {topic.assessment_id !== null && (
+                        <Link
+                          to={`/admin/assessments/${topic.assessment_id}/questions`}
+                          className="text-sm font-medium text-brand-600 underline hover:text-brand-700"
+                        >
+                          Manage Questions
+                        </Link>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button

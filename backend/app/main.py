@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 
 from app.admin.router import router as admin_router
-from app.assessments.router import router as assessments_router
+from app.assessments.router import admin_router as assessments_admin_router, router as assessments_router
 from app.auth.router import router as auth_router
 from app.batches.router import admin_router as batches_admin_router, router as batches_router
 from app.courses.router import admin_router as courses_admin_router, router as courses_router
@@ -51,6 +51,7 @@ for module_router in (
     topics_admin_router,
     questions_admin_router,
     assessments_router,
+    assessments_admin_router,
     results_router,
     results_admin_router,
     admin_router,

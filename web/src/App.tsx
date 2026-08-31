@@ -12,7 +12,8 @@ import ResultsPage from './pages/ResultsPage'
 import ResultDetailPage from './pages/ResultDetailPage'
 import AdminCoursesPage from './pages/AdminCoursesPage'
 import AdminTopicsPage from './pages/AdminTopicsPage'
-import AdminQuestionsPage from './pages/AdminQuestionsPage'
+import AdminAssessmentsPage from './pages/AdminAssessmentsPage'
+import AdminAssessmentQuestionsPage from './pages/AdminAssessmentQuestionsPage'
 import AdminBatchesPage from './pages/AdminBatchesPage'
 import AdminStudentsPage from './pages/AdminStudentsPage'
 import AdminStudentEnrollmentsPage from './pages/AdminStudentEnrollmentsPage'
@@ -44,7 +45,8 @@ function App() {
           <Route index element={<Navigate to="batches" replace />} />
           <Route path="courses" element={<AdminCoursesPage />} />
           <Route path="courses/:courseId/topics" element={<AdminTopicsPage />} />
-          <Route path="topics/:topicId/questions" element={<AdminQuestionsPage />} />
+          <Route path="assessments" element={<AdminAssessmentsPage />} />
+          <Route path="assessments/:assessmentId/questions" element={<AdminAssessmentQuestionsPage />} />
           <Route path="batches" element={<AdminBatchesPage />} />
           <Route path="students" element={<AdminStudentsPage />} />
           <Route

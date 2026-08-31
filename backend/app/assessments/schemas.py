@@ -4,15 +4,21 @@ The take/submit shapes here are deliberately separate from
 app/questions/schemas.py's admin shapes: AssessmentOptionPublic/
 AssessmentQuestionPublic never carry `is_correct` - correct answers must
 never reach the frontend before submission, for anyone, admin included.
+
+AssessmentCreate/AssessmentUpdate/AssessmentAdminPublic (2026-08-31) are
+the admin CRUD shapes for the standalone, reusable Assessment entity - see
+this module's admin_router and app/assessments/models.py's docstring.
 """
 
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.core.enums import EntityStatus
 
 if TYPE_CHECKING:
-    from app.assessments.models import AssessmentAttempt
+    from app.assessments.models import Assessment, AssessmentAttempt
 
 
 class AnswerSubmission(BaseModel):
@@ -70,4 +76,41 @@ class AssessmentResultPublic(BaseModel):
             wrong_count=attempt.wrong_count,
             percentage=float(attempt.percentage),
             submitted_at=attempt.submitted_at,
+        )
+
+
+class AssessmentCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str | None = None
+    status: EntityStatus = EntityStatus.ACTIVE
+
+
+class AssessmentUpdate(BaseModel):
+    """All fields optional - the admin_router applies only what's set."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    status: EntityStatus | None = None
+
+
+class AssessmentAdminPublic(BaseModel):
+    id: int
+    name: str
+    description: str | None
+    status: EntityStatus
+    question_count: int
+    # How many topics currently have this assessment attached - the
+    # reuse count, and what delete-safety checks in the admin_router key
+    # off of.
+    topic_count: int
+
+    @classmethod
+    def from_model(cls, assessment: "Assessment") -> "AssessmentAdminPublic":
+        return cls(
+            id=assessment.id,
+            name=assessment.name,
+            description=assessment.description,
+            status=assessment.status,
+            question_count=len(assessment.questions),
+            topic_count=len(assessment.topics),
         )

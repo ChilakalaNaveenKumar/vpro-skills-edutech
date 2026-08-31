@@ -1,8 +1,14 @@
-"""API router for the MCQ questions per topic module.
+"""API router for the MCQ questions module.
 
 Admin-only, on purpose: students never browse questions directly, only
 through app/assessments/router.py's take/submit endpoints (which never
 expose `is_correct`). There is no student-facing router in this module.
+
+Questions belong to a reusable Assessment (2026-08-31), not directly to a
+Topic - see app/assessments/models.py's docstring. An Assessment must
+already exist (created via the admin_router in app/assessments/router.py)
+before questions can be added to it; there is no more auto-provisioning
+(that used to live in app/assessments/provisioning.py, now removed).
 """
 
 from io import BytesIO
@@ -13,7 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.assessments.provisioning import ensure_assessment_for_topic
+from app.assessments.models import Assessment
 from app.auth.dependencies import require_admin
 from app.database.session import get_db
 from app.questions.bulk_upload import build_template_workbook, parse_questions_workbook
@@ -25,7 +31,6 @@ from app.questions.schemas import (
     QuestionCreate,
     QuestionUpdate,
 )
-from app.topics.models import Topic
 
 admin_router = APIRouter(
     prefix="/api/admin/questions", dependencies=[Depends(require_admin)], tags=["Questions"]
@@ -33,11 +38,11 @@ admin_router = APIRouter(
 
 
 # --- Bulk upload (2026-08-31) -----------------------------------------
-# Registered before the two `/topics/{topic_id}...` routes below purely
-# for readability (grouped with the create-side of the module); FastAPI
-# matches by exact literal path segment vs. `{param}` placeholder, not by
-# registration order, so "bulk-template" can never be swallowed by
-# "{topic_id}" - there's no ordering hazard here to begin with.
+# Registered before the two `/assessments/{assessment_id}...` routes below
+# purely for readability (grouped with the create-side of the module);
+# FastAPI matches by exact literal path segment vs. `{param}` placeholder,
+# not by registration order, so "bulk-template" can never be swallowed by
+# "{assessment_id}" - there's no ordering hazard here to begin with.
 
 
 @admin_router.get("/bulk-template")
@@ -58,9 +63,9 @@ def download_bulk_upload_template() -> StreamingResponse:
     )
 
 
-@admin_router.post("/topics/{topic_id}/bulk-upload", response_model=BulkUploadResult)
+@admin_router.post("/assessments/{assessment_id}/bulk-upload", response_model=BulkUploadResult)
 def bulk_upload_questions(
-    topic_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
+    assessment_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
 ) -> BulkUploadResult:
     """Creates one Question (+ its 4 QuestionOptions) per valid row.
     Partial success by design, not all-or-nothing: a typo in row 14 of a
@@ -69,8 +74,8 @@ def bulk_upload_questions(
     the failed rows (they're independent Questions either way, so there's
     no correctness reason to require every row to succeed together).
     """
-    if db.get(Topic, topic_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
+    if db.get(Assessment, assessment_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
     if not (file.filename or "").lower().endswith(".xlsx"):
         raise HTTPException(
@@ -91,7 +96,7 @@ def bulk_upload_questions(
 
     for row in parsed_rows:
         question = Question(
-            topic_id=topic_id,
+            assessment_id=assessment_id,
             question_text=row.question_text,
             status=row.status,
             options=[
@@ -105,12 +110,6 @@ def bulk_upload_questions(
         )
         db.add(question)
 
-    if parsed_rows:
-        # Same as the single-question create_question below - the topic's
-        # Assessment row starts existing the moment its first question
-        # does, whether that question arrived one at a time or via this
-        # bulk path.
-        ensure_assessment_for_topic(db, topic_id)
     db.commit()
 
     return BulkUploadResult(
@@ -120,15 +119,17 @@ def bulk_upload_questions(
     )
 
 
-@admin_router.get("/topics/{topic_id}", response_model=list[QuestionAdminPublic])
-def list_questions_for_topic(topic_id: int, db: Session = Depends(get_db)) -> list[Question]:
-    if db.get(Topic, topic_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
+@admin_router.get("/assessments/{assessment_id}", response_model=list[QuestionAdminPublic])
+def list_questions_for_assessment(
+    assessment_id: int, db: Session = Depends(get_db)
+) -> list[Question]:
+    if db.get(Assessment, assessment_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
     stmt = (
         select(Question)
         .options(selectinload(Question.options))
-        .where(Question.topic_id == topic_id)
+        .where(Question.assessment_id == assessment_id)
         .order_by(Question.id)
     )
     return list(db.scalars(stmt).all())
@@ -136,11 +137,11 @@ def list_questions_for_topic(topic_id: int, db: Session = Depends(get_db)) -> li
 
 @admin_router.post("/", response_model=QuestionAdminPublic, status_code=status.HTTP_201_CREATED)
 def create_question(payload: QuestionCreate, db: Session = Depends(get_db)) -> Question:
-    if db.get(Topic, payload.topic_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
+    if db.get(Assessment, payload.assessment_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
 
     question = Question(
-        topic_id=payload.topic_id,
+        assessment_id=payload.assessment_id,
         question_text=payload.question_text,
         status=payload.status,
         options=[
@@ -153,9 +154,6 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)) -> Q
         ],
     )
     db.add(question)
-    # The topic's Assessment row starts existing the moment its first
-    # question does - see app/assessments/provisioning.py's module docstring.
-    ensure_assessment_for_topic(db, payload.topic_id)
     db.commit()
     db.refresh(question)
     return question

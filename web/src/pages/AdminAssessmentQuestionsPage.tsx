@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
-import { getCourse } from '../services/coursesService'
-import { getTopic } from '../services/topicsService'
+import { getAssessmentAdmin } from '../services/assessmentsAdminService'
 import {
   bulkUploadQuestions,
   createQuestion,
@@ -11,7 +10,7 @@ import {
   listQuestions,
   updateQuestion,
 } from '../services/questionsService'
-import type { BulkUploadResult, Course, QuestionAdmin, QuestionOptionInput, Topic } from '../types'
+import type { AssessmentAdmin, BulkUploadResult, QuestionAdmin, QuestionOptionInput } from '../types'
 
 const LABELS = ['A', 'B', 'C', 'D'] as const
 
@@ -39,17 +38,18 @@ function toOptions(form: { texts: string[]; correctIndex: number }): QuestionOpt
   }))
 }
 
-// Admin Questions for one topic (Phase 8), reached via a topic's "Manage
-// Questions" link. Every question always has exactly 4 options labeled
-// A-D with exactly one marked correct - enforced backend-side
+// Admin Questions for one reusable Assessment (2026-08-31, re-keyed from
+// per-topic to per-assessment - see app/assessments/models.py's docstring
+// for why), reached via the Assessments list's "Manage Questions" link.
+// Every question always has exactly 4 options labeled A-D with exactly
+// one marked correct - enforced backend-side
 // (app/questions/schemas.py's _validate_four_options), mirrored here by
 // always rendering exactly 4 text inputs plus a single-select radio group.
-export default function AdminQuestionsPage() {
-  const { topicId } = useParams<{ topicId: string }>()
-  const topicIdNum = Number(topicId)
+export default function AdminAssessmentQuestionsPage() {
+  const { assessmentId } = useParams<{ assessmentId: string }>()
+  const assessmentIdNum = Number(assessmentId)
 
-  const [course, setCourse] = useState<Course | null>(null)
-  const [topic, setTopic] = useState<Topic | null>(null)
+  const [assessment, setAssessment] = useState<AssessmentAdmin | null>(null)
   const [questions, setQuestions] = useState<QuestionAdmin[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -77,13 +77,9 @@ export default function AdminQuestionsPage() {
   const bulkFileInputRef = useRef<HTMLInputElement>(null)
 
   function loadData() {
-    getTopic(topicIdNum)
-      .then((topicData) => {
-        setTopic(topicData)
-        return Promise.all([getCourse(topicData.course_id), listQuestions(topicIdNum)])
-      })
-      .then(([courseData, questionsData]) => {
-        setCourse(courseData)
+    Promise.all([getAssessmentAdmin(assessmentIdNum), listQuestions(assessmentIdNum)])
+      .then(([assessmentData, questionsData]) => {
+        setAssessment(assessmentData)
         setQuestions(questionsData)
         setLoadError(false)
       })
@@ -91,7 +87,7 @@ export default function AdminQuestionsPage() {
       .finally(() => setIsLoading(false))
   }
 
-  useEffect(loadData, [topicIdNum])
+  useEffect(loadData, [assessmentIdNum])
 
   async function handleCreate() {
     setCreateError(null)
@@ -102,7 +98,7 @@ export default function AdminQuestionsPage() {
     setIsCreating(true)
     try {
       await createQuestion({
-        topic_id: topicIdNum,
+        assessment_id: assessmentIdNum,
         question_text: createText,
         options: toOptions(createOptions),
       })
@@ -194,7 +190,7 @@ export default function AdminQuestionsPage() {
     }
     setIsBulkUploading(true)
     try {
-      const result = await bulkUploadQuestions(topicIdNum, bulkFile)
+      const result = await bulkUploadQuestions(assessmentIdNum, bulkFile)
       setBulkResult(result)
       setBulkFile(null)
       if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
@@ -210,18 +206,26 @@ export default function AdminQuestionsPage() {
     return <p className="text-gray-500">Loading...</p>
   }
 
-  if (loadError || !course || !topic) {
-    return <p className="text-red-600">Could not load this topic's questions right now.</p>
+  if (loadError || !assessment) {
+    return <p className="text-red-600">Could not load this assessment's questions right now.</p>
   }
 
   return (
     <div>
-      <Link to={`/admin/courses/${course.id}/topics`} className="text-sm text-gray-600 hover:text-ink">
-        &larr; Back to {course.name} Topics
+      <Link to="/admin/assessments" className="text-sm text-gray-600 hover:text-ink">
+        &larr; Back to Assessments
       </Link>
 
       <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-semibold">{topic.name} - Questions</h2>
+        <div>
+          <h2 className="text-xl font-semibold">{assessment.name} - Questions</h2>
+          {assessment.topic_count > 0 && (
+            <p className="text-sm text-gray-500">
+              Attached to {assessment.topic_count} topic{assessment.topic_count === 1 ? '' : 's'} -
+              editing here updates it everywhere it's reused.
+            </p>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"

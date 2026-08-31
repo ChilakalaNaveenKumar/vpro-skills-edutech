@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.assessments.models import Assessment, AssessmentAnswer, AssessmentAttempt
+from app.assessments.models import AssessmentAnswer, AssessmentAttempt
 from app.auth.dependencies import get_current_user, require_admin
 from app.core.enums import UserRole
 from app.database.session import get_db
@@ -26,11 +26,12 @@ admin_router = APIRouter(
     prefix="/api/admin/results", dependencies=[Depends(require_admin)], tags=["Results"]
 )
 
-_SUMMARY_LOAD_OPTIONS = (
-    selectinload(AssessmentAttempt.assessment)
-    .selectinload(Assessment.topic)
-    .selectinload(Topic.course),
-)
+# `attempt.topic` directly (2026-08-31), not via `assessment.topic` - an
+# assessment can now be attached to more than one topic, so the topic/
+# course an attempt belongs to is read off the attempt's own `topic_id`
+# (captured at submission time - see app/assessments/models.py's
+# AssessmentAttempt docstring), not inferred through the assessment.
+_SUMMARY_LOAD_OPTIONS = (selectinload(AssessmentAttempt.topic).selectinload(Topic.course),)
 
 
 @router.get("/", response_model=list[ResultPublic])
@@ -88,9 +89,7 @@ def list_all_results(
     if student_id is not None:
         stmt = stmt.where(AssessmentAttempt.student_id == student_id)
     if topic_id is not None:
-        stmt = stmt.join(Assessment, Assessment.id == AssessmentAttempt.assessment_id).where(
-            Assessment.topic_id == topic_id
-        )
+        stmt = stmt.where(AssessmentAttempt.topic_id == topic_id)
 
     attempts = db.scalars(stmt).all()
     return [AdminResultPublic.from_attempt(a) for a in attempts]

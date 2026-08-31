@@ -219,38 +219,77 @@ def make_topic(db_session):
 
 
 @pytest.fixture()
+def make_assessment(db_session):
+    """Creates a standalone Assessment (2026-08-31) - not attached to any
+    topic by default. Use this directly (together with `make_topic`'s
+    `assessment_id=` override) for tests that need explicit control over
+    reuse across multiple topics; `make_question`'s `topic=` shortcut
+    below covers the common "one topic, one assessment" case without
+    needing this fixture at all.
+    """
+    counter = {"n": 0}
+
+    def _make(**overrides) -> Assessment:
+        counter["n"] += 1
+        defaults = {"name": f"Assessment {counter['n']}", "status": EntityStatus.ACTIVE}
+        defaults.update(overrides)
+        assessment = Assessment(**defaults)
+        db_session.add(assessment)
+        db_session.commit()
+        db_session.refresh(assessment)
+        return assessment
+
+    return _make
+
+
+@pytest.fixture()
 def make_question(db_session):
     """Creates a question with exactly 4 options (A-D); `correct_label`
     picks which one is marked correct (default "A"), matching the real
     admin-creation validation rule (exactly one correct option) even
     though this factory bypasses that schema and inserts directly.
 
-    Also ensures the topic's Assessment row exists (creating it ACTIVE on
-    first call for a topic, reusing it on subsequent calls) - this mirrors
-    what app/assessments/provisioning.py's ensure_assessment_for_topic()
-    does as a side effect of the real admin "create question" endpoint.
-    Since this factory bypasses that endpoint and inserts the Question
-    directly, it has to do the same provisioning itself, or
-    GET/POST .../assessment would 404 with "Assessment not available for
-    this topic" even though questions exist - caught by this suite's own
-    first smoke test against these fixtures.
+    Questions belong to an Assessment, not a Topic, directly (2026-08-31 -
+    see app/assessments/models.py's docstring). Pass `assessment=` for
+    explicit control (e.g. reuse-across-topics tests); pass `topic=` as a
+    convenience shortcut that auto-creates and attaches a fresh Assessment
+    to that topic the first time it's called for that topic (mirroring
+    what the real admin UI does when a topic has nothing attached yet),
+    and reuses whatever's already attached on later calls - this keeps
+    every existing test that only ever cared about "this topic has some
+    questions" working unchanged.
     """
     counter = {"n": 0}
 
-    def _make(*, topic: Topic, correct_label: str = "A", texts: dict[str, str] | None = None, status: EntityStatus = EntityStatus.ACTIVE) -> Question:
+    def _make(
+        *,
+        topic: Topic | None = None,
+        assessment: Assessment | None = None,
+        correct_label: str = "A",
+        texts: dict[str, str] | None = None,
+        status: EntityStatus = EntityStatus.ACTIVE,
+    ) -> Question:
         counter["n"] += 1
         texts = texts or {"A": "Option A", "B": "Option B", "C": "Option C", "D": "Option D"}
-        question = Question(topic_id=topic.id, question_text=f"Question {counter['n']}?", status=status)
+
+        if assessment is None:
+            assert topic is not None, "make_question needs either topic= or assessment="
+            if topic.assessment_id is None:
+                assessment = Assessment(name=f"{topic.name} Assessment", status=EntityStatus.ACTIVE)
+                db_session.add(assessment)
+                db_session.flush()
+                topic.assessment_id = assessment.id
+            else:
+                assessment = db_session.get(Assessment, topic.assessment_id)
+
+        question = Question(
+            assessment_id=assessment.id, question_text=f"Question {counter['n']}?", status=status
+        )
         question.options = [
             QuestionOption(option_label=label, option_text=text, is_correct=(label == correct_label))
             for label, text in texts.items()
         ]
         db_session.add(question)
-
-        assessment = db_session.query(Assessment).filter_by(topic_id=topic.id).one_or_none()
-        if assessment is None:
-            db_session.add(Assessment(topic_id=topic.id, status=EntityStatus.ACTIVE))
-
         db_session.commit()
         db_session.refresh(question)
         return question

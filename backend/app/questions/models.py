@@ -1,18 +1,27 @@
 """SQLAlchemy models for the questions module: MCQ questions and their options."""
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import EntityStatus
 from app.database.base import Base, TimestampMixin
 
+if TYPE_CHECKING:
+    from app.assessments.models import Assessment
+
 
 class Question(Base, TimestampMixin):
     __tablename__ = "questions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    topic_id: Mapped[int] = mapped_column(
-        ForeignKey("topics.id", ondelete="CASCADE"), index=True, nullable=False
+    # A question belongs to a reusable Assessment (2026-08-31), not
+    # directly to a Topic - see assessments/models.py's docstring. The
+    # topic(s) a question is reachable from are whichever topics have that
+    # assessment attached (Topic.assessment_id).
+    assessment_id: Mapped[int] = mapped_column(
+        ForeignKey("assessments.id", ondelete="CASCADE"), index=True, nullable=False
     )
     question_text: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[EntityStatus] = mapped_column(default=EntityStatus.ACTIVE, nullable=False)
@@ -22,6 +31,7 @@ class Question(Base, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="QuestionOption.option_label",
     )
+    assessment: Mapped["Assessment"] = relationship(back_populates="questions")
 
 
 class QuestionOption(Base):
@@ -58,3 +68,4 @@ class QuestionOption(Base):
     is_correct: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     question: Mapped["Question"] = relationship(back_populates="options")
+

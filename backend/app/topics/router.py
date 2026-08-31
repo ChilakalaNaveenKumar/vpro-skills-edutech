@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.assessments.models import Assessment
 from app.auth.dependencies import get_current_user, require_admin
 from app.core.enums import EntityStatus, UserRole
 from app.courses.models import Course
@@ -73,11 +74,26 @@ def create_topic(payload: TopicCreate, db: Session = Depends(get_db)) -> Topic:
 
 @admin_router.put("/{topic_id}", response_model=TopicPublic)
 def update_topic(topic_id: int, payload: TopicUpdate, db: Session = Depends(get_db)) -> Topic:
+    """Also the attach/detach action for a reusable Assessment
+    (2026-08-31): `assessment_id` in the payload is handled by this same
+    generic setattr loop like every other field. Sending an id attaches
+    that assessment to this topic (replacing whatever was attached
+    before, on this topic only - it never touches any other topic's
+    attachment to the same assessment, which is what makes the assessment
+    reusable rather than "moved"); sending `null` explicitly detaches.
+    """
     topic = db.get(Topic, topic_id)
     if topic is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    if "assessment_id" in updates and updates["assessment_id"] is not None:
+        if db.get(Assessment, updates["assessment_id"]) is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found"
+            )
+
+    for field, value in updates.items():
         setattr(topic, field, value)
     db.commit()
     db.refresh(topic)
@@ -86,6 +102,15 @@ def update_topic(topic_id: int, payload: TopicUpdate, db: Session = Depends(get_
 
 @admin_router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_topic(topic_id: int, db: Session = Depends(get_db)) -> None:
+    """Deleting a topic never touches an attached Assessment or its
+    Questions (2026-08-31) - they're independent, reusable entities that
+    may still be attached elsewhere (see app/assessments/models.py's
+    docstring), so a topic delete only detaches, never cascades into
+    them. It's still blocked, via the IntegrityError below, if students
+    have recorded assessment attempts for this specific topic - deleting
+    it would otherwise silently destroy their results
+    (AssessmentAttempt.topic_id is ON DELETE RESTRICT for exactly this).
+    """
     topic = db.get(Topic, topic_id)
     if topic is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Topic not found")
@@ -96,5 +121,5 @@ def delete_topic(topic_id: int, db: Session = Depends(get_db)) -> None:
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="This topic has questions with existing assessment answers and cannot be deleted",
+            detail="This topic has recorded student assessment attempts and cannot be deleted",
         )
