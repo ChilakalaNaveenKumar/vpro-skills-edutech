@@ -52,6 +52,52 @@ resource "aws_cloudfront_distribution" "web" {
     origin_access_control_id = aws_cloudfront_origin_access_control.web.id
   }
 
+  # The EC2 app server as a second origin, so the browser can call the
+  # API on the SAME https://*.cloudfront.net address the web app is
+  # served from. Without this, the web app (HTTPS, via CloudFront) would
+  # call the backend directly over plain HTTP (the EC2 instance has no
+  # certificate - no domain has been added yet, see ec2.tf/nginx), which
+  # every browser blocks as "mixed content". CloudFront-to-origin stays
+  # plain HTTP here (origin_protocol_policy = "http-only") - that hop
+  # never leaves AWS's own network, only the viewer-to-CloudFront leg
+  # (which does leave the network) needs to be encrypted, and it already
+  # is via CloudFront's own default certificate.
+  origin {
+    domain_name = aws_eip.app.public_ip
+    origin_id   = "ec2-api"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port              = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # Anything under /api/ goes to the backend instead of the S3 bucket -
+  # matched before default_cache_behavior since CloudFront evaluates
+  # ordered_cache_behavior blocks first. Not cached (this is a live API,
+  # not static assets) and every method is allowed, not just GET/HEAD.
+  ordered_cache_behavior {
+    path_pattern           = "/api/*"
+    target_origin_id       = "ec2-api"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods          = ["GET", "HEAD"]
+    compress                = true
+    min_ttl                  = 0
+    default_ttl               = 0
+    max_ttl                   = 0
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Authorization", "Content-Type", "Accept", "Origin"]
+      cookies {
+        forward = "all"
+      }
+    }
+  }
+
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods          = ["GET", "HEAD"]
