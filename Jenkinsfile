@@ -142,8 +142,8 @@ pipeline {
                     sh '''
                         set -e
                         ./fetch-secrets.sh
-                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml pull
-                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml up -d
+                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml pull backend
+                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml up -d --build
                     '''
                 }
             }

@@ -38,7 +38,12 @@ services:
     # over the internal compose network.
 
   nginx:
-    image: nginx:1.27-alpine
+    # Built from ./nginx (docker/nginx/Dockerfile), not pulled as a
+    # plain image with a bind-mounted config - see that Dockerfile's
+    # header comment for why (Jenkins runs "Docker outside of Docker",
+    # so runtime bind mounts resolve against the HOST's filesystem, not
+    # Jenkins' own workspace, and fail).
+    build: ./nginx
     restart: unless-stopped
     depends_on:
       backend:
@@ -48,5 +53,3 @@ services:
       # 443 is not mapped yet - no certificate exists until a real domain
       # is added (docs/AWS_DEPLOYMENT.md's "Adding a domain and HTTPS"
       # section covers turning this on with Certbot).
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
