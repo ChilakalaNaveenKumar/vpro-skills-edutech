@@ -48,17 +48,24 @@ export async function bulkUploadQuestions(
 ): Promise<BulkUploadResult> {
   const formData = new FormData()
   formData.append('file', file)
-  // Deliberately NOT setting a Content-Type header here (2026-08-31 fix):
-  // a hardcoded 'multipart/form-data' has no boundary= parameter, which
-  // stops the browser from generating its own - axios/XHR only fills in
-  // the boundary automatically when it's the one setting the header. The
-  // request still "sent" with a manual header, but FastAPI/python-multipart
-  // can't parse a boundary-less body, so every upload failed server-side.
-  // Letting axios see the FormData and set the header itself (with a real
-  // boundary) is what actually makes multipart uploads work.
+  // Content-Type handling here has a two-part history (2026-08-31):
+  // attempt 1 hardcoded 'multipart/form-data' with no boundary=
+  // parameter, which stops the browser from generating its own - that
+  // was removed, since axios/XHR only fills in a real boundary
+  // automatically when IT is the one setting the header. But apiClient's
+  // axios instance also sets a default 'Content-Type: application/json'
+  // (apiClient.ts), and this axios version does not automatically strip
+  // that instance default just because the request body is FormData - so
+  // with no header override at all, every upload was still going out as
+  // application/json with no multipart body, and FastAPI correctly (if
+  // confusingly) reported the "file" field as simply missing. Explicitly
+  // unsetting Content-Type for *this* request is what's actually needed:
+  // it clears the inherited default and lets axios/XHR compute a fresh
+  // multipart header with a real boundary from the FormData body.
   const response = await apiClient.post<BulkUploadResult>(
     `/api/admin/questions/assessments/${assessmentId}/bulk-upload`,
     formData,
+    { headers: { 'Content-Type': undefined } },
   )
   return response.data
 }
