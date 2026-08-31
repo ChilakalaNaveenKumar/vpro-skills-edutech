@@ -169,7 +169,7 @@ export default function PublicLayout() {
       <footer className="border-t border-gray-200 bg-ink px-4 py-6 text-sm text-gray-300">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-1 sm:flex-row sm:justify-between">
           <span>© {new Date().getFullYear()} VPRO Skills EduTech</span>
-          <span className="text-gray-400">Practical, instructor-led tech training.</span>
+          <span className="text-gray-400">Practical, instructor-led tech training — deployed automatically via CI/CD.</span>
         </div>
       </footer>
     </div>
