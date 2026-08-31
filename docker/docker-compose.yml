@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vpro
+      POSTGRES_PASSWORD: vpro_password
+      POSTGRES_DB: vpro_skills
+    # Host port 5433, not the default 5432 - a local, natively-installed
+    # Postgres already listening on 5432 is a common dev-machine conflict
+    # (Postgres.app, a Homebrew service, another project). The container
+    # still listens on 5432 *inside* the Docker network, unaffected -
+    # backend below still reaches it at postgres:5432.
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vpro -d vpro_skills"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      # Overrides ../backend/.env so the container reaches the postgres
+      # service by its Docker network name instead of localhost.
+      DATABASE_URL: postgresql+psycopg2://vpro:vpro_password@postgres:5432/vpro_skills
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Host port 8001, not the default 8000 - something else on the host
+    # (often a stale Docker Desktop port reservation, or another local dev
+    # server) can already hold 8000. The container still listens on 8000
+    # *inside* the Docker network, unaffected.
+    ports:
+      - "8001:8000"
+
+volumes:
+  postgres_data:

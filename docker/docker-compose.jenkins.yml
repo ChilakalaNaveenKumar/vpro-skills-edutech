@@ -1,0 +1,31 @@
+# Jenkins CI, run locally via Docker. See docs/CICD.md for the full
+# first-run walkthrough (unlocking Jenkins, adding credentials, creating
+# the pipeline job, wiring the GitHub webhook via ngrok).
+#
+# Kept separate from docker/docker-compose.yml (the app stack) since
+# Jenkins is CI infrastructure, not something the running app depends
+# on. Start it on its own:
+#   docker compose -f docker/docker-compose.jenkins.yml up -d --build
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Local/solo-dev shortcut: running the controller as root sidesteps
+    # the classic docker-outside-of-docker permission mismatch between
+    # the jenkins user's uid/gid and the host's /var/run/docker.sock
+    # group. Fine for one developer's own machine; a shared/production
+    # Jenkins should instead match the socket's real group GID rather
+    # than run as root.
+    user: root
+    ports:
+      - "8080:8080"   # Jenkins web UI
+      - "50000:50000" # Jenkins inbound-agent port (unused here today,
+                       # kept in case a build agent is added later)
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home:
