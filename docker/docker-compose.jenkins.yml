@@ -19,10 +19,16 @@ services:
     # Jenkins should instead match the socket's real group GID rather
     # than run as root.
     user: root
-    ports:
-      - "8080:8080"   # Jenkins web UI
-      - "50000:50000" # Jenkins inbound-agent port (unused here today,
-                       # kept in case a build agent is added later)
+    # Host networking, not published ports: this container runs `docker
+    # compose`/`curl` commands against the very same host it's on (see
+    # docker/nginx/Dockerfile's comment on "Docker outside of Docker"),
+    # and "localhost" only means "the host" if Jenkins shares the
+    # host's network namespace. With bridge networking (the previous
+    # "ports:" mapping), Jenkins' own `curl http://localhost/health` in
+    # the Jenkinsfile's verify stage was checking itself, not the app -
+    # always failing even when the app was actually healthy. Host mode
+    # also just works for the Jenkins web UI on :8080, no publish needed.
+    network_mode: host
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
