@@ -75,3 +75,14 @@ class QuestionAdminPublic(BaseModel):
     question_text: str
     status: EntityStatus
     options: list[QuestionOptionAdminPublic]
+
+
+class BulkUploadRowError(BaseModel):
+    row: int  # 1-based Excel row number, matching what the admin sees in the spreadsheet
+    message: str
+
+
+class BulkUploadResult(BaseModel):
+    created: int
+    skipped: int
+    errors: list[BulkUploadRowError]

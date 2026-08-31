@@ -1,7 +1,9 @@
+import { isAxiosError } from 'axios'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { createBatch, listBatches, updateBatch } from '../services/batchesService'
 import { listCourses } from '../services/coursesService'
-import type { Batch, Course } from '../types'
+import type { Batch, BatchProgressStatus, Course } from '../types'
 
 function emptyForm() {
   return {
@@ -12,14 +14,79 @@ function emptyForm() {
     start_time: '',
     end_time: '',
     trainer_name: '',
+    trainer_email: '',
+    progress_status: 'IN_PROGRESS' as BatchProgressStatus,
   }
 }
 
-// Admin Batches (Phase 8): list every batch (active + inactive, since the
-// caller is an admin - listBatches() is the same public endpoint students
-// use, it's just role-aware), create new ones against a course, edit the
-// schedule/trainer, and toggle Activate/Deactivate - batches have no hard
-// delete, same as courses.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const PROGRESS_LABEL: Record<BatchProgressStatus, string> = {
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+}
+
+// Extracts a specific, human-readable message from a failed API call
+// instead of a generic fallback. FastAPI's HTTPException(detail=...) puts
+// a plain string in response.data.detail (our 409 "already has a batch
+// with that name" and 422 date/time-order errors both do this); a
+// Pydantic-level 422 (e.g. a malformed email) puts a list of
+// {loc, msg, ...} objects there instead. Falls back to `fallback` for
+// anything else (network error, unexpected shape).
+function getErrorMessage(err: unknown, fallback: string): string {
+  if (isAxiosError(err)) {
+    const detail = err.response?.data?.detail
+    if (typeof detail === 'string') return detail
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail.map((d) => (typeof d?.msg === 'string' ? d.msg : String(d))).join(' ')
+    }
+  }
+  return fallback
+}
+
+// Suggests the next available batch name for a course ("Batch 1", "Batch
+// 2", ...) from the batches already loaded for it, so the New Batch form
+// isn't starting from a blank field and the admin doesn't have to think
+// one up (and possibly collide with an existing one) themselves. Only
+// used to pre-fill the field - it stays fully editable.
+function suggestBatchName(courseId: number, existingBatches: Batch[], excludeId?: number): string {
+  const pattern = /^batch\s+(\d+)$/i
+  let highest = 0
+  for (const b of existingBatches) {
+    if (b.course_id !== courseId || b.id === excludeId) continue
+    const match = b.batch_number.trim().match(pattern)
+    if (match) highest = Math.max(highest, Number(match[1]))
+  }
+  return `Batch ${highest + 1}`
+}
+
+// Case-/whitespace-insensitive, scoped to one course - mirrors
+// backend/app/batches/router.py's _reject_duplicate_batch_number, so the
+// admin sees the error before submitting instead of only after a round
+// trip to the server (which still enforces this too).
+function isDuplicateBatchName(
+  name: string,
+  courseId: number,
+  existingBatches: Batch[],
+  excludeId?: number
+): boolean {
+  const normalized = name.trim().toLowerCase()
+  return existingBatches.some(
+    (b) =>
+      b.course_id === courseId &&
+      b.id !== excludeId &&
+      b.batch_number.trim().toLowerCase() === normalized
+  )
+}
+
+// Admin Batches (Phase 8; course dropdown seeded from a fixed course list
+// and a "Status: In Progress/Completed" field added 2026-08-31 per the
+// admin's request - see docs/ARCHITECTURE.md's "Batches" section). Lists
+// every batch (active + inactive, since the caller is an admin -
+// listBatches() is the same public endpoint students use, it's just
+// role-aware), creates new ones against a course, edits the
+// schedule/trainer/progress, and toggles Activate/Deactivate - batches
+// have no hard delete, same as courses.
 export default function AdminBatchesPage() {
   const [batches, setBatches] = useState<Batch[]>([])
   const [courses, setCourses] = useState<Course[]>([])
@@ -55,22 +122,58 @@ export default function AdminBatchesPage() {
       setCreateError('Choose a course.')
       return
     }
+    const courseId = Number(createForm.course_id)
+    const batchName = createForm.batch_number.trim()
+    if (!batchName) {
+      setCreateError('Enter a batch name.')
+      return
+    }
+    if (isDuplicateBatchName(batchName, courseId, batches)) {
+      setCreateError('A batch with this name already exists for this course. Try another name.')
+      return
+    }
+    if (!createForm.start_date || !createForm.end_date) {
+      setCreateError('Choose a start date and an end date.')
+      return
+    }
+    if (createForm.end_date < createForm.start_date) {
+      setCreateError('End date cannot be before the start date.')
+      return
+    }
+    if (!createForm.start_time || !createForm.end_time) {
+      setCreateError('Choose a start time and an end time.')
+      return
+    }
+    if (createForm.end_time <= createForm.start_time) {
+      setCreateError('End time must be after the start time.')
+      return
+    }
+    if (!createForm.trainer_name.trim()) {
+      setCreateError('Enter the trainer/faculty name.')
+      return
+    }
+    if (!createForm.trainer_email.trim() || !EMAIL_PATTERN.test(createForm.trainer_email.trim())) {
+      setCreateError('Enter a valid trainer/faculty email.')
+      return
+    }
     setIsCreating(true)
     try {
       await createBatch({
-        course_id: Number(createForm.course_id),
-        batch_number: createForm.batch_number,
+        course_id: courseId,
+        batch_number: batchName,
         start_date: createForm.start_date,
         end_date: createForm.end_date,
         start_time: createForm.start_time,
         end_time: createForm.end_time,
-        trainer_name: createForm.trainer_name,
+        trainer_name: createForm.trainer_name.trim(),
+        trainer_email: createForm.trainer_email.trim(),
+        progress_status: createForm.progress_status,
       })
       setCreateForm(emptyForm())
       setShowCreateForm(false)
       loadData()
-    } catch {
-      setCreateError('Could not create the batch. Check the fields and try again.')
+    } catch (err) {
+      setCreateError(getErrorMessage(err, 'Could not create the batch. Check the fields and try again.'))
     } finally {
       setIsCreating(false)
     }
@@ -86,26 +189,69 @@ export default function AdminBatchesPage() {
       start_time: batch.start_time,
       end_time: batch.end_time,
       trainer_name: batch.trainer_name,
+      trainer_email: batch.trainer_email ?? '',
+      progress_status: batch.progress_status,
     })
     setEditError(null)
   }
 
   async function handleSaveEdit(batchId: number) {
     setEditError(null)
+    const courseId = Number(editForm.course_id)
+    const batchName = editForm.batch_number.trim()
+    if (!batchName) {
+      setEditError('Enter a batch name.')
+      return
+    }
+    if (isDuplicateBatchName(batchName, courseId, batches, batchId)) {
+      setEditError('A batch with this name already exists for this course. Try another name.')
+      return
+    }
+    if (!editForm.start_date || !editForm.end_date) {
+      setEditError('Choose a start date and an end date.')
+      return
+    }
+    if (editForm.end_date < editForm.start_date) {
+      setEditError('End date cannot be before the start date.')
+      return
+    }
+    if (!editForm.start_time || !editForm.end_time) {
+      setEditError('Choose a start time and an end time.')
+      return
+    }
+    if (editForm.end_time <= editForm.start_time) {
+      setEditError('End time must be after the start time.')
+      return
+    }
+    if (!editForm.trainer_name.trim()) {
+      setEditError('Enter the trainer/faculty name.')
+      return
+    }
+    const trimmedEmail = editForm.trainer_email.trim()
+    if (trimmedEmail && !EMAIL_PATTERN.test(trimmedEmail)) {
+      setEditError('Enter a valid trainer/faculty email, or leave it blank.')
+      return
+    }
     setIsSaving(true)
     try {
       await updateBatch(batchId, {
-        batch_number: editForm.batch_number,
+        batch_number: batchName,
         start_date: editForm.start_date,
         end_date: editForm.end_date,
         start_time: editForm.start_time,
         end_time: editForm.end_time,
-        trainer_name: editForm.trainer_name,
+        trainer_name: editForm.trainer_name.trim(),
+        // Blank stays unset rather than being sent as an empty string, so
+        // an older batch with no email on file yet can still be re-saved
+        // (e.g. just to change its status) without being forced to add
+        // one right now - the field is required only at creation time.
+        trainer_email: trimmedEmail || undefined,
+        progress_status: editForm.progress_status,
       })
       setEditingId(null)
       loadData()
-    } catch {
-      setEditError('Could not save changes. Check the fields and try again.')
+    } catch (err) {
+      setEditError(getErrorMessage(err, 'Could not save changes. Check the fields and try again.'))
     } finally {
       setIsSaving(false)
     }
@@ -144,7 +290,17 @@ export default function AdminBatchesPage() {
             <select
               id="create-batch-course"
               value={createForm.course_id}
-              onChange={(e) => setCreateForm({ ...createForm, course_id: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value
+                setCreateForm((f) => {
+                  // Only auto-fill a suggested name into an empty field -
+                  // never overwrite something the admin already typed.
+                  if (!value || f.batch_number.trim()) {
+                    return { ...f, course_id: value }
+                  }
+                  return { ...f, course_id: value, batch_number: suggestBatchName(Number(value), batches) }
+                })
+              }}
               className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
             >
               <option value="">Select a course</option>
@@ -156,14 +312,19 @@ export default function AdminBatchesPage() {
             </select>
           </div>
           <div>
-            <label htmlFor="create-batch-number" className="block text-sm font-medium">Batch number</label>
+            <label htmlFor="create-batch-number" className="block text-sm font-medium">Batch name</label>
             <input
               id="create-batch-number"
               type="text"
               value={createForm.batch_number}
               onChange={(e) => setCreateForm({ ...createForm, batch_number: e.target.value })}
               className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              placeholder="e.g. Batch 1"
             />
+            <p className="mt-1 text-xs text-gray-400">
+              Must be unique for this course. We suggest one once you pick a course above - feel free to
+              change it.
+            </p>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
@@ -210,6 +371,20 @@ export default function AdminBatchesPage() {
             </div>
           </div>
           <div>
+            <label htmlFor="create-batch-status" className="block text-sm font-medium">Status</label>
+            <select
+              id="create-batch-status"
+              value={createForm.progress_status}
+              onChange={(e) =>
+                setCreateForm({ ...createForm, progress_status: e.target.value as BatchProgressStatus })
+              }
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+          <div>
             <label htmlFor="create-batch-trainer" className="block text-sm font-medium">Trainer name</label>
             <input
               id="create-batch-trainer"
@@ -217,6 +392,19 @@ export default function AdminBatchesPage() {
               value={createForm.trainer_name}
               onChange={(e) => setCreateForm({ ...createForm, trainer_name: e.target.value })}
               className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label htmlFor="create-batch-trainer-email" className="block text-sm font-medium">
+              Trainer/faculty email
+            </label>
+            <input
+              id="create-batch-trainer-email"
+              type="email"
+              value={createForm.trainer_email}
+              onChange={(e) => setCreateForm({ ...createForm, trainer_email: e.target.value })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              placeholder="trainer@vproskills.com"
             />
           </div>
           {createError && <p className="text-sm text-red-600">{createError}</p>}
@@ -240,12 +428,12 @@ export default function AdminBatchesPage() {
               {editingId === batch.id ? (
                 <div className="space-y-2">
                   <input
-                    aria-label="Batch number"
+                    aria-label="Batch name"
                     type="text"
                     value={editForm.batch_number}
                     onChange={(e) => setEditForm({ ...editForm, batch_number: e.target.value })}
                     className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
-                    placeholder="Batch number"
+                    placeholder="Batch name"
                   />
                   <div className="flex gap-2">
                     <input
@@ -279,6 +467,17 @@ export default function AdminBatchesPage() {
                       className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
                     />
                   </div>
+                  <select
+                    aria-label="Status"
+                    value={editForm.progress_status}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, progress_status: e.target.value as BatchProgressStatus })
+                    }
+                    className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
+                  >
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
                   <input
                     aria-label="Trainer name"
                     type="text"
@@ -286,6 +485,14 @@ export default function AdminBatchesPage() {
                     onChange={(e) => setEditForm({ ...editForm, trainer_name: e.target.value })}
                     className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
                     placeholder="Trainer name"
+                  />
+                  <input
+                    aria-label="Trainer email"
+                    type="email"
+                    value={editForm.trainer_email}
+                    onChange={(e) => setEditForm({ ...editForm, trainer_email: e.target.value })}
+                    className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
+                    placeholder="Trainer/faculty email"
                   />
                   {editError && <p className="text-sm text-red-600">{editError}</p>}
                   <div className="flex gap-2">
@@ -308,16 +515,21 @@ export default function AdminBatchesPage() {
                 </div>
               ) : (
                 <>
-                  <h3 className="font-medium">
-                    {batch.course_name}{' '}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-medium">{batch.course_name}</h3>
                     <span
-                      className={`ml-1 text-xs ${
-                        batch.status === 'ACTIVE' ? 'text-green-700' : 'text-gray-500'
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        batch.progress_status === 'IN_PROGRESS'
+                          ? 'bg-brand-50 text-brand-700'
+                          : 'bg-gray-100 text-gray-600'
                       }`}
                     >
-                      {batch.status}
+                      {PROGRESS_LABEL[batch.progress_status]}
                     </span>
-                  </h3>
+                    {batch.status === 'INACTIVE' && (
+                      <span className="text-xs text-gray-400">(deactivated)</span>
+                    )}
+                  </div>
                   <p className="mt-1 text-sm text-gray-600">Batch {batch.batch_number}</p>
                   <p className="mt-1 text-sm text-gray-600">
                     {batch.start_date} to {batch.end_date}
@@ -326,7 +538,16 @@ export default function AdminBatchesPage() {
                     {batch.start_time} - {batch.end_time}
                   </p>
                   <p className="mt-1 text-sm text-gray-600">Trainer: {batch.trainer_name}</p>
-                  <div className="mt-3 flex gap-2">
+                  {batch.trainer_email && (
+                    <p className="mt-1 text-sm text-gray-600">Email: {batch.trainer_email}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      to={`/admin/courses/${batch.course_id}/topics`}
+                      className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-brand-600 hover:bg-gray-50"
+                    >
+                      Manage Topics
+                    </Link>
                     <button
                       type="button"
                       onClick={() => startEdit(batch)}

@@ -31,20 +31,27 @@ function App() {
           <Route path="/results" element={<ResultsPage />} />
           <Route path="/results/:attemptId" element={<ResultDetailPage />} />
         </Route>
-        <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="courses" replace />} />
-            <Route path="courses" element={<AdminCoursesPage />} />
-            <Route path="courses/:courseId/topics" element={<AdminTopicsPage />} />
-            <Route path="topics/:topicId/questions" element={<AdminQuestionsPage />} />
-            <Route path="batches" element={<AdminBatchesPage />} />
-            <Route path="students" element={<AdminStudentsPage />} />
-            <Route
-              path="students/:studentId/enrollments"
-              element={<AdminStudentEnrollmentsPage />}
-            />
-            <Route path="results" element={<AdminResultsPage />} />
-          </Route>
+      </Route>
+
+      {/* /admin routes deliberately sit OUTSIDE PublicLayout - AdminLayout
+          is its own self-contained header/nav (including its own "Back to
+          site" link and logo), so nesting it inside PublicLayout as well
+          rendered two stacked headers/logos on every admin page. */}
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          {/* Lands on Batches, not Courses - the Courses tab was
+              removed from admin nav 2026-08-31 (see AdminLayout.tsx). */}
+          <Route index element={<Navigate to="batches" replace />} />
+          <Route path="courses" element={<AdminCoursesPage />} />
+          <Route path="courses/:courseId/topics" element={<AdminTopicsPage />} />
+          <Route path="topics/:topicId/questions" element={<AdminQuestionsPage />} />
+          <Route path="batches" element={<AdminBatchesPage />} />
+          <Route path="students" element={<AdminStudentsPage />} />
+          <Route
+            path="students/:studentId/enrollments"
+            element={<AdminStudentEnrollmentsPage />}
+          />
+          <Route path="results" element={<AdminResultsPage />} />
         </Route>
       </Route>
     </Routes>

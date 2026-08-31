@@ -1,16 +1,23 @@
 // VPro Skills EduTech - CI/CD pipeline.
 //
 // Runs on a Jenkins controller built from docker/jenkins/Dockerfile
-// (jenkins/jenkins:lts-jdk17 + python3/pip/venv, Node.js 20, and the
-// Docker CLI). That image's Docker CLI talks to the *host's* Docker
-// daemon via the docker.sock bind-mount in
+// (jenkins/jenkins:lts-jdk17 + python3/pip/venv, Node.js 20, the Docker
+// CLI + Compose plugin, and the AWS CLI v2). That image's Docker CLI
+// talks to the *host's* Docker daemon via the docker.sock bind-mount in
 // docker/docker-compose.jenkins.yml ("Docker outside of Docker") - so
 // `docker build` below builds real images on the host, no extra plugin
 // required beyond what Jenkins' own "suggested plugins" install
 // (Pipeline, Git, Credentials Binding).
 //
-// See docs/CICD.md for the full setup walkthrough (GitHub push, Jenkins
-// first run, credentials, the GitHub webhook via ngrok).
+// This controller itself now runs on the AWS app instance (infra/aws/),
+// colocated with the running app - see docs/ARCHITECTURE.md's "AWS
+// Deployment" section for why. The Deploy stage below pushes to ECR and
+// deploys via `docker compose`, both authenticated by that instance's
+// IAM role (infra/aws/iam.tf) - no AWS access key is stored in Jenkins
+// for this. See docs/AWS_DEPLOYMENT.md for the full setup walkthrough
+// (GitHub push, Jenkins first run, credentials, the GitHub webhook) and
+// docs/CICD.md for the superseded local-Mac/ngrok version of this file's
+// history.
 
 pipeline {
     agent any
@@ -35,6 +42,12 @@ pipeline {
     environment {
         BACKEND_IMAGE = 'vpro-skills-backend'
         IMAGE_TAG     = "${env.BUILD_NUMBER}"
+        // Populated by `terraform output` after infra/aws/ has been
+        // applied - see docs/AWS_DEPLOYMENT.md. Configured once as
+        // Jenkins global environment variables (Manage Jenkins > System),
+        // not hardcoded here, since they're per-deployment values.
+        // ECR_REPOSITORY_URL: e.g. <account>.dkr.ecr.<region>.amazonaws.com/vpro-skills-backend
+        // AWS_REGION: the region infra/aws/ was deployed into
     }
 
     stages {
@@ -99,12 +112,65 @@ pipeline {
             }
         }
 
-        stage('Deploy (placeholder - AWS, future)') {
+        stage('Deploy: push to ECR') {
             steps {
-                echo 'AWS deployment is not wired up yet. When ready: push the image to ECR ' +
-                     'instead of/alongside Docker Hub, then add a step here such as ' +
-                     '"aws ecs update-service --force-new-deployment" (ECS) or a kubectl/eksctl ' +
-                     'rollout (EKS). Keep this a separate stage so it stays easy to swap in.'
+                dir('backend') {
+                    sh '''
+                        set -e
+                        aws ecr get-login-password --region "${AWS_REGION}" \
+                            | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URL%%/*}"
+                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${ECR_REPOSITORY_URL}:${IMAGE_TAG}
+                        docker tag ${BACKEND_IMAGE}:${IMAGE_TAG} ${ECR_REPOSITORY_URL}:latest
+                        docker push ${ECR_REPOSITORY_URL}:${IMAGE_TAG}
+                        docker push ${ECR_REPOSITORY_URL}:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy: roll out on this instance') {
+            steps {
+                dir('docker') {
+                    // Fetches JWT_SECRET/DATABASE_URL/CORS_ORIGINS fresh
+                    // from SSM Parameter Store into backend/.env on every
+                    // deploy (docker/fetch-secrets.sh) - authenticated by
+                    // this instance's IAM role, no AWS key stored here.
+                    // Jenkins is colocated with the running app (see the
+                    // file header above), so this is a direct `docker
+                    // compose` call against the host's Docker daemon, not
+                    // a remote SSH/SSM round-trip.
+                    sh '''
+                        set -e
+                        ./fetch-secrets.sh
+                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml pull
+                        ECR_IMAGE="${ECR_REPOSITORY_URL}:${IMAGE_TAG}" docker compose -f docker-compose.aws.yml up -d
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy: verify') {
+            steps {
+                // Real smoke test, not just "the deploy command exited
+                // 0" - fails the build (and leaves the previous
+                // container running, since `up -d` only replaces a
+                // container once its replacement is healthy per this
+                // service's own HEALTHCHECK) if the new deployment never
+                // comes up healthy.
+                sh '''
+                    set -e
+                    for i in $(seq 1 12); do
+                        if curl -fsS http://localhost/health; then
+                            echo ""
+                            echo "Deploy verified healthy."
+                            exit 0
+                        fi
+                        echo "Waiting for the app to report healthy (attempt $i/12)..."
+                        sleep 5
+                    done
+                    echo "Deploy did not become healthy in time - failing the build." >&2
+                    exit 1
+                '''
             }
         }
     }

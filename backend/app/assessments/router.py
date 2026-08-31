@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.assessments.models import Assessment, AssessmentAnswer, AssessmentAttempt
@@ -67,6 +68,32 @@ def get_assessment(
     assessment = db.scalar(select(Assessment).where(Assessment.topic_id == topic_id))
     if assessment is None or (not is_admin and assessment.status != EntityStatus.ACTIVE):
         raise _NOT_AVAILABLE
+
+    # One attempt per student per assessment (2026-08-31) - a student who
+    # already submitted this topic's assessment gets blocked from
+    # re-fetching the question set at all, rather than being allowed to
+    # retake it. 409 (not 403/404) since the topic/assessment itself is
+    # perfectly valid - it's this specific request that conflicts with an
+    # existing attempt. `attempt_id` in the detail lets the frontend send
+    # the student straight to their existing result instead of just
+    # showing an error. Admins never have attempts of their own (they
+    # never submit - see submit_assessment's role check below), so this
+    # only ever applies to students.
+    if not is_admin:
+        existing_attempt = db.scalar(
+            select(AssessmentAttempt).where(
+                AssessmentAttempt.assessment_id == assessment.id,
+                AssessmentAttempt.student_id == current_user.id,
+            )
+        )
+        if existing_attempt is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "message": "You have already completed this assessment.",
+                    "attempt_id": existing_attempt.id,
+                },
+            )
 
     questions = _load_active_questions(db, topic_id)
     if not questions:
@@ -152,6 +179,27 @@ def submit_assessment(
         answers=answer_rows,
     )
     db.add(attempt)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Backstop for a second submission slipping past get_assessment's
+        # own check above (a replayed request, two tabs racing each
+        # other) - the DB's UniqueConstraint(assessment_id, student_id) is
+        # the actual source of truth. Same shape as get_assessment's 409
+        # so the frontend can handle both with one code path.
+        db.rollback()
+        existing_attempt = db.scalar(
+            select(AssessmentAttempt).where(
+                AssessmentAttempt.assessment_id == assessment.id,
+                AssessmentAttempt.student_id == current_user.id,
+            )
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": "You have already completed this assessment.",
+                "attempt_id": existing_attempt.id if existing_attempt else None,
+            },
+        )
     db.refresh(attempt)
     return AssessmentResultPublic.from_attempt(attempt)

@@ -183,6 +183,7 @@ def make_batch(db_session):
             "start_time": time(9, 0),
             "end_time": time(11, 0),
             "trainer_name": "Trainer",
+            "trainer_email": "trainer@example.com",
             "status": EntityStatus.ACTIVE,
         }
         defaults.update(overrides)

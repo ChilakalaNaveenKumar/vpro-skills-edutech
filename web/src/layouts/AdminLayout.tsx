@@ -6,10 +6,14 @@ const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visibl
 // Shared chrome for the admin section (Phase 8; brand/responsive/focus
 // polish added in Phase 9, recolored + given a "back to site" link post-
 // launch - see docs/ARCHITECTURE.md's "Design system" section). Topics and
-// Questions aren't nav items here - they're reached by drilling into
-// Courses/Topics respectively, matching the real data hierarchy.
+// Questions aren't nav items here - they're reached by drilling in from
+// Batches/Topics respectively. The Courses tab itself was removed
+// 2026-08-31 (the admin picks a course from a fixed dropdown when
+// creating a batch instead of managing courses as their own section) -
+// /admin/courses and /admin/courses/:courseId/topics still work, just
+// without a top-level nav link; "Manage Topics" is reached from each
+// batch card on the Batches page instead.
 const NAV_ITEMS = [
-  { to: '/admin/courses', label: 'Courses' },
   { to: '/admin/batches', label: 'Batches' },
   { to: '/admin/students', label: 'Students' },
   { to: '/admin/results', label: 'Results' },

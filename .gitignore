@@ -35,3 +35,17 @@ docker/bridge/
 # before that was added).
 pytest-cache-files-*/
 .pytest_cache/
+
+# Terraform (infra/aws/) - state files can contain secrets/resource
+# details (e.g. the RDS endpoint) and must never be committed; .terraform/
+# is a large local provider-plugin cache; *.tfvars holds this
+# deployment's config (nothing secret today - see
+# infra/aws/terraform.tfvars.example - but keep it out of git on
+# principle, same as every other real-vs-example config file here).
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log

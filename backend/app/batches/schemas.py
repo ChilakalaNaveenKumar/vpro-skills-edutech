@@ -3,9 +3,9 @@
 from datetime import date, time
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from app.core.enums import EntityStatus
+from app.core.enums import BatchProgressStatus, EntityStatus
 
 if TYPE_CHECKING:
     from app.batches.models import Batch
@@ -19,12 +19,16 @@ class BatchCreate(BaseModel):
     start_time: time
     end_time: time
     trainer_name: str = Field(min_length=1, max_length=150)
+    trainer_email: EmailStr
     status: EntityStatus = EntityStatus.ACTIVE
+    progress_status: BatchProgressStatus = BatchProgressStatus.IN_PROGRESS
 
     @model_validator(mode="after")
-    def _check_date_order(self) -> "BatchCreate":
+    def _check_ordering(self) -> "BatchCreate":
         if self.end_date < self.start_date:
             raise ValueError("end_date cannot be before start_date")
+        if self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
         return self
 
 
@@ -35,7 +39,24 @@ class BatchUpdate(BaseModel):
     start_time: time | None = None
     end_time: time | None = None
     trainer_name: str | None = Field(default=None, min_length=1, max_length=150)
+    trainer_email: EmailStr | None = None
     status: EntityStatus | None = None
+    progress_status: BatchProgressStatus | None = None
+
+    # Only catches the case where the *request itself* supplies both ends
+    # out of order. A partial update (e.g. only end_date, leaving the
+    # existing start_date on the row untouched) can't be checked here -
+    # this schema has no access to the row being updated - so
+    # app/batches/router.py's update_batch also re-checks the *merged*
+    # result before committing. Both checks are needed; neither is
+    # redundant with the other.
+    @model_validator(mode="after")
+    def _check_ordering(self) -> "BatchUpdate":
+        if self.start_date is not None and self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("end_date cannot be before start_date")
+        if self.start_time is not None and self.end_time is not None and self.end_time <= self.start_time:
+            raise ValueError("end_time must be after start_time")
+        return self
 
 
 class BatchPublic(BaseModel):
@@ -50,7 +71,9 @@ class BatchPublic(BaseModel):
     start_time: time
     end_time: time
     trainer_name: str
+    trainer_email: EmailStr | None
     status: EntityStatus
+    progress_status: BatchProgressStatus
 
     @classmethod
     def from_model(cls, batch: "Batch") -> "BatchPublic":
@@ -69,5 +92,7 @@ class BatchPublic(BaseModel):
             start_time=batch.start_time,
             end_time=batch.end_time,
             trainer_name=batch.trainer_name,
+            trainer_email=batch.trainer_email,
             status=batch.status,
+            progress_status=batch.progress_status,
         )

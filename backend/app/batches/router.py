@@ -5,7 +5,7 @@ app/courses/router.py's module docstring).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -25,6 +25,32 @@ admin_router = APIRouter(
 
 def _is_admin(user: User | None) -> bool:
     return user is not None and user.role == UserRole.ADMIN
+
+
+def _reject_duplicate_batch_number(
+    db: Session, *, course_id: int, batch_number: str, exclude_batch_id: int | None = None
+) -> None:
+    """Case-/whitespace-insensitive duplicate check, run before the DB
+    write. The table's UniqueConstraint (course_id, batch_number) already
+    guarantees no two exact-string duplicates can land in the same course,
+    but Postgres compares that column case-sensitively, so "Batch 1" and
+    "batch 1" would otherwise both be accepted as "unique" - not what an
+    admin means by two batches having the same name. This check catches
+    that; the DB constraint (see create_batch/update_batch's IntegrityError
+    handling below) remains as a safety net for any race between two
+    concurrent requests.
+    """
+    normalized = batch_number.strip().lower()
+    stmt = select(Batch.id).where(
+        Batch.course_id == course_id, func.lower(Batch.batch_number) == normalized
+    )
+    if exclude_batch_id is not None:
+        stmt = stmt.where(Batch.id != exclude_batch_id)
+    if db.scalar(stmt) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This course already has a batch with that name.",
+        )
 
 
 @router.get("/", response_model=list[BatchPublic])
@@ -57,6 +83,10 @@ def create_batch(payload: BatchCreate, db: Session = Depends(get_db)) -> BatchPu
     if db.get(Course, payload.course_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
 
+    _reject_duplicate_batch_number(
+        db, course_id=payload.course_id, batch_number=payload.batch_number
+    )
+
     batch = Batch(**payload.model_dump())
     db.add(batch)
     try:
@@ -77,8 +107,32 @@ def update_batch(batch_id: int, payload: BatchUpdate, db: Session = Depends(get_
     if batch is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found")
 
+    if payload.batch_number is not None:
+        _reject_duplicate_batch_number(
+            db,
+            course_id=batch.course_id,
+            batch_number=payload.batch_number,
+            exclude_batch_id=batch.id,
+        )
+
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(batch, field, value)
+
+    # BatchUpdate's own validator only catches an out-of-order pair supplied
+    # together in *this* request. A request that changes only one end (e.g.
+    # just end_date) has to be checked against the merged, final state -
+    # otherwise "move end_date earlier than the existing start_date" would
+    # silently succeed.
+    if batch.end_date < batch.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="end_date cannot be before start_date",
+        )
+    if batch.end_time <= batch.start_time:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="end_time must be after start_time",
+        )
 
     try:
         db.commit()

@@ -9,6 +9,9 @@ export interface HealthResponse {
 
 export type EntityStatus = 'ACTIVE' | 'INACTIVE'
 
+// Mirrors backend/app/core/enums.py's BatchProgressStatus.
+export type BatchProgressStatus = 'IN_PROGRESS' | 'COMPLETED'
+
 // Mirrors backend/app/courses/schemas.py's CoursePublic.
 export interface Course {
   id: number
@@ -28,7 +31,10 @@ export interface Batch {
   start_time: string
   end_time: string
   trainer_name: string
+  // Nullable - batches created before 2026-08-31 predate this field.
+  trainer_email: string | null
   status: EntityStatus
+  progress_status: BatchProgressStatus
 }
 
 
@@ -89,6 +95,16 @@ export interface Assessment {
 export interface AnswerSubmission {
   question_id: number
   selected_option_id: number | null
+}
+
+// Mirrors the 409 error `detail` body on GET /api/topics/{id}/assessment
+// and POST .../assessment/submit when the student has already completed
+// this assessment (2026-08-31) - not a success response, so it isn't a
+// service function's return type, just the shape AssessmentPage.tsx reads
+// out of the caught error to redirect straight to the existing result.
+export interface AlreadyAttemptedDetail {
+  message: string
+  attempt_id: number | null
 }
 
 // Mirrors backend/app/assessments/schemas.py's AssessmentResultPublic.
@@ -158,7 +174,9 @@ export interface BatchCreate {
   start_time: string
   end_time: string
   trainer_name: string
+  trainer_email: string
   status?: EntityStatus
+  progress_status?: BatchProgressStatus
 }
 
 export interface BatchUpdate {
@@ -168,7 +186,9 @@ export interface BatchUpdate {
   start_time?: string
   end_time?: string
   trainer_name?: string
+  trainer_email?: string
   status?: EntityStatus
+  progress_status?: BatchProgressStatus
 }
 
 // Mirrors backend/app/topics/schemas.py's TopicCreate/TopicUpdate.
@@ -221,6 +241,18 @@ export interface QuestionAdmin {
   question_text: string
   status: EntityStatus
   options: QuestionOptionAdmin[]
+}
+
+// Mirrors backend/app/questions/schemas.py's BulkUploadRowError/BulkUploadResult.
+export interface BulkUploadRowError {
+  row: number
+  message: string
+}
+
+export interface BulkUploadResult {
+  created: number
+  skipped: number
+  errors: BulkUploadRowError[]
 }
 
 // Mirrors backend/app/users/schemas.py's UserCreate/UserUpdate.

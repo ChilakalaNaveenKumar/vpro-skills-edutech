@@ -1,12 +1,31 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { getCourse } from '../services/coursesService'
 import { getTopic } from '../services/topicsService'
-import { createQuestion, deleteQuestion, listQuestions, updateQuestion } from '../services/questionsService'
-import type { Course, QuestionAdmin, QuestionOptionInput, Topic } from '../types'
+import {
+  bulkUploadQuestions,
+  createQuestion,
+  deleteQuestion,
+  downloadBulkUploadTemplate,
+  listQuestions,
+  updateQuestion,
+} from '../services/questionsService'
+import type { BulkUploadResult, Course, QuestionAdmin, QuestionOptionInput, Topic } from '../types'
 
 const LABELS = ['A', 'B', 'C', 'D'] as const
+
+// Same "extract the backend's actual error text" pattern as
+// AdminBatchesPage.tsx's getErrorMessage - a 400 here (bad file type,
+// wrong columns, file-level parse failure) carries a specific, useful
+// message in response.data.detail that a generic fallback would throw away.
+function getUploadErrorMessage(err: unknown, fallback: string): string {
+  if (axios.isAxiosError(err)) {
+    const detail = err.response?.data?.detail
+    if (typeof detail === 'string') return detail
+  }
+  return fallback
+}
 
 function emptyOptionForm(): { texts: string[]; correctIndex: number } {
   return { texts: ['', '', '', ''], correctIndex: 0 }
@@ -48,6 +67,14 @@ export default function AdminQuestionsPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
+  const [bulkFile, setBulkFile] = useState<File | null>(null)
+  const [isBulkUploading, setIsBulkUploading] = useState(false)
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false)
+  const [bulkError, setBulkError] = useState<string | null>(null)
+  const [bulkResult, setBulkResult] = useState<BulkUploadResult | null>(null)
+  const bulkFileInputRef = useRef<HTMLInputElement>(null)
 
   function loadData() {
     getTopic(topicIdNum)
@@ -136,6 +163,49 @@ export default function AdminQuestionsPage() {
     }
   }
 
+  async function handleDownloadTemplate() {
+    setBulkError(null)
+    setIsDownloadingTemplate(true)
+    try {
+      const blob = await downloadBulkUploadTemplate()
+      // Authenticated GET, so this can't be a plain <a href> - build a
+      // throwaway object URL, click it programmatically, then release it.
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'question_upload_template.xlsx'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setBulkError('Could not download the template right now. Please try again.')
+    } finally {
+      setIsDownloadingTemplate(false)
+    }
+  }
+
+  async function handleBulkUpload() {
+    setBulkError(null)
+    setBulkResult(null)
+    if (!bulkFile) {
+      setBulkError('Choose an Excel (.xlsx) file first - use "Download template" if you need one.')
+      return
+    }
+    setIsBulkUploading(true)
+    try {
+      const result = await bulkUploadQuestions(topicIdNum, bulkFile)
+      setBulkResult(result)
+      setBulkFile(null)
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
+      loadData()
+    } catch (err) {
+      setBulkError(getUploadErrorMessage(err, 'Could not process this file. Check it against the template and try again.'))
+    } finally {
+      setIsBulkUploading(false)
+    }
+  }
+
   if (isLoading) {
     return <p className="text-gray-500">Loading...</p>
   }
@@ -152,14 +222,97 @@ export default function AdminQuestionsPage() {
 
       <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold">{topic.name} - Questions</h2>
-        <button
-          type="button"
-          onClick={() => setShowCreateForm((v) => !v)}
-          className="rounded-lg bg-brand-600 shadow-sm transition-colors hover:bg-brand-700 px-4 py-2 text-sm font-medium text-white"
-        >
-          {showCreateForm ? 'Cancel' : 'New Question'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setShowBulkUpload((v) => !v)
+              setBulkError(null)
+              setBulkResult(null)
+            }}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            {showBulkUpload ? 'Cancel' : 'Bulk Upload (Excel)'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreateForm((v) => !v)}
+            className="rounded-lg bg-brand-600 shadow-sm transition-colors hover:bg-brand-700 px-4 py-2 text-sm font-medium text-white"
+          >
+            {showCreateForm ? 'Cancel' : 'New Question'}
+          </button>
+        </div>
       </div>
+
+      {showBulkUpload && (
+        <div className="mt-4 rounded-xl border border-gray-200 p-4 shadow-sm max-w-xl">
+          <p className="text-sm text-gray-600">
+            Add many questions at once from an Excel file, instead of filling in the form below one
+            question at a time. Each row becomes one question with its 4 options (A-D) and which one
+            is correct.
+          </p>
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            disabled={isDownloadingTemplate}
+            className="mt-3 text-sm font-medium text-brand-600 underline hover:text-brand-700 disabled:opacity-50"
+          >
+            {isDownloadingTemplate ? 'Downloading...' : 'Download template (.xlsx)'}
+          </button>
+          <p className="mt-1 text-xs text-gray-400">
+            Fill in your questions below the two example rows, keep the column headers as they are, then
+            upload the file back here.
+          </p>
+
+          <div className="mt-4">
+            <label htmlFor="bulk-upload-file" className="block text-sm font-medium">
+              Filled-in Excel file
+            </label>
+            <input
+              id="bulk-upload-file"
+              ref={bulkFileInputRef}
+              type="file"
+              accept=".xlsx"
+              onChange={(e) => setBulkFile(e.target.files?.[0] ?? null)}
+              className="mt-1 w-full text-sm"
+            />
+          </div>
+
+          {bulkError && <p className="mt-3 text-sm text-red-600">{bulkError}</p>}
+
+          {bulkResult && (
+            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm">
+              <p className="font-medium text-green-700">
+                {bulkResult.created} question{bulkResult.created === 1 ? '' : 's'} added.
+              </p>
+              {bulkResult.skipped > 0 && (
+                <>
+                  <p className="mt-1 text-amber-700">
+                    {bulkResult.skipped} row{bulkResult.skipped === 1 ? '' : 's'} skipped - fix these
+                    and upload just the corrected rows in a new file:
+                  </p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-5 text-gray-600">
+                    {bulkResult.errors.map((e) => (
+                      <li key={e.row}>
+                        Row {e.row}: {e.message}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            disabled={isBulkUploading || !bulkFile}
+            onClick={handleBulkUpload}
+            className="mt-4 rounded-lg bg-brand-600 shadow-sm transition-colors hover:bg-brand-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {isBulkUploading ? 'Uploading...' : 'Upload'}
+          </button>
+        </div>
+      )}
 
       {showCreateForm && (
         <div className="mt-4 rounded-xl border border-gray-200 p-4 shadow-sm max-w-xl">

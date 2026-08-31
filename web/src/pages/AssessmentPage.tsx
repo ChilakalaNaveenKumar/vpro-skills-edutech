@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { getAssessment, submitAssessment } from '../services/assessmentService'
-import type { Assessment, AssessmentResult } from '../types'
+import type { AlreadyAttemptedDetail, Assessment, AssessmentResult } from '../types'
 
 // Topic-wise MCQ assessment (Phase 6): one question at a time, answers
 // held only in this component's state - nothing is sent to the backend
@@ -23,6 +23,15 @@ export default function AssessmentPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<AssessmentResult | null>(null)
 
+  // Set when the backend says this assessment was already completed (a
+  // student who never left the results page but somehow lands back on
+  // /topics/:id/assessment - e.g. a stale tab, a bookmark, browser back)
+  // - once set, this component immediately hands off to the results page
+  // instead of showing an error or a quiz that will just be rejected on
+  // submit. See app/assessments/router.py's get_assessment for the 409
+  // this reads.
+  const [alreadyAttemptedId, setAlreadyAttemptedId] = useState<number | null>(null)
+
   useEffect(() => {
     let isMounted = true
 
@@ -32,6 +41,13 @@ export default function AssessmentPage() {
       })
       .catch((err) => {
         if (!isMounted) return
+        if (axios.isAxiosError(err) && err.response?.status === 409) {
+          const detail = err.response?.data?.detail as AlreadyAttemptedDetail | undefined
+          if (detail?.attempt_id != null) {
+            setAlreadyAttemptedId(detail.attempt_id)
+            return
+          }
+        }
         if (axios.isAxiosError(err) && err.response?.status === 403) {
           setLoadError('You are not enrolled in this course.')
         } else if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -60,11 +76,26 @@ export default function AssessmentPage() {
       }))
       const submitResult = await submitAssessment(topicIdNum, startedAtRef.current, answers)
       setResult(submitResult)
-    } catch {
+    } catch (err) {
+      // Same 409 shape as the load-time check above - covers the race
+      // where a second tab/device submits first while this one was
+      // still open. Send the student to their real result instead of a
+      // confusing "could not submit" error.
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        const detail = err.response?.data?.detail as AlreadyAttemptedDetail | undefined
+        if (detail?.attempt_id != null) {
+          setAlreadyAttemptedId(detail.attempt_id)
+          return
+        }
+      }
       setSubmitError('Could not submit your assessment right now. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (alreadyAttemptedId != null) {
+    return <Navigate to={`/results/${alreadyAttemptedId}`} replace />
   }
 
   if (isLoading) {

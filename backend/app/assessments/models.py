@@ -50,9 +50,29 @@ class AssessmentAttempt(Base, TimestampMixin):
     question = one correct answer, no negative marking" rule it always
     equals `correct_count`, so the API exposes `correct_count` as `score`
     rather than storing the same number twice.
+
+    One attempt per student per assessment (2026-08-31, per the admin's
+    explicit request - "once assessment done... never allow me to attempt
+    again... show him results instead"). This reverses an earlier decision
+    (multiple attempts were previously allowed, with no uniqueness
+    constraint) - see migration `c3d4e5f6a7b8` for how any pre-existing
+    duplicate attempts were consolidated before this constraint was added.
+    Enforced here at the DB level (the real backstop) via
+    `__table_args__` below, and also checked at the application level in
+    app/assessments/router.py (`get_assessment` blocks re-fetching the quiz
+    once an attempt exists; `submit_assessment` catches the IntegrityError
+    from a concurrent/replayed second submission) - the same
+    belt-and-suspenders pattern this app already uses for every other
+    uniqueness rule (e.g. Batch.batch_number, QuestionOption's
+    one-correct-answer-per-question index).
     """
 
     __tablename__ = "assessment_attempts"
+    __table_args__ = (
+        UniqueConstraint(
+            "assessment_id", "student_id", name="uq_assessment_attempts_assessment_student"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     assessment_id: Mapped[int] = mapped_column(

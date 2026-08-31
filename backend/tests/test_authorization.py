@@ -38,6 +38,7 @@ def test_create_batch_requires_admin(client, make_admin, make_student, make_cour
         "start_time": "09:00:00",
         "end_time": "11:00:00",
         "trainer_name": "Trainer",
+        "trainer_email": "trainer@example.com",
     }
 
     make_student(email="student-batch@example.com")

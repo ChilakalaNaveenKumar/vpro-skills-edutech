@@ -153,3 +153,66 @@ docker-compose.prod.yml ps` shows each container's current health state.
 See `docs/SETUP.md`'s "Deploying the web app" section - the web app is a
 static build (`web/dist`), not a Docker container; this repo doesn't
 commit to a specific static host.
+
+## Operating the AWS deployment
+
+Everything above describes the self-contained Docker deployment
+(`docker-compose.prod.yml`, its own local Postgres, SSH-shaped mental
+model). The AWS deployment (`docs/AWS_DEPLOYMENT.md`) changes three of
+these procedures - the rest (health checks, `alembic` commands, the
+overall "the entrypoint applies migrations automatically" behavior) work
+identically once you have a shell on the instance.
+
+**Getting a shell - no SSH.** Port 22 isn't open and there's no key pair
+(see `docs/ARCHITECTURE.md`'s "AWS Deployment" section for why). Use AWS
+Systems Manager instead:
+```
+aws ssm start-session --target <instance_id from terraform output>
+```
+Every session is logged by AWS - a real improvement over an SSH key that
+can be copied/leaked with no record of who used it.
+
+**Backups - RDS snapshots, not `backup.sh`.** `docker/backup.sh`/
+`restore.sh` are for the self-contained Docker deployment's own local
+Postgres container and don't apply here - RDS takes automated daily
+backups itself (7-day retention, `infra/aws/rds.tf`). To restore:
+```
+aws rds restore-db-instance-to-point-in-time \
+    --source-db-instance-identifier vpro-skills-production \
+    --target-db-instance-identifier vpro-skills-production-restored \
+    --restore-time <timestamp>
+```
+This creates a **new** RDS instance from the backup rather than
+overwriting the live one - point the app at it (update the
+`database_url` SSM parameter, redeploy) once you've confirmed it's the
+data you wanted, then decide whether to keep or delete the original.
+For a specific stored snapshot instead of point-in-time:
+```
+aws rds describe-db-snapshots --db-instance-identifier vpro-skills-production
+aws rds restore-db-instance-from-db-snapshot \
+    --db-instance-identifier vpro-skills-production-restored \
+    --db-snapshot-identifier <snapshot-id>
+```
+
+**Rotating `JWT_SECRET` - via SSM, not `backend/.env`.** The AWS
+deployment's `backend/.env` is regenerated fresh on every deploy by
+`docker/fetch-secrets.sh` (see the Jenkinsfile's deploy stage) - hand-
+editing it on the instance would just be overwritten by the next push.
+Rotate the actual source of truth instead:
+```
+aws ssm put-parameter \
+    --name /vpro-skills/production/jwt_secret \
+    --type SecureString \
+    --value "<a new long random value>" \
+    --overwrite
+```
+then trigger a redeploy (a Jenkins "Build Now", or push any small
+change) so the running container picks it up. Same consequence as
+before: every existing JWT is invalidated immediately, every logged-in
+user is signed out at once.
+
+**Everything else** (viewing logs, checking `/health`, an incident
+rollback by redeploying a previous image tag from ECR) works the same
+way described above, just run from inside an SSM session instead of a
+local terminal, and against `docker-compose.aws.yml` instead of
+`docker-compose.prod.yml`.

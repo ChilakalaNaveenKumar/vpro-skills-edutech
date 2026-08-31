@@ -6,6 +6,9 @@
 
 export type EntityStatus = 'ACTIVE' | 'INACTIVE'
 
+// Mirrors backend/app/core/enums.py's BatchProgressStatus.
+export type BatchProgressStatus = 'IN_PROGRESS' | 'COMPLETED'
+
 export type UserRole = 'ADMIN' | 'STUDENT'
 
 // Mirrors backend/app/users/schemas.py's UserPublic (returned by GET /api/auth/me).
@@ -47,7 +50,10 @@ export interface Batch {
   start_time: string
   end_time: string
   trainer_name: string
+  // Nullable - batches created before 2026-08-31 predate this field.
+  trainer_email: string | null
   status: EntityStatus
+  progress_status: BatchProgressStatus
 }
 
 // Mirrors backend/app/topics/schemas.py's TopicPublic.
