@@ -44,8 +44,21 @@ class Assessment(Base, TimestampMixin):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[EntityStatus] = mapped_column(default=EntityStatus.ACTIVE, nullable=False)
 
+    # passive_deletes=True (2026-08-31 fix): questions.assessment_id has a
+    # real ON DELETE CASCADE at the DB level (questions/models.py), but
+    # without this flag SQLAlchemy's default unit-of-work still tries to
+    # NULL out each loaded Question's assessment_id itself before deleting
+    # the Assessment row - assessment_id is NOT NULL, so that always
+    # raised an IntegrityError (surfaced as an unhandled 500 from
+    # delete_assessment below, since assessment_id isn't nullable and
+    # there was never a try/except around this delete). This tells
+    # SQLAlchemy to leave the children alone and let the database's own
+    # cascade remove them, which is what ondelete=CASCADE was already
+    # there for - an assessment's own questions aren't shared with
+    # anything else (unlike topics/attempts), so deleting them along with
+    # it is correct, not just a symptom fix.
     questions: Mapped[list["Question"]] = relationship(
-        back_populates="assessment", order_by="Question.id"
+        back_populates="assessment", order_by="Question.id", passive_deletes=True
     )
     attempts: Mapped[list["AssessmentAttempt"]] = relationship(back_populates="assessment")
     # Read-only convenience for the admin assessments list (attached-topic

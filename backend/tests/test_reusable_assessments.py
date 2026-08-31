@@ -175,6 +175,48 @@ def test_deleting_an_assessment_attached_to_a_topic_is_blocked(
     assert delete_after_detach.status_code == 204
 
 
+def test_deleting_an_assessment_with_questions_but_no_topics_cascades_cleanly(
+    client, make_admin, make_assessment, make_question, login_as, db_session
+):
+    """Regression test (2026-08-31): an assessment's own Questions belong
+    exclusively to it (unlike topics/attempts, which are the actual
+    delete-safety checks in delete_assessment), so deleting an assessment
+    that has questions but is not attached to any topic and has no
+    attempts must succeed and take its questions with it - not 500. This
+    exercises a path the sibling test above never did (that assessment
+    was never given any questions), which is exactly how the bug -
+    SQLAlchemy trying to null out Question.assessment_id, a NOT NULL
+    column, instead of leaving the DB's own ON DELETE CASCADE to do it -
+    went unnoticed.
+    """
+    from sqlalchemy import text
+
+    admin = make_admin(email="reuse-admin7@example.com")
+    headers = login_as(admin.email)
+
+    assessment = make_assessment(name="Has Questions, No Topic")
+    question = make_question(assessment=assessment, correct_label="A")
+    # Read while still fresh - client.delete() below reuses this same
+    # db_session under the hood, and its commit() expires every object
+    # this session is tracking (default expire_on_commit=True), including
+    # `question`. Touching `question.id` after that point - even just to
+    # read it - would try to refresh the now-cascade-deleted row and raise
+    # ObjectDeletedError, same as any ORM read of it would.
+    question_id = question.id
+
+    delete_resp = client.delete(f"/api/admin/assessments/{assessment.id}", headers=headers)
+    assert delete_resp.status_code == 204, delete_resp.text
+
+    # Raw SQL, not the ORM, for this check too: even with a plain int id
+    # in hand, an ORM Query for a Question with this id would hydrate an
+    # instance sharing identity with the expired one above and hit the
+    # same refresh problem. A raw COUNT sidesteps that entirely.
+    remaining = db_session.execute(
+        text("SELECT COUNT(*) FROM questions WHERE id = :qid"), {"qid": question_id}
+    ).scalar()
+    assert remaining == 0
+
+
 def test_attaching_a_nonexistent_assessment_404s(client, make_admin, make_course, make_topic, login_as):
     admin = make_admin(email="reuse-admin5@example.com")
     headers = login_as(admin.email)
