@@ -248,7 +248,17 @@ export default function AdminAssessmentQuestionsPage() {
       if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
       loadData()
     } catch (err) {
-      setBulkError(getUploadErrorMessage(err, 'Could not process this file. Check it against the template and try again.'))
+      // Logged so a failure that isn't a clean server-returned error (a
+      // timeout, a dropped connection, a proxy-level rejection with no
+      // JSON body) is still inspectable in the console instead of only
+      // ever showing the generic fallback message below.
+      console.error('Bulk upload failed:', err)
+      const isTimeout = axios.isAxiosError(err) && err.code === 'ECONNABORTED'
+      setBulkError(
+        isTimeout
+          ? 'The upload timed out. Check your connection and try again - if it keeps timing out, the file may be too large or the server may be slow to respond.'
+          : getUploadErrorMessage(err, 'Could not process this file. Check it against the template and try again.'),
+      )
     } finally {
       setIsBulkUploading(false)
     }

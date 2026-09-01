@@ -65,7 +65,15 @@ export async function bulkUploadQuestions(
   const response = await apiClient.post<BulkUploadResult>(
     `/api/admin/questions/assessments/${assessmentId}/bulk-upload`,
     formData,
-    { headers: { 'Content-Type': undefined } },
+    {
+      headers: { 'Content-Type': undefined },
+      // A parsed request that hangs (proxy/timeout misconfiguration,
+      // origin unreachable, a huge file) used to leave the Upload button
+      // stuck showing "Uploading..." indefinitely with no feedback at
+      // all - axios has no timeout by default. Bounded here so a hang
+      // reliably turns into a visible, specific error instead.
+      timeout: 30000,
+    },
   )
   return response.data
 }
