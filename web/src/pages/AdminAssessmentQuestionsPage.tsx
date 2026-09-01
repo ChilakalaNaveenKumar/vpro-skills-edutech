@@ -97,6 +97,7 @@ export default function AdminAssessmentQuestionsPage() {
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [bulkResult, setBulkResult] = useState<BulkUploadResult | null>(null)
   const bulkFileInputRef = useRef<HTMLInputElement>(null)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
 
   function loadData() {
     Promise.all([getAssessmentAdmin(assessmentIdNum), listQuestions(assessmentIdNum)])
@@ -203,6 +204,30 @@ export default function AdminAssessmentQuestionsPage() {
     }
   }
 
+  // Shared by the click-to-browse <input> below and the drag-and-drop zone
+  // around it (2026-08-31, added after "Choose file" was reported to not
+  // open the native OS picker at all on one admin's Mac, in every browser
+  // tried - a picker that never appears is outside anything this app's code
+  // can control, so drag-and-drop is a second, independent way to hand a
+  // file to the browser that never goes through that native dialog).
+  function applySelectedFile(file: File | null) {
+    setBulkResult(null)
+    if (!file) {
+      setBulkFile(null)
+      setBulkError(null)
+      return
+    }
+    const validationError = validateBulkUploadFile(file)
+    if (validationError) {
+      setBulkFile(null)
+      setBulkError(validationError)
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
+      return
+    }
+    setBulkFile(file)
+    setBulkError(null)
+  }
+
   async function handleBulkUpload() {
     setBulkError(null)
     setBulkResult(null)
@@ -299,31 +324,44 @@ export default function AdminAssessmentQuestionsPage() {
             <label htmlFor="bulk-upload-file" className="block text-sm font-medium">
               Filled-in Excel file
             </label>
-            <input
-              id="bulk-upload-file"
-              ref={bulkFileInputRef}
-              type="file"
-              accept=".xlsx"
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null
-                setBulkResult(null)
-                if (!file) {
-                  setBulkFile(null)
-                  setBulkError(null)
-                  return
-                }
-                const validationError = validateBulkUploadFile(file)
-                if (validationError) {
-                  setBulkFile(null)
-                  setBulkError(validationError)
-                  if (bulkFileInputRef.current) bulkFileInputRef.current.value = ''
-                  return
-                }
-                setBulkFile(file)
-                setBulkError(null)
+            {/* Drag-and-drop target wrapping the click-to-browse input - a
+                second, independent way to hand over a file that never goes
+                through the browser's native Open panel, for anyone whose
+                "Choose file" click doesn't open that panel at all (a known
+                OS-level failure mode this app's code can't reach into). */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDraggingFile(true)
               }}
-              className="mt-1 w-full text-sm"
-            />
+              onDragLeave={(e) => {
+                e.preventDefault()
+                setIsDraggingFile(false)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                setIsDraggingFile(false)
+                applySelectedFile(e.dataTransfer.files?.[0] ?? null)
+              }}
+              className={`mt-1 rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                isDraggingFile ? 'border-brand-600 bg-brand-50' : 'border-gray-300'
+              }`}
+            >
+              <p className="text-sm text-gray-500">
+                Drag and drop your filled-in .xlsx file here, or use the file picker below.
+              </p>
+              <input
+                id="bulk-upload-file"
+                ref={bulkFileInputRef}
+                type="file"
+                accept=".xlsx"
+                onChange={(e) => applySelectedFile(e.target.files?.[0] ?? null)}
+                className="mt-2 w-full text-sm"
+              />
+            </div>
+            {bulkFile && !isDraggingFile && (
+              <p className="mt-2 text-sm text-gray-600">Selected: {bulkFile.name}</p>
+            )}
           </div>
 
           {bulkError && <p className="mt-3 text-sm text-red-600">{bulkError}</p>}
