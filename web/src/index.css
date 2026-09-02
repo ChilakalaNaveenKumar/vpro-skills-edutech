@@ -798,3 +798,42 @@ textarea:focus-visible {
       linear-gradient(to top, rgba(16, 10, 6, 0.72) 0%, transparent 42%);
   }
 }
+
+/* --- Scroll-scrubbed sequence stage ------------------------------------- */
+
+/* The hero copy yields the stage to the object as the card comes apart. */
+[data-journey] .hero-copy {
+  opacity: clamp(0.28, calc(1 - (var(--p, 0) - 0.18) / 0.34), 1);
+  transform: translateY(calc(var(--p, 0) * -1.6rem));
+}
+
+/* Captions timed to the deconstruction. Text only, never interactive. */
+[data-journey] .seq-stop {
+  opacity: 0;
+  pointer-events: none;
+}
+
+[data-journey] .seq-stop-2 {
+  opacity: min(
+    clamp(0, calc((var(--p, 0) - 0.34) / 0.1), 1),
+    clamp(0, calc((0.64 - var(--p, 0)) / 0.1), 1)
+  );
+}
+
+[data-journey] .seq-stop-3 {
+  opacity: clamp(0, calc((var(--p, 0) - 0.74) / 0.12), 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .hero-copy {
+    opacity: 1;
+    transform: none;
+  }
+  /* One caption, the concluding one, so the meaning survives without motion. */
+  [data-journey] .seq-stop-2 {
+    opacity: 0;
+  }
+  [data-journey] .seq-stop-3 {
+    opacity: 1;
+  }
+}
