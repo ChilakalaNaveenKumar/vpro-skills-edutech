@@ -6,7 +6,6 @@ import StringTuneRuntime from '../motion/StringTuneRuntime'
 import SectionRail from '../components/SectionRail'
 import FloatingContact from '../components/FloatingContact'
 import Hero from '../sections/Hero'
-import WhyThisWay from '../sections/WhyThisWay'
 import CoursesAndSchedule from '../sections/CoursesAndSchedule'
 import HowItWorks from '../sections/HowItWorks'
 import Trainer from '../sections/Trainer'
@@ -42,7 +41,6 @@ export default function HomePage() {
       <SectionRail active={active} />
 
       <Hero />
-      <WhyThisWay />
       <CoursesAndSchedule />
       <HowItWorks />
       <Trainer />

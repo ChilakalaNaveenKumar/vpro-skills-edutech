@@ -15,7 +15,6 @@ export interface SectionMeta {
 
 export const SECTIONS: SectionMeta[] = [
   { id: 'hero', label: 'Top', numbered: false },
-  { id: 'why', label: 'Why this way', numbered: true },
   { id: 'courses', label: 'Courses', numbered: true },
   { id: 'how', label: 'How it works', numbered: true },
   { id: 'trainer', label: 'Trainer', numbered: true },

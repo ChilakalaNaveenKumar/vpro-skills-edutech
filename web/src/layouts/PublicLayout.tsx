@@ -42,7 +42,9 @@ export default function PublicLayout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   // The marketing surface: the home journey and every course page.
   const journey =
-    location.pathname === '/' || location.pathname.startsWith('/courses')
+    location.pathname === '/' ||
+    location.pathname.startsWith('/courses') ||
+    location.pathname === '/about'
 
   function handleLogout() {
     logout()
