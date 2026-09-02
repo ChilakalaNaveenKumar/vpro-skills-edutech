@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { COURSES } from '../content/courses'
 import LiveClassesPanel from '../components/LiveClassesPanel'
+import WeekCalendar3D from '../components/WeekCalendar3D'
+import { useSchedule } from '../utils/schedule'
 import SplitWords from '../motion/SplitWords'
 import Section, { SectionLabel } from './Section'
 
@@ -10,6 +12,8 @@ import Section, { SectionLabel } from './Section'
 // six syllabi is a page nobody finishes; each course owns its own page, and this
 // section's job is to say what exists and what is running.
 export default function CoursesAndSchedule() {
+  const { rows, failed } = useSchedule()
+
   return (
     <Section id="courses" className="border-y border-[color:var(--rule)]">
       <div className="shell py-24 lg:py-32">
@@ -69,6 +73,9 @@ export default function CoursesAndSchedule() {
           </div>
 
           <div className="rise lg:sticky lg:top-28">
+            <div className="relative mb-6 h-[20rem] overflow-hidden rounded-2xl border border-[color:var(--rule)] sm:h-[24rem]">
+              <WeekCalendar3D rows={rows} failed={failed} />
+            </div>
             <LiveClassesPanel />
           </div>
         </div>

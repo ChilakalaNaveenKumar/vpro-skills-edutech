@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { courseByName } from '../content/courses'
 import { minutesOfDay, nowInIst, type ScheduleRow } from '../utils/schedule'
 
-// The real teaching week, as a 3D calendar.
+// The real teaching week, as an interactive 3D calendar.
 //
 // Every block is an actual batch from the schedule, placed on the day and at the
 // hour it really runs. The block teaching at this moment glows. Hovering names
@@ -126,7 +126,7 @@ interface Props {
   failed: boolean
 }
 
-export default function HeroWeek3D({ rows, failed }: Props) {
+export default function WeekCalendar3D({ rows, failed }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const navigate = useNavigate()
