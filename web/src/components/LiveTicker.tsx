@@ -49,7 +49,7 @@ export default function LiveTicker() {
       <CtaLink
         cta="demo_register"
         chapter="ticker"
-        className="shrink-0 rounded-full bg-[color:var(--signal)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-transform duration-200 hover:scale-[1.03]"
+        className="shrink-0 rounded-full bg-[color:var(--signal)] px-4 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-[filter] duration-200 hover:brightness-110"
       >
         Register now
       </CtaLink>

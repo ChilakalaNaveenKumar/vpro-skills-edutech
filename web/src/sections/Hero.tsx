@@ -69,9 +69,6 @@ export default function Hero() {
                 >
                   <SplitWords text={PLATFORM.headline} />
                   <span className="cycle mt-1" aria-label={HERO_ENDINGS.join(' or ')}>
-                    <span className="cycle-sizer" aria-hidden="true">
-                      {[...HERO_ENDINGS].sort((a, b) => b.length - a.length)[0]}
-                    </span>
                     {HERO_ENDINGS.map((ending, index) => (
                       <span
                         key={ending}
