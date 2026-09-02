@@ -65,7 +65,7 @@ export default function Hero() {
 
                 <h1
                   aria-label={`${PLATFORM.headline} ${HERO_ENDINGS[0]}`}
-                  className="display mt-7 text-[clamp(2.4rem,5.4vw,4rem)] text-[color:var(--on-ink)]"
+                  className="display mt-6 text-[clamp(2.1rem,4.4vw,3.3rem)] text-[color:var(--on-ink)]"
                 >
                   <SplitWords text={PLATFORM.headline} />
                   <span className="cycle mt-1" aria-label={HERO_ENDINGS.join(' or ')}>
@@ -85,9 +85,9 @@ export default function Hero() {
                   </span>
                 </h1>
 
-                <p className="lede rise mt-7 max-w-lg">{PLATFORM.sub}</p>
+                <p className="lede rise mt-6 max-w-lg">{PLATFORM.sub}</p>
 
-                <ul className="rise-stagger mt-9 grid max-w-md grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
+                <ul className="rise-stagger mt-7 grid max-w-md grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                   {PLATFORM.proof.map((item) => (
                     <li key={item} className="flex items-center gap-2.5">
                       <span className="h-px w-4 bg-[color:var(--signal)]" aria-hidden="true" />
@@ -98,7 +98,7 @@ export default function Hero() {
                   ))}
                 </ul>
 
-                <div className="rise mt-11 flex flex-wrap items-center gap-4">
+                <div className="rise mt-9 flex flex-wrap items-center gap-4">
                   <CtaLink
                     cta="live_class_times"
                     chapter="hero"

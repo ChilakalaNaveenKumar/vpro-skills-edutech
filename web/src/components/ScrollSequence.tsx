@@ -226,7 +226,7 @@ export default function ScrollSequence({ config, className = '', children }: Pro
       className={className}
       style={{ height: `${config.scrollVh}vh` }}
     >
-      <div ref={stageRef} className="sticky top-0 h-svh w-full overflow-hidden">
+      <div ref={stageRef} className="sticky top-0 flex h-svh w-full flex-col justify-center">
         <canvas ref={canvasRef} className="block" aria-hidden="true" />
         {children}
       </div>

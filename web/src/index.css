@@ -836,3 +836,48 @@ textarea:focus-visible {
     opacity: 1;
   }
 }
+
+/* Inside a pinned stage, a viewport-progress reveal never completes: the
+   element does not travel through the viewport, so animation-timeline: view()
+   freezes at whatever value matches its fixed position - which left the hero's
+   buttons stuck at partial opacity. Inside the hero, reveal on load instead. */
+[data-journey] #hero .rise,
+[data-journey] #hero .rise-stagger > * {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
+/* --- Live ticker ---------------------------------------------------------- */
+
+[data-journey] .ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker 42s linear infinite;
+}
+
+[data-journey] .ticker-item {
+  display: flex;
+  white-space: nowrap;
+}
+
+/* Two identical copies scroll past; translating by exactly half the track puts
+   the second copy where the first began, so the loop has no seam. */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+[data-journey] .ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .ticker-track {
+    animation: none;
+  }
+  /* Without motion the marquee becomes a single readable line. */
+  [data-journey] .ticker-item:nth-child(2) {
+    display: none;
+  }
+}
