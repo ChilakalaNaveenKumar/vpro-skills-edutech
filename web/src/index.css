@@ -989,189 +989,240 @@ textarea:focus-visible {
 }
 
 
-/* --- Course triptych ------------------------------------------------------ */
+/* --- Course V scroller ---------------------------------------------------- */
 
-/* Three panels on a plinth: the centre flat, the wings hinged forward from
-   their inner edges like a real trifold. Nothing scrolls and nothing is faded
-   out - all three panels stay readable. */
-[data-journey] .triptych-wrap {
-  /* Phones show the centre panel only - three hinged panels cannot fit. */
-  --panel-w: 17rem;
-  --panel-h: 25rem;
-  --hinge: 40deg;
+/* Cards sit on a V that opens away from the viewer: the one at the point is
+   closest and square-on, its neighbours step back along the two legs. Side
+   scrolling walks the formation through the point. */
+[data-journey] .vflow {
+  --v-card: 17rem;
+  --v-height: 27rem;
 }
 
 @media (min-width: 640px) {
-  [data-journey] .triptych-wrap {
-    --panel-w: 14.5rem;
-    --panel-h: 25rem;
-    --hinge: 55deg;
-  }
-}
-
-@media (min-width: 768px) {
-  [data-journey] .triptych-wrap {
-    --panel-w: 16rem;
-    --panel-h: 26rem;
-    --hinge: 52deg;
+  [data-journey] .vflow {
+    --v-card: 19rem;
+    --v-height: 28rem;
   }
 }
 
 @media (min-width: 1024px) {
-  [data-journey] .triptych-wrap {
-    --panel-w: 19rem;
-    --panel-h: 26.5rem;
-    --hinge: 46deg;
+  [data-journey] .vflow {
+    --v-card: 21rem;
+    --v-height: 29rem;
   }
 }
 
-@media (min-width: 1280px) {
-  [data-journey] .triptych-wrap {
-    --panel-w: 21rem;
-    --panel-h: 27rem;
-    --hinge: 44deg;
-  }
-}
-
-/* Below the first breakpoint the wings are removed rather than squeezed: the
-   arrows and the position dots are how a phone moves between courses. */
-@media (max-width: 639px) {
-  [data-journey] .panel[data-slot='left'],
-  [data-journey] .panel[data-slot='right'] {
-    display: none;
-  }
-}
-
-[data-journey] .triptych {
+[data-journey] .vflow-stage {
   position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  /* The wings lean toward the viewer, so the stage needs headroom either side. */
-  padding: 3rem clamp(1rem, 6vw, 4rem) 4.5rem;
-  perspective: 1900px;
-  perspective-origin: 50% 46%;
-}
-
-[data-journey] .triptych:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: -6px;
-  border-radius: 1.5rem;
-}
-
-[data-journey] .panel {
-  position: relative;
-  width: var(--panel-w);
-  height: var(--panel-h);
-  flex: 0 0 auto;
+  height: var(--v-height);
+  perspective: 1700px;
+  perspective-origin: 50% 44%;
   transform-style: preserve-3d;
-  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-/* Hinged at the edge that meets the centre panel, which is what makes it read
-   as one folded object rather than three separate cards. */
-[data-journey] .panel[data-slot='left'] {
-  transform-origin: right center;
-  transform: rotateY(var(--hinge));
-  z-index: 1;
-}
-
-[data-journey] .panel[data-slot='centre'] {
-  z-index: 3;
-  transform: translateZ(0.5rem);
-}
-
-[data-journey] .panel[data-slot='right'] {
-  transform-origin: left center;
-  transform: rotateY(calc(var(--hinge) * -1));
-  z-index: 1;
-}
-
-/* The wings are slightly cooler, as a surface turned away from the key light
-   would be - not dimmed to the point of being unreadable. */
-[data-journey] .panel[data-slot='left'] .course-card,
-[data-journey] .panel[data-slot='right'] .course-card {
-  filter: brightness(0.82);
-  transition: filter 500ms ease-out;
-}
-
-[data-journey] .panel[data-slot='left']:hover .course-card,
-[data-journey] .panel[data-slot='right']:hover .course-card,
-[data-journey] .panel[data-slot='left']:focus-within .course-card,
-[data-journey] .panel[data-slot='right']:focus-within .course-card {
-  filter: brightness(1);
-}
-
-[data-journey] .panel-button {
-  display: block;
-  width: 100%;
-  height: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-[data-journey] .panel-button:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 4px;
-  border-radius: 1rem;
-}
-
-/* The panel number, sitting on the panel itself the way it does on a stand. */
-[data-journey] .panel-index {
-  position: absolute;
-  top: -1.6rem;
-  right: 0.25rem;
-  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.86rem;
-  font-weight: 620;
-  letter-spacing: -0.02em;
-  color: var(--on-ink-faint);
-}
-
-[data-journey] .panel[data-slot='centre'] .panel-index {
-  color: var(--signal);
-}
-
-/* The plinth the three panels stand on. */
-[data-journey] .plinth {
+[data-journey] .vflow-card {
   position: absolute;
   left: 50%;
-  bottom: 2.2rem;
-  width: min(88%, 62rem);
-  height: 9rem;
+  top: 0;
+  width: var(--v-card);
+  height: var(--v-height);
+  transform: translateX(-50%);
+  transform-style: preserve-3d;
+  /* No will-change: it promoted all six cards to permanent compositor layers,
+     each a full-size gradient panel. The transform still composites while it
+     animates. */
+  transition:
+    transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 480ms ease-out;
+}
+
+/* The floor the V stands on, which is what makes the formation read as depth
+   rather than as cards drifting apart. */
+[data-journey] .vflow-floor {
+  position: absolute;
+  left: 50%;
+  bottom: -2.5rem;
+  width: min(92%, 70rem);
+  height: 10rem;
   translate: -50% 0;
-  transform: rotateX(74deg);
+  transform: rotateX(76deg);
   transform-origin: top center;
   border-radius: 50%;
   background: radial-gradient(
     closest-side,
-    color-mix(in oklch, var(--signal), transparent 82%),
-    transparent 74%
+    color-mix(in oklch, var(--signal), transparent 84%),
+    transparent 76%
   );
   pointer-events: none;
 }
 
+/* The scroll track sits under the stage. It is the real input surface: a thin
+   strip you scroll sideways, with one slot per course. */
+[data-journey] .vflow-track {
+  display: flex;
+  margin-top: 2.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: 999px;
+}
+
+[data-journey] .vflow-track::-webkit-scrollbar {
+  display: none;
+}
+
+[data-journey] .vflow-track:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+[data-journey] .vflow-slot {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  height: 2.25rem;
+}
+
+/* Without motion the V is abandoned: the cards become a plain grid in document
+   order and the track is removed. */
 @media (prefers-reduced-motion: reduce) {
-  [data-journey] .triptych {
-    perspective: none;
-    flex-wrap: wrap;
+  [data-journey] .vflow-stage {
+    display: grid;
+    height: auto;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
     gap: 1.5rem;
-    padding-bottom: 2rem;
+    perspective: none;
+    padding-inline: var(--gutter);
   }
-  [data-journey] .panel,
-  [data-journey] .panel[data-slot='left'],
-  [data-journey] .panel[data-slot='right'],
-  [data-journey] .panel[data-slot='centre'] {
-    transform: none;
-    transition: none;
+  [data-journey] .vflow-card {
+    position: static;
+    width: auto;
+    height: var(--v-height);
+    transform: none !important;
   }
-  [data-journey] .panel[data-slot='left'] .course-card,
-  [data-journey] .panel[data-slot='right'] .course-card {
-    filter: none;
-  }
-  [data-journey] .plinth {
+  [data-journey] .vflow-floor,
+  [data-journey] .vflow-track {
     display: none;
   }
+}
+
+/* --- Course panel --------------------------------------------------------- */
+
+/* Built like a stand rather than a table row: a vivid accent head above a dark
+   body, with the name set large. --hue is set per course. */
+[data-journey] .course-card {
+  --accent: oklch(0.62 0.17 var(--hue, 52));
+  --accent-deep: oklch(0.34 0.11 var(--hue, 52));
+  background: var(--ink-2);
+  border: 1px solid var(--rule);
+  transition:
+    border-color 300ms ease,
+    transform 300ms var(--ease-out);
+}
+
+[data-journey] .course-card:hover,
+[data-journey] .course-card:focus-visible {
+  border-color: color-mix(in oklch, var(--accent), transparent 45%);
+}
+
+[data-journey] .card-head {
+  min-height: 9.5rem;
+  background:
+    radial-gradient(120% 140% at 12% 0%, color-mix(in oklch, var(--accent), transparent 62%) 0%, transparent 62%),
+    linear-gradient(155deg, var(--accent-deep) 0%, oklch(0.18 0.03 var(--hue, 52)) 78%);
+}
+
+[data-journey] .card-number {
+  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  font-size: 2.4rem;
+  font-weight: 620;
+  line-height: 0.8;
+  letter-spacing: -0.05em;
+  color: color-mix(in oklch, var(--on-ink), transparent 55%);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-journey] .card-techline {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--on-ink), transparent 32%);
+}
+
+[data-journey] .card-flag {
+  align-self: flex-start;
+  margin-bottom: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--signal);
+  color: var(--ink);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+[data-journey] .card-title {
+  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
+  font-weight: 620;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--on-ink);
+}
+
+[data-journey] .card-tagline {
+  margin-top: 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--on-ink-mute);
+}
+
+[data-journey] .card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+[data-journey] .card-stats dt {
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-ink-faint);
+}
+
+[data-journey] .card-stats dd {
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--on-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-journey] .card-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: color-mix(in oklch, var(--accent), white 22%);
+}
+
+[data-journey] .course-card:hover .card-cta span,
+[data-journey] .course-card:focus-visible .card-cta span {
+  transform: translateX(4px);
+}
+
+[data-journey] .card-cta span {
+  transition: transform 300ms var(--ease-out);
 }
 
 /* --- Nav buttons shared by the triptych ---------------------------------- */

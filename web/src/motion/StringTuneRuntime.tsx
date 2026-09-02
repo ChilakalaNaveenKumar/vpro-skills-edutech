@@ -5,6 +5,9 @@ import { useEffect } from 'react'
 export default function StringTuneRuntime() {
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // Magnetism, spotlight and pointer parallax are mouse-only effects, so a
+    // touch device would download 503KB and run a 60fps loop for nothing.
+    if (!window.matchMedia('(pointer: fine)').matches) return
     let cancelled = false
     let instance: { destroy?: () => void } | null = null
 

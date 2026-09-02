@@ -51,10 +51,11 @@ export default function CoursesPage() {
       </div>
 
       <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {COURSES.map((course) => (
+        {COURSES.map((course, index) => (
           <li key={course.slug} className="h-full">
             <CourseCard
               course={course}
+              index={index}
               scheduled={liveCourseNames.has(course.name.toLowerCase())}
             />
           </li>

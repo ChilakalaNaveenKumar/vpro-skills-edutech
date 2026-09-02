@@ -1,4 +1,4 @@
-import CourseTriptych from '../components/CourseTriptych'
+import CourseVScroller from '../components/CourseVScroller'
 import LiveClassesPanel from '../components/LiveClassesPanel'
 import WeekBoard from '../components/WeekBoard'
 import { useSchedule } from '../utils/schedule'
@@ -19,7 +19,7 @@ export default function CoursesAndSchedule() {
   return (
     <Section id="courses" className="border-y border-[color:var(--rule)]">
       <div className="py-16 lg:py-20">
-        <CourseTriptych scheduled={scheduled} />
+        <CourseVScroller scheduled={scheduled} />
 
         <div className="shell mt-16 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-10">
           <WeekBoard rows={rows} failed={failed} />

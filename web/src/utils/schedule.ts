@@ -79,13 +79,29 @@ export interface Schedule {
 
 // One fetch of the real schedule, classified in IST. Shared by the hero and the
 // schedule panel so they can never disagree about what is teaching.
+// Every consumer shared the hook but not the request, so the home page fired
+// four identical /api/batches calls - the hero, the ticker, the courses section
+// and the schedule panel. One in-flight promise is shared instead.
+let inFlight: Promise<Batch[]> | null = null
+
+function batchesOnce(): Promise<Batch[]> {
+  if (!inFlight) {
+    inFlight = listBatches().catch((error) => {
+      // Do not cache a failure: the next mount should be able to retry.
+      inFlight = null
+      throw error
+    })
+  }
+  return inFlight
+}
+
 export function useSchedule(): Schedule {
   const [rows, setRows] = useState<ScheduleRow[] | null>(null)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let mounted = true
-    listBatches()
+    batchesOnce()
       .then((batches) => {
         if (mounted) setRows(classifyBatches(batches))
       })

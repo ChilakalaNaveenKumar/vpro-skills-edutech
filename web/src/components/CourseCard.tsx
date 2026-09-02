@@ -3,64 +3,67 @@ import type { CourseContent } from '../content/courses'
 import { TECH_LABELS } from '../content/techMarks'
 import TechMarks from './TechMarks'
 
-// One course, said with the technologies it teaches.
+// A panel, not a list item.
 //
-// Arbitrary art objects meant nothing for a programming course - a stack of
-// slabs does not tell anybody what Python Full Stack is. The real marks do, and
-// every one of them appears in that course's own modules. Hovering brings them
-// up in sequence into full colour and sweeps a light across the panel.
+// The old card was a flat dark box with small type - it read as a table row.
+// This is built like a stand: a vivid accent head carrying the course number and
+// the technologies, then a dark body with the name set large enough to be read
+// across a room.
 export default function CourseCard({
   course,
+  index,
   scheduled = false,
 }: {
   course: CourseContent
+  /** Position in the catalogue, printed on the panel. */
+  index: number
   scheduled?: boolean
 }) {
   return (
     <Link
       to={`/courses/${course.slug}`}
-      className="course-card group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[color:var(--rule)] bg-[color:var(--ink-2)] outline-offset-2 transition-colors duration-300 hover:border-[color:var(--on-ink-faint)] focus-visible:outline-2 focus-visible:outline-[color:var(--signal)]"
+      className="course-card group flex h-full flex-col overflow-hidden rounded-[1.25rem]"
+      style={{ ['--hue' as string]: course.hue }}
     >
-      <div className="relative overflow-hidden border-b border-[color:var(--rule)] bg-black px-6 py-8">
-        <span className="card-sweep pointer-events-none absolute inset-0" aria-hidden="true" />
+      <div className="card-head relative flex flex-col justify-between px-6 pb-5 pt-6">
+        <div className="flex items-start justify-between gap-4">
+          <TechMarks techs={course.techs} className="relative max-w-[11rem]" />
+          <span className="card-number">{String(index + 1).padStart(2, '0')}</span>
+        </div>
 
-        <TechMarks techs={course.techs} className="relative" />
-
-        <p className="relative mt-5 text-[0.68rem] uppercase tracking-[0.16em] text-[color:var(--on-ink-faint)]">
+        <p className="card-techline mt-6">
           {course.techs
             .slice(0, 3)
             .map((tech) => TECH_LABELS[tech] ?? tech)
             .join(' · ')}
           {course.techs.length > 3 ? ` +${course.techs.length - 3}` : ''}
         </p>
-
-        {course.flagship && (
-          <span className="absolute right-5 top-5 rounded-full bg-[color:var(--signal)] px-2.5 py-0.5 text-[0.52rem] font-bold uppercase tracking-[0.12em] text-[color:var(--ink)]">
-            Flagship
-          </span>
-        )}
       </div>
 
-      <div className="flex flex-1 flex-col p-6">
-        <h3 className="display text-[1.1rem] text-[color:var(--on-ink)]">{course.name}</h3>
-        <p className="mt-2 text-[0.84rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-          {course.tagline}
-        </p>
+      <div className="card-body flex flex-1 flex-col px-6 pb-6 pt-5">
+        {course.flagship && <span className="card-flag">Flagship</span>}
 
-        <div className="tnum mt-5 flex flex-wrap items-center gap-x-4 text-[0.7rem] text-[color:var(--on-ink-faint)]">
-          <span>{course.modules.length} modules</span>
-          <span>{course.projects.length} projects</span>
-          {scheduled && <span className="text-[color:var(--signal-text)]">Batch scheduled</span>}
-        </div>
+        <h3 className="card-title">{course.name}</h3>
+        <p className="card-tagline">{course.tagline}</p>
 
-        <span className="mt-auto pt-6 text-[0.78rem] font-medium text-[color:var(--signal-text)]">
+        <dl className="card-stats">
+          <div>
+            <dt>Modules</dt>
+            <dd>{course.modules.length}</dd>
+          </div>
+          <div>
+            <dt>Projects</dt>
+            <dd>{course.projects.length}</dd>
+          </div>
+          <div>
+            <dt>Batch</dt>
+            <dd>{scheduled ? 'Scheduled' : 'On request'}</dd>
+          </div>
+        </dl>
+
+        <span className="card-cta">
           See the curriculum
-          <span
-            className="ml-1.5 inline-block transition-transform duration-300 group-hover:translate-x-1"
-            aria-hidden="true"
-          >
-            &rarr;
-          </span>
+          <span aria-hidden="true">&rarr;</span>
         </span>
       </div>
     </Link>
