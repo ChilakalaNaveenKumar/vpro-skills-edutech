@@ -850,6 +850,12 @@ textarea:focus-visible {
 
 /* --- Live ticker ---------------------------------------------------------- */
 
+/* Fade the leading and trailing edges so a word cut mid-scroll reads as motion
+   passing out of view rather than as text colliding with the button beside it. */
+[data-journey] .ticker {
+  mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+}
+
 [data-journey] .ticker-track {
   display: flex;
   width: max-content;
@@ -876,9 +882,13 @@ textarea:focus-visible {
   [data-journey] .ticker-track {
     animation: none;
   }
-  /* Without motion the marquee becomes a single readable line. */
+  /* Without motion the marquee becomes a single readable line, so it must not
+     be faded at the edges. */
   [data-journey] .ticker-item:nth-child(2) {
     display: none;
+  }
+  [data-journey] .ticker {
+    mask-image: none;
   }
 }
 
@@ -916,5 +926,58 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   [data-journey] .rail {
     scroll-snap-type: none;
+  }
+}
+
+/* --- Course cards --------------------------------------------------------- */
+
+/* At rest the marks are quiet and desaturated; hover or keyboard focus brings
+   them up in sequence into full colour. */
+[data-journey] .tech-mark {
+  display: flex;
+  opacity: 0.5;
+  filter: grayscale(1);
+  transform: translateY(0);
+  transition:
+    opacity 420ms var(--ease-out),
+    filter 420ms var(--ease-out),
+    transform 420ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 45ms);
+}
+
+[data-journey] .course-card:hover .tech-mark,
+[data-journey] .course-card:focus-visible .tech-mark {
+  opacity: 1;
+  filter: grayscale(0);
+  transform: translateY(-3px);
+}
+
+/* A single light pass across the panel, so the card acknowledges the pointer
+   without moving or resizing. */
+[data-journey] .card-sweep {
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgb(255 255 255 / 6%) 48%,
+    transparent 66%
+  );
+  transform: translateX(-110%);
+  transition: transform 900ms var(--ease-out);
+}
+
+[data-journey] .course-card:hover .card-sweep,
+[data-journey] .course-card:focus-visible .card-sweep {
+  transform: translateX(110%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .tech-mark {
+    opacity: 1;
+    filter: grayscale(0);
+    transform: none;
+    transition: none;
+  }
+  [data-journey] .card-sweep {
+    display: none;
   }
 }

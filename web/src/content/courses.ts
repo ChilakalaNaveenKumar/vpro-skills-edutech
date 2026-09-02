@@ -37,25 +37,14 @@ export interface CourseContent {
   outcomes: string[]
   /** The track the marketing site currently leads with. */
   flagship?: boolean
+  /** Marks from techMarks.ts. Every one must appear in this course's modules. */
+  techs: string[]
 }
 
-/** Course images live at a path derived from the slug. */
-export function courseImage(slug: string): string {
-  return `/courses/${slug}.webp`
-}
-
-/** What each object is, for the image's alt text. */
-export const COURSE_IMAGE_ALT: Record<string, string> = {
-  'agentic-ai': 'Machined metal spheres orbiting a larger engraved core',
-  'python-full-stack': 'Five machined slabs stacked with gaps between the layers',
-  'java-full-stack': 'A dark espresso cup on a machined metal saucer',
-  'dotnet-full-stack': 'A woven lattice of fine dark metal wire',
-  'forward-deployment-engineer': 'An open rugged field case holding cables and connectors',
-  'quantum-computing': 'A gold-plated quantum refrigerator chandelier',
-}
 
 const AGENTIC_AI: CourseContent = {
   slug: 'agentic-ai',
+  techs: ['python', 'tensorflow', 'openai-icon', 'anthropic-icon', 'pinecone-icon', 'aws'],
   name: 'Agentic AI',
   tagline: 'Become an AI engineer in 90 days',
   summary:
@@ -140,6 +129,7 @@ const AGENTIC_AI: CourseContent = {
 
 const PYTHON_FULL_STACK: CourseContent = {
   slug: 'python-full-stack',
+  techs: ['python', 'django-icon', 'fastapi-icon', 'react', 'postgresql', 'docker-icon'],
   name: 'Python Full Stack',
   tagline: 'Python on the server, a real interface on the front',
   summary:
@@ -209,6 +199,7 @@ const PYTHON_FULL_STACK: CourseContent = {
 
 const JAVA_FULL_STACK: CourseContent = {
   slug: 'java-full-stack',
+  techs: ['java', 'spring-icon', 'hibernate', 'maven', 'react', 'docker-icon'],
   name: 'Java Full Stack',
   tagline: 'The enterprise stack, taught the way teams actually use it',
   summary:
@@ -277,6 +268,7 @@ const JAVA_FULL_STACK: CourseContent = {
 
 const DOTNET_FULL_STACK: CourseContent = {
   slug: 'dotnet-full-stack',
+  techs: ['dotnet', 'c-sharp', 'react', 'microsoft-azure', 'docker-icon'],
   name: '.NET Full Stack',
   tagline: 'C# and ASP.NET Core, end to end',
   summary:
@@ -345,6 +337,7 @@ const DOTNET_FULL_STACK: CourseContent = {
 
 const FORWARD_DEPLOYMENT: CourseContent = {
   slug: 'forward-deployment-engineer',
+  techs: ['python', 'pandas-icon', 'linux-tux', 'docker-icon', 'postgresql', 'git-icon'],
   name: 'Forward Deployment Engineer',
   tagline: 'The engineer who makes software work at the customer',
   summary:
@@ -414,6 +407,7 @@ const FORWARD_DEPLOYMENT: CourseContent = {
 
 const QUANTUM_COMPUTING: CourseContent = {
   slug: 'quantum-computing',
+  techs: ['python', 'ibm', 'jupyter', 'numpy'],
   name: 'Quantum Computing',
   tagline: 'From linear algebra to running circuits on real hardware',
   summary:
