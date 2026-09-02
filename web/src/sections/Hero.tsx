@@ -3,7 +3,8 @@ import { PLATFORM, HERO_ENDINGS } from '../content/platform'
 import SplitWords from '../motion/SplitWords'
 import LiveType from '../motion/LiveType'
 import CtaLink from '../components/CtaLink'
-import HeroDepth from '../components/HeroDepth'
+import HeroWeek3D from '../components/HeroWeek3D'
+import { useSchedule } from '../utils/schedule'
 import Section from './Section'
 
 // The hero answers "what is this place", not "buy this course".
@@ -19,14 +20,38 @@ import Section from './Section'
 // The Ameerpet address is deliberately absent. It is real, and it is in the
 // footer and the page metadata where somebody looking for it will look.
 export default function Hero() {
+  const { rows, failed, liveNow, nextUp } = useSchedule()
+
   return (
     <Section id="hero" className="relative isolate min-h-[94svh] items-center overflow-hidden">
-      <HeroDepth />
+      <HeroWeek3D rows={rows} failed={failed} />
       <div className="hero-scrim pointer-events-none absolute inset-0" aria-hidden="true" />
       <LiveType>
         <div className="shell relative z-10 pb-20 pt-28 lg:pb-28 lg:pt-36">
           <div className="max-w-2xl">
-            <p className="eyebrow rise">{PLATFORM.eyebrow}</p>
+            <div className="rise flex flex-wrap items-center gap-x-4 gap-y-2">
+              <p className="eyebrow">{PLATFORM.eyebrow}</p>
+              {liveNow && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--signal)]/45 px-3 py-1">
+                  <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--signal)] opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--signal)]" />
+                  </span>
+                  <span className="text-[0.64rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--signal-text)]">
+                    Teaching now
+                  </span>
+                  <span className="text-[0.72rem] text-[color:var(--on-ink-mute)]">
+                    {liveNow.batch.course_name} &middot; {liveNow.batch.trainer_name}
+                  </span>
+                </span>
+              )}
+              {!liveNow && nextUp && (
+                <span className="text-[0.72rem] text-[color:var(--on-ink-faint)]">
+                  Next live class {nextUp.batch.start_time.slice(0, 5)} IST &middot;{' '}
+                  {nextUp.batch.course_name}
+                </span>
+              )}
+            </div>
 
             <h1
               aria-label={`${PLATFORM.headline} ${HERO_ENDINGS[0]}`}
