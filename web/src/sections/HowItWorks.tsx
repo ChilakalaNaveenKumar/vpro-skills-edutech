@@ -279,12 +279,6 @@ export default function HowItWorks() {
           </div>
         }
       />
-
-      <div className="shell pb-24">
-        <p className="rise border-t border-[color:var(--rule)] pt-6 text-[0.86rem] uppercase tracking-[0.16em] text-[color:var(--on-ink-faint)]">
-          {HOW_IT_WORKS.footnote}
-        </p>
-      </div>
     </Section>
   )
 }

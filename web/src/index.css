@@ -989,62 +989,192 @@ textarea:focus-visible {
 }
 
 
-/* --- Cover flow ----------------------------------------------------------- */
+/* --- Course triptych ------------------------------------------------------ */
 
-/* Horizontal scroll only. The page's own vertical scroll is never touched, so
-   the section is exactly as tall as the cards. */
-[data-journey] .flow {
-  --flow-card: 17rem;
-  display: flex;
-  gap: 1.5rem;
-  align-items: stretch;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  perspective: 1600px;
-  perspective-origin: 50% 50%;
-  /* Room for the rotated neighbours to lean without being clipped. */
-  padding: 2.5rem calc(50% - var(--flow-card) / 2);
-  scrollbar-width: none;
-}
-
-[data-journey] .flow::-webkit-scrollbar {
-  display: none;
-}
-
-[data-journey] .flow:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: -4px;
+/* Three panels on a plinth: the centre flat, the wings hinged forward from
+   their inner edges like a real trifold. Nothing scrolls and nothing is faded
+   out - all three panels stay readable. */
+[data-journey] .triptych-wrap {
+  /* Phones show the centre panel only - three hinged panels cannot fit. */
+  --panel-w: 17rem;
+  --panel-h: 25rem;
+  --hinge: 40deg;
 }
 
 @media (min-width: 640px) {
-  [data-journey] .flow {
-    --flow-card: 19rem;
+  [data-journey] .triptych-wrap {
+    --panel-w: 14.5rem;
+    --panel-h: 25rem;
+    --hinge: 55deg;
+  }
+}
+
+@media (min-width: 768px) {
+  [data-journey] .triptych-wrap {
+    --panel-w: 16rem;
+    --panel-h: 26rem;
+    --hinge: 52deg;
   }
 }
 
 @media (min-width: 1024px) {
-  [data-journey] .flow {
-    --flow-card: 21rem;
+  [data-journey] .triptych-wrap {
+    --panel-w: 19rem;
+    --panel-h: 26.5rem;
+    --hinge: 46deg;
   }
 }
 
-[data-journey] .flow-item {
-  width: var(--flow-card);
-  flex: 0 0 auto;
-  scroll-snap-align: center;
-  transform-style: preserve-3d;
-  transform-origin: 50% 50%;
-  will-change: transform, opacity;
-  transition:
-    transform 220ms linear,
-    opacity 220ms linear;
+@media (min-width: 1280px) {
+  [data-journey] .triptych-wrap {
+    --panel-w: 21rem;
+    --panel-h: 27rem;
+    --hinge: 44deg;
+  }
 }
 
-/* The centred card is the readable one, and the only one that catches light. */
-[data-journey] .flow-item[data-centred='true'] .course-card {
-  border-color: color-mix(in oklch, var(--signal), transparent 55%);
+/* Below the first breakpoint the wings are removed rather than squeezed: the
+   arrows and the position dots are how a phone moves between courses. */
+@media (max-width: 639px) {
+  [data-journey] .panel[data-slot='left'],
+  [data-journey] .panel[data-slot='right'] {
+    display: none;
+  }
 }
+
+[data-journey] .triptych {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  /* The wings lean toward the viewer, so the stage needs headroom either side. */
+  padding: 3rem clamp(1rem, 6vw, 4rem) 4.5rem;
+  perspective: 1900px;
+  perspective-origin: 50% 46%;
+}
+
+[data-journey] .triptych:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -6px;
+  border-radius: 1.5rem;
+}
+
+[data-journey] .panel {
+  position: relative;
+  width: var(--panel-w);
+  height: var(--panel-h);
+  flex: 0 0 auto;
+  transform-style: preserve-3d;
+  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Hinged at the edge that meets the centre panel, which is what makes it read
+   as one folded object rather than three separate cards. */
+[data-journey] .panel[data-slot='left'] {
+  transform-origin: right center;
+  transform: rotateY(var(--hinge));
+  z-index: 1;
+}
+
+[data-journey] .panel[data-slot='centre'] {
+  z-index: 3;
+  transform: translateZ(0.5rem);
+}
+
+[data-journey] .panel[data-slot='right'] {
+  transform-origin: left center;
+  transform: rotateY(calc(var(--hinge) * -1));
+  z-index: 1;
+}
+
+/* The wings are slightly cooler, as a surface turned away from the key light
+   would be - not dimmed to the point of being unreadable. */
+[data-journey] .panel[data-slot='left'] .course-card,
+[data-journey] .panel[data-slot='right'] .course-card {
+  filter: brightness(0.82);
+  transition: filter 500ms ease-out;
+}
+
+[data-journey] .panel[data-slot='left']:hover .course-card,
+[data-journey] .panel[data-slot='right']:hover .course-card,
+[data-journey] .panel[data-slot='left']:focus-within .course-card,
+[data-journey] .panel[data-slot='right']:focus-within .course-card {
+  filter: brightness(1);
+}
+
+[data-journey] .panel-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+[data-journey] .panel-button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+  border-radius: 1rem;
+}
+
+/* The panel number, sitting on the panel itself the way it does on a stand. */
+[data-journey] .panel-index {
+  position: absolute;
+  top: -1.6rem;
+  right: 0.25rem;
+  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  color: var(--on-ink-faint);
+}
+
+[data-journey] .panel[data-slot='centre'] .panel-index {
+  color: var(--signal);
+}
+
+/* The plinth the three panels stand on. */
+[data-journey] .plinth {
+  position: absolute;
+  left: 50%;
+  bottom: 2.2rem;
+  width: min(88%, 62rem);
+  height: 9rem;
+  translate: -50% 0;
+  transform: rotateX(74deg);
+  transform-origin: top center;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--signal), transparent 82%),
+    transparent 74%
+  );
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .triptych {
+    perspective: none;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding-bottom: 2rem;
+  }
+  [data-journey] .panel,
+  [data-journey] .panel[data-slot='left'],
+  [data-journey] .panel[data-slot='right'],
+  [data-journey] .panel[data-slot='centre'] {
+    transform: none;
+    transition: none;
+  }
+  [data-journey] .panel[data-slot='left'] .course-card,
+  [data-journey] .panel[data-slot='right'] .course-card {
+    filter: none;
+  }
+  [data-journey] .plinth {
+    display: none;
+  }
+}
+
+/* --- Nav buttons shared by the triptych ---------------------------------- */
 
 [data-journey] .flow-nav {
   display: grid;
@@ -1059,29 +1189,12 @@ textarea:focus-visible {
     border-color 200ms ease;
 }
 
-[data-journey] .flow-nav:hover:not(:disabled) {
+[data-journey] .flow-nav:hover {
   color: var(--on-ink);
   border-color: var(--on-ink-faint);
-}
-
-[data-journey] .flow-nav:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 
 [data-journey] .flow-nav:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .flow {
-    scroll-snap-type: none;
-    perspective: none;
-  }
-  [data-journey] .flow-item {
-    transform: none !important;
-    opacity: 1 !important;
-    transition: none;
-  }
 }
