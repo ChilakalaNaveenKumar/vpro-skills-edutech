@@ -456,8 +456,8 @@ textarea:focus-visible {
 
 @keyframes phrase {
   0% { opacity: 0; transform: translateY(0.42em); }
-  3%, 21% { opacity: 1; transform: translateY(0); }
-  24%, 100% { opacity: 0; transform: translateY(-0.34em); }
+  2%, 27% { opacity: 1; transform: translateY(0); }
+  30%, 100% { opacity: 0; transform: translateY(-0.34em); }
 }
 
 /* --- Scanning sheen ------------------------------------------------------- */
@@ -803,8 +803,7 @@ textarea:focus-visible {
 
 /* The hero copy yields the stage to the object as the card comes apart. */
 [data-journey] .hero-copy {
-  opacity: clamp(0.28, calc(1 - (var(--p, 0) - 0.18) / 0.34), 1);
-  transform: translateY(calc(var(--p, 0) * -1.6rem));
+  transform: translateY(calc(var(--p, 0) * -1.4rem));
 }
 
 /* Captions timed to the deconstruction. Text only, never interactive. */

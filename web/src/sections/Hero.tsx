@@ -21,11 +21,11 @@ const LIVE_SEQUENCE: SequenceConfig = {
   frameUrl: (index) => `/seq/live/f_${String(index).padStart(3, '0')}.webp`,
   scrollVh: 260,
   posterFrame: 1,
-  reducedMotionFrame: 48,
+  reducedMotionFrame: 96,
   fit: 'contain',
   mobileStride: 2,
   // Biased right, so the subject never enters the copy's column.
-  region: { x: 0.18, y: 0.06, w: 0.8, h: 0.86 },
+  region: { x: 0.22, y: 0.05, w: 0.76, h: 0.88 },
   // On a phone the mic takes the top third and the copy sits under it.
   mobileRegion: { x: 0.1, y: 0.02, w: 0.8, h: 0.34 },
 }
@@ -87,7 +87,7 @@ export default function Hero() {
 
                 <p className="lede rise mt-7 max-w-lg">{PLATFORM.sub}</p>
 
-                <ul className="rise-stagger mt-9 flex flex-wrap gap-x-6 gap-y-3">
+                <ul className="rise-stagger mt-9 grid max-w-md grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
                   {PLATFORM.proof.map((item) => (
                     <li key={item} className="flex items-center gap-2.5">
                       <span className="h-px w-4 bg-[color:var(--signal)]" aria-hidden="true" />
@@ -127,10 +127,10 @@ export default function Hero() {
 
         {/* Captions timed to the deconstruction. Text only - the single set of
             CTAs above stays in the DOM once, so focus order never changes. */}
-        <p className="seq-stop seq-stop-2 shell absolute bottom-24 left-0 right-0 text-[0.82rem] uppercase tracking-[0.22em] text-[color:var(--on-ink-faint)]">
+        <p className="seq-stop seq-stop-2 absolute bottom-10 right-[6%] max-w-[38%] text-right text-[0.78rem] uppercase tracking-[0.22em] text-[color:var(--on-ink-faint)]">
           A real voice, at a fixed time
         </p>
-        <p className="seq-stop seq-stop-3 shell absolute bottom-24 left-0 right-0 text-[0.82rem] uppercase tracking-[0.22em] text-[color:var(--signal-text)]">
+        <p className="seq-stop seq-stop-3 absolute bottom-10 right-[6%] max-w-[38%] text-right text-[0.78rem] uppercase tracking-[0.22em] text-[color:var(--signal-text)]">
           Ask while the class is happening
         </p>
       </ScrollSequence>
