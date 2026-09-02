@@ -153,10 +153,13 @@ export default function ScrollSequence({ config, className = '', children }: Pro
         ? reducedMotionFrame
         : clampIndex(Math.round(progress * (frameCount - 1)) + 1)
       if (onGrid(index) !== lastDrawn) draw()
-      // Prefetch a little ahead of the reading direction.
+      // A window around the current frame, both directions, so scrubbing back
+      // is as smooth as scrubbing forward without loading everything.
       if (!reduce) {
-        request(index + stride * 2)
-        request(index + stride * 5)
+        for (let ahead = 1; ahead <= 6; ahead += 1) {
+          request(index + stride * ahead)
+          request(index - stride * ahead)
+        }
       }
     }
 
@@ -191,12 +194,11 @@ export default function ScrollSequence({ config, className = '', children }: Pro
     request(reduce ? reducedMotionFrame : posterFrame, true)
     request(reducedMotionFrame)
     if (!reduce) {
-      const coarse = Math.max(stride, Math.floor(frameCount / 12));
+      // A coarse spread only - twelve frames, so a fast scroll always has
+      // something to show. The rest are fetched in a window around the reader
+      // as they move, rather than pulling the whole sequence up front.
+      const coarse = Math.max(stride, Math.floor(frameCount / 12))
       for (let i = 1; i <= frameCount; i += coarse) request(i)
-      // Then everything else, after the coarse pass is queued.
-      window.setTimeout(() => {
-        for (let i = 1; i <= frameCount; i += stride) request(i)
-      }, 600)
     }
 
     intersection.observe(section)
