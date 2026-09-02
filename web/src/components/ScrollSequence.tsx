@@ -23,6 +23,13 @@ export interface SequenceConfig {
   fit?: 'cover' | 'contain'
   /** Load every Nth frame on narrow viewports. */
   mobileStride?: number
+  /**
+   * The box the frame is fitted into, in fractions of the stage. Keeps the
+   * subject out of the copy's column instead of filling the whole viewport.
+   */
+  region?: { x: number; y: number; w: number; h: number }
+  /** Region used at 768px and below, where copy sits below the subject. */
+  mobileRegion?: { x: number; y: number; w: number; h: number }
 }
 
 interface Props {
@@ -45,6 +52,7 @@ export default function ScrollSequence({ config, className = '', children }: Pro
     if (!ctx) return
 
     const { frameCount, frameUrl, posterFrame, reducedMotionFrame, fit = 'contain' } = config
+    const FULL = { x: 0, y: 0, w: 1, h: 1 }
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
     let reduce = motion.matches
     const stride = window.innerWidth <= 768 ? Math.max(1, config.mobileStride ?? 2) : 1
@@ -113,13 +121,21 @@ export default function ScrollSequence({ config, className = '', children }: Pro
       ctx.clearRect(0, 0, width, height)
       if (!image) return
 
+      const narrow = width <= 768
+      const region =
+        (narrow ? config.mobileRegion ?? config.region : config.region) ?? FULL
+      const bx = region.x * width
+      const by = region.y * height
+      const bw = Math.max(1, region.w * width)
+      const bh = Math.max(1, region.h * height)
+
       const scale =
         fit === 'cover'
-          ? Math.max(width / image.width, height / image.height)
-          : Math.min(width / image.width, height / image.height)
+          ? Math.max(bw / image.width, bh / image.height)
+          : Math.min(bw / image.width, bh / image.height)
       const w = image.width * scale
       const h = image.height * scale
-      ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h)
+      ctx.drawImage(image, bx + (bw - w) / 2, by + (bh - h) / 2, w, h)
       lastDrawn = onGrid(index)
     }
 
