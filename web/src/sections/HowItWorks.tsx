@@ -171,7 +171,7 @@ function StepStage({ step, progress }: { step: number; progress: number }) {
   const local = Math.min(1, Math.max(0, progress * STEPS.length - step))
 
   return (
-    <div className="shell flex flex-col pb-10 pt-[9svh]">
+    <div className="shell flex flex-col justify-center pb-10 pt-10">
       <div className="flex items-baseline justify-between border-b border-[color:var(--rule)] pb-3">
         <span className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--on-ink-mute)]">
           {HOW_IT_WORKS.eyebrow}
@@ -181,7 +181,7 @@ function StepStage({ step, progress }: { step: number; progress: number }) {
         </span>
       </div>
 
-      <div className="relative mt-8 min-h-[25rem] sm:min-h-[22rem]">
+      <div className="plate-stack mt-8">
         {STEPS.map((entry, index) => (
           <div
             key={entry.order}
@@ -270,7 +270,7 @@ export default function HowItWorks() {
 
       <ScrubStage
         steps={STEPS.length}
-        vhPerStep={0.8}
+        vhPerStep={0.55}
         className="stage-top"
         render={({ step, progress }) => <StepStage step={step} progress={progress} />}
         fallback={
