@@ -7,21 +7,27 @@ import { useSchedule } from '../utils/schedule'
 import { Link } from 'react-router-dom'
 import Section from './Section'
 
-// A 96-frame exploded view of an AI accelerator, scrubbed by scroll.
+// A 96-frame live-broadcast microphone, scrubbed by scroll.
 //
-// The frames are rendered on pure black and the stage is pure black, so the card
-// floats in the page with no visible image edge. Scroll position alone decides
-// the frame, so the same offset always produces the same state in both
-// directions, and nothing autoplays.
-const GPU_SEQUENCE: SequenceConfig = {
+// The subject is the thing that makes a class live: a real voice, on air, at a
+// fixed time. The frames are rendered on pure black and the stage is pure black,
+// so the mic floats in the page with no visible image edge, and the generated
+// composition leaves the left half empty for the copy.
+//
+// Scroll position alone decides the frame, so the same offset always produces
+// the same state in both directions, and nothing autoplays.
+const LIVE_SEQUENCE: SequenceConfig = {
   frameCount: 96,
-  frameUrl: (index) => `/seq/gpu/f_${String(index).padStart(3, '0')}.webp`,
-  scrollVh: 300,
+  frameUrl: (index) => `/seq/live/f_${String(index).padStart(3, '0')}.webp`,
+  scrollVh: 260,
   posterFrame: 1,
-  // The resting, fully exploded composition - the most informative single frame.
-  reducedMotionFrame: 96,
+  reducedMotionFrame: 48,
   fit: 'contain',
   mobileStride: 2,
+  // Biased right, so the subject never enters the copy's column.
+  region: { x: 0.18, y: 0.06, w: 0.8, h: 0.86 },
+  // On a phone the mic takes the top third and the copy sits under it.
+  mobileRegion: { x: 0.1, y: 0.02, w: 0.8, h: 0.34 },
 }
 
 export default function Hero() {
@@ -29,11 +35,11 @@ export default function Hero() {
 
   return (
     <Section id="hero" className="relative bg-black">
-      <ScrollSequence config={GPU_SEQUENCE}>
-        <div className="pointer-events-none absolute inset-0 flex items-center">
+      <ScrollSequence config={LIVE_SEQUENCE}>
+        <div className="pointer-events-none absolute inset-0 flex items-end pb-16 lg:items-center lg:pb-0">
           <div className="shell w-full">
             <LiveType>
-              <div className="hero-copy pointer-events-auto max-w-xl">
+              <div className="hero-copy pointer-events-auto max-w-lg lg:max-w-[42%]">
                 <div className="rise flex flex-wrap items-center gap-x-4 gap-y-2">
                   <p className="eyebrow">{PLATFORM.eyebrow}</p>
                   {liveNow && (
@@ -122,10 +128,10 @@ export default function Hero() {
         {/* Captions timed to the deconstruction. Text only - the single set of
             CTAs above stays in the DOM once, so focus order never changes. */}
         <p className="seq-stop seq-stop-2 shell absolute bottom-24 left-0 right-0 text-[0.82rem] uppercase tracking-[0.22em] text-[color:var(--on-ink-faint)]">
-          Every layer, taken apart
+          A real voice, at a fixed time
         </p>
         <p className="seq-stop seq-stop-3 shell absolute bottom-24 left-0 right-0 text-[0.82rem] uppercase tracking-[0.22em] text-[color:var(--signal-text)]">
-          That is how we teach it
+          Ask while the class is happening
         </p>
       </ScrollSequence>
     </Section>
