@@ -1,42 +1,16 @@
-// Program positioning, verified from vproskills.com on 2026-09-01.
-// AI Engineer is course #1; nothing here hardcodes "AI only" into the layout.
+// The one course currently running live. It is a course *on* the platform, not
+// the platform itself - which is what the previous version of this page got
+// wrong. Market-size and salary claims that used to live here were removed:
+// they were unverifiable and they sold a category rather than this classroom.
 
-export const PROGRAM = {
-  headline: 'Become an AI Engineer in 90 Days',
-  sub: 'Master Python, Machine Learning, Deep Learning, Generative AI, RAG, MCP, AI Agents and Real-World Projects.',
-  proof: ['Live Classes', 'Real Projects', 'Placement Support', 'Certification'],
+export const COURSE = {
+  name: 'AI Engineer',
+  eyebrow: 'Open now',
+  headline: 'Become an AI Engineer in 90 days',
+  sub: 'Python, Machine Learning, Deep Learning, Generative AI, Agentic AI, RAG and MCP - built up through real projects rather than lectures about them.',
+  proof: ['Live classes', 'Real projects', 'Placement support', 'Certification'],
   durationDays: 90,
 } as const
-
-export const MARKET_CLAIMS = [
-  { value: '$1.8 Trillion', label: 'Expected AI market by 2030' },
-  { value: '95%', label: 'Companies adopting AI solutions' },
-  { value: '₹8-40 LPA', label: 'Average AI engineer salary' },
-  { value: '100M+', label: 'New AI jobs expected globally' },
-] as const
-
-export const SEGMENTS = [
-  {
-    id: 'students',
-    label: 'B.Tech & M.Tech Students',
-    promises: [
-      'Build industry projects',
-      'Crack internships',
-      'Improve placement chances',
-      'Stand out from peers',
-    ],
-  },
-  {
-    id: 'professionals',
-    label: 'Working Professionals',
-    promises: [
-      'Switch to AI careers',
-      'Get higher packages',
-      'Automate daily work',
-      'Future-proof your career',
-    ],
-  },
-] as const
 
 // The four options the live site's booking form offers.
 export const AUDIENCE_OPTIONS = [

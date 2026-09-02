@@ -1,3 +1,5 @@
+import { istParts } from '../utils/ist'
+
 // Single source of truth for every outbound contact channel. The live site's
 // proven pattern: one number, a context-specific prefilled WhatsApp message per CTA.
 
@@ -19,6 +21,8 @@ export type CtaKey =
   | 'talk_to_trainer'
   | 'footer_whatsapp'
   | 'course_interest'
+  | 'live_class_times'
+  | 'course_waitlist'
 
 const MESSAGES: Record<CtaKey, string> = {
   hero_demo: 'Hi VPro Skills, I want to join the FREE AI Demo.',
@@ -28,6 +32,8 @@ const MESSAGES: Record<CtaKey, string> = {
   talk_to_trainer: 'Hi VPro Skills, I would like to speak with the trainer.',
   footer_whatsapp: 'Hi VPro Skills, I am interested in the AI Course.',
   course_interest: 'Hi VPro Skills, I want to register for the FREE Generative AI Demo Session.',
+  live_class_times: 'Hi VPro Skills, I would like to know the live class timings.',
+  course_waitlist: 'Hi VPro Skills, I want to be told when the next course opens.',
 }
 
 export function whatsappUrl(key: CtaKey, segment?: string): string {
@@ -41,8 +47,9 @@ export function ctaMessage(key: CtaKey): string {
 }
 
 // Honest presence: real IST hours, computed - never a fake "online now" dot.
+// Uses the fixed-offset helper rather than re-parsing a localized date string,
+// which is not guaranteed to round-trip through `Date` across engines.
 export function isOpenNow(now: Date = new Date()): boolean {
-  const ist = new Date(now.toLocaleString('en-US', { timeZone: CONTACT.timezone }))
-  const hour = ist.getHours()
+  const { hour } = istParts(now)
   return hour >= CONTACT.hours.openHour && hour < CONTACT.hours.closeHour
 }

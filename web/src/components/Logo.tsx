@@ -1,9 +1,12 @@
-// Real VPro Skills logo (public/logo-wide.png) on light surfaces. That file has
-// a solid white background and a charcoal half, so on the dark journey it is
-// replaced by an authored typographic wordmark rather than a white box.
+// The real VPro Skills logo (public/logo-wide.png). It has a solid white plate,
+// which sits cleanly on both the app's white shell and the journey's warm paper.
+//
+// This used to carry a second branch that substituted an authored typographic
+// wordmark on the dark journey, because a white-plated PNG on a near-black
+// background reads as a white box. The journey is no longer dark, so the
+// substitute is gone: the client's own mark is the only mark on the page.
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
-  onDark?: boolean
 }
 
 const HEIGHT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
@@ -12,24 +15,7 @@ const HEIGHT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
   lg: 'h-14',
 }
 
-const DARK_TEXT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
-  sm: 'text-base',
-  md: 'text-lg',
-  lg: 'text-2xl',
-}
-
-export default function Logo({ size = 'md', onDark = false }: LogoProps) {
-  if (onDark) {
-    return (
-      <span
-        className={`font-editorial inline-flex items-baseline gap-1.5 font-semibold ${DARK_TEXT_CLASS[size]}`}
-      >
-        <span className="text-ember">VPro</span>
-        <span className="text-bone/85 text-[0.62em] uppercase tracking-[0.34em]">Skills</span>
-      </span>
-    )
-  }
-
+export default function Logo({ size = 'md' }: LogoProps) {
   return (
     <img
       src="/logo-wide.png"
