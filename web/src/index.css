@@ -122,6 +122,8 @@ textarea:focus-visible {
   --rule: oklch(0.315 0.016 62);
   --rule-paper: oklch(0.845 0.02 84);
 
+  --gutter: clamp(1.25rem, 5vw, 5rem);
+
   --dur-micro: 140ms;
   --dur-enter: 560ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -979,5 +981,121 @@ textarea:focus-visible {
   }
   [data-journey] .card-sweep {
     display: none;
+  }
+}
+
+/* --- Course turntable ----------------------------------------------------- */
+
+/* Radius follows card width: for seven stops the cards just clear each other at
+   radius = width / (2 * tan(180/7)), so a little over one card width. */
+[data-journey] .ring-section {
+  --card-w: 15rem;
+  --ring-r: calc(var(--card-w) * 1.18);
+  --card-h: 21rem;
+  height: 300vh;
+}
+
+@media (min-width: 640px) {
+  [data-journey] .ring-section {
+    --card-w: 18rem;
+    --card-h: 22rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-journey] .ring-section {
+    --card-w: 20.5rem;
+    --card-h: 23rem;
+  }
+}
+
+[data-journey] .ring-stage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  place-items: center;
+  height: 100svh;
+  perspective: 1500px;
+  perspective-origin: 50% 44%;
+}
+
+[data-journey] .ring {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  transform-style: preserve-3d;
+  transform: rotateY(var(--spin, 0deg));
+  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+[data-journey] .ring-item {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: rotateY(calc(var(--slot) * (360deg / var(--stops, 7)))) translateZ(var(--ring-r));
+  /* Cards facing away recede: dimmed, softened and not clickable. */
+  opacity: calc(1 - var(--d, 0) * 1.15);
+  filter: blur(calc(var(--d, 0) * 5px));
+  transition:
+    opacity 400ms ease-out,
+    filter 400ms ease-out;
+}
+
+[data-journey] .ring-item[data-front='false'] {
+  pointer-events: none;
+}
+
+/* The floor the ring stands on, so it reads as a turntable rather than cards
+   floating in space. */
+[data-journey] .ring-stage::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ring-r) * 2.5);
+  height: calc(var(--ring-r) * 2.5);
+  translate: -50% calc(var(--card-h) / 2);
+  transform: rotateX(78deg);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, var(--signal), transparent 88%),
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+/* Without motion the turntable is abandoned entirely: the section collapses to
+   its natural height and the cards read as an ordinary responsive grid. */
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .ring-section {
+    height: auto;
+  }
+  [data-journey] .ring-stage {
+    position: static;
+    height: auto;
+    perspective: none;
+    padding-inline: var(--gutter, 1.25rem);
+  }
+  [data-journey] .ring-stage::after {
+    display: none;
+  }
+  [data-journey] .ring {
+    display: grid;
+    width: 100%;
+    max-width: 78rem;
+    height: auto;
+    gap: 1.5rem;
+    transform: none;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+  [data-journey] .ring-item {
+    position: static;
+    inset: auto;
+    height: var(--card-h);
+    transform: none;
+    opacity: 1;
+    filter: none;
+    pointer-events: auto;
   }
 }
