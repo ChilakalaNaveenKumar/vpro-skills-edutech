@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import { CONTACT, whatsappUrl } from '../content/contact'
+import LiveTicker from '../components/LiveTicker'
 import { NAV_SECTIONS } from '../content/sections'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
@@ -73,6 +74,8 @@ export default function PublicLayout() {
       data-journey={journey ? '' : undefined}
       className={`flex min-h-screen flex-col ${journey ? '' : 'bg-white'}`}
     >
+
+      {journey && <LiveTicker />}
 
       <a href="#main-content" className="skip-link rounded bg-brand-600 px-3 py-2 text-sm text-white">
         Skip to main content
