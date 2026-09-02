@@ -1,97 +1,12 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listBatches } from '../services/batchesService'
 import { courseByName } from '../content/courses'
-import type { Batch } from '../types'
-
-function parseDate(value: string): Date | null {
-  const d = new Date(`${value}T00:00:00`)
-  return Number.isNaN(d.getTime()) ? null : d
-}
-
-/** Minutes since midnight, from an "HH:MM" or "HH:MM:SS" string. */
-function minutes(time: string): number | null {
-  const parts = time.split(':').map(Number)
-  if (parts.length < 2 || parts.some(Number.isNaN)) return null
-  return parts[0] * 60 + parts[1]
-}
-
-/** Now, in IST, regardless of the visitor's own timezone. */
-function nowInIst(): { date: Date; minuteOfDay: number } {
-  const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-  return { date: ist, minuteOfDay: ist.getHours() * 60 + ist.getMinutes() }
-}
-
-type State = 'live' | 'today' | 'running' | 'upcoming'
-
-interface Row {
-  batch: Batch
-  state: State
-  slug?: string
-}
-
-function classify(batch: Batch): Row | null {
-  if (batch.status !== 'ACTIVE') return null
-  const start = parseDate(batch.start_date)
-  const end = parseDate(batch.end_date)
-  if (!start || !end) return null
-
-  const { date, minuteOfDay } = nowInIst()
-  const today = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const from = minutes(batch.start_time)
-  const to = minutes(batch.end_time)
-  const slug = courseByName(batch.course_name)?.slug
-
-  const withinRun = today.getTime() >= start.getTime() && today.getTime() <= end.getTime()
-
-  if (withinRun && from !== null && to !== null && minuteOfDay >= from && minuteOfDay < to) {
-    return { batch, state: 'live', slug }
-  }
-  if (withinRun && from !== null && minuteOfDay < from) return { batch, state: 'today', slug }
-  if (withinRun) return { batch, state: 'running', slug }
-  if (start.getTime() > today.getTime()) return { batch, state: 'upcoming', slug }
-  return null
-}
-
-const ORDER: Record<State, number> = { live: 0, today: 1, running: 2, upcoming: 3 }
-
-const LABEL: Record<State, string> = {
-  live: 'Live now',
-  today: 'Starts today',
-  running: 'In progress',
-  upcoming: 'Upcoming',
-}
+import { STATE_LABEL, useSchedule } from '../utils/schedule'
 
 // The real schedule: what is teaching right now, what starts today, what is
 // mid-run, and what is next. Batches come from the admin panel, so this panel
 // changes when the schedule changes and never needs editing here.
 export default function LiveClassesPanel() {
-  const [rows, setRows] = useState<Row[] | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-    listBatches()
-      .then((batches) => {
-        if (!mounted) return
-        const classified = batches
-          .map(classify)
-          .filter((row): row is Row => row !== null)
-          .sort((a, b) => {
-            const byState = ORDER[a.state] - ORDER[b.state]
-            if (byState !== 0) return byState
-            return a.batch.start_date.localeCompare(b.batch.start_date)
-          })
-        setRows(classified)
-      })
-      .catch(() => {
-        if (mounted) setFailed(true)
-      })
-    return () => {
-      mounted = false
-    }
-  }, [])
-
+  const { rows, failed } = useSchedule()
   const liveCount = rows?.filter((row) => row.state === 'live').length ?? 0
 
   return (
@@ -144,9 +59,9 @@ export default function LiveClassesPanel() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    {row.slug ? (
+                    {courseByName(row.batch.course_name)?.slug ? (
                       <Link
-                        to={`/courses/${row.slug}`}
+                        to={`/courses/${courseByName(row.batch.course_name)?.slug}`}
                         className="text-[0.98rem] font-medium text-[color:var(--on-ink)] underline decoration-[color:var(--rule)] underline-offset-4 hover:decoration-[color:var(--signal)]"
                       >
                         {row.batch.course_name}
@@ -163,7 +78,7 @@ export default function LiveClassesPanel() {
                           : 'border border-[color:var(--rule)] text-[color:var(--on-ink-faint)]'
                       }`}
                     >
-                      {LABEL[row.state]}
+                      {STATE_LABEL[row.state]}
                     </span>
                   </div>
                   <p className="mt-1 text-[0.78rem] text-[color:var(--on-ink-faint)]">
