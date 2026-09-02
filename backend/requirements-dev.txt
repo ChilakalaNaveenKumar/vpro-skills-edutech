@@ -1,0 +1,7 @@
+# Test-only dependencies (Phase 11) - kept separate from requirements.txt
+# since these are never needed in production. Install alongside it:
+#   pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+
+pytest>=8.0,<9.0
+httpx>=0.27,<0.29

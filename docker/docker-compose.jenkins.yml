@@ -1,0 +1,37 @@
+# Jenkins CI, run locally via Docker. See docs/CICD.md for the full
+# first-run walkthrough (unlocking Jenkins, adding credentials, creating
+# the pipeline job, wiring the GitHub webhook via ngrok).
+#
+# Kept separate from docker/docker-compose.yml (the app stack) since
+# Jenkins is CI infrastructure, not something the running app depends
+# on. Start it on its own:
+#   docker compose -f docker/docker-compose.jenkins.yml up -d --build
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # Local/solo-dev shortcut: running the controller as root sidesteps
+    # the classic docker-outside-of-docker permission mismatch between
+    # the jenkins user's uid/gid and the host's /var/run/docker.sock
+    # group. Fine for one developer's own machine; a shared/production
+    # Jenkins should instead match the socket's real group GID rather
+    # than run as root.
+    user: root
+    # Host networking, not published ports: this container runs `docker
+    # compose`/`curl` commands against the very same host it's on (see
+    # docker/nginx/Dockerfile's comment on "Docker outside of Docker"),
+    # and "localhost" only means "the host" if Jenkins shares the
+    # host's network namespace. With bridge networking (the previous
+    # "ports:" mapping), Jenkins' own `curl http://localhost/health` in
+    # the Jenkinsfile's verify stage was checking itself, not the app -
+    # always failing even when the app was actually healthy. Host mode
+    # also just works for the Jenkins web UI on :8080, no publish needed.
+    network_mode: host
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home:

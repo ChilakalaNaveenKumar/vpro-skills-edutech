@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Brand design system (Phase 9, recolored post-launch once the user
+   supplied the real VPro Skills logo - a two-tone orange/charcoal mark).
+   Values sampled directly from the logo's dominant colors, then tuned for
+   WCAG contrast (see docs/ARCHITECTURE.md's "Design system" section for
+   the full palette derivation and contrast numbers):
+   - brand-500 (#fb7a02) is the true logo orange, used only where it sits
+     behind dark ink text/icons or as a large decorative surface (hero
+     backgrounds, badges) - on its own it fails AA against white text.
+   - brand-600/700 are deepened, AA-safe versions of the same hue (5.6:1 /
+     7.8:1 against white) - the workhorse colors for every button/link/
+     focus-ring across the app, unchanged in role from the original
+     Phase 9 palette, just recolored.
+   - ink is the logo's near-black, used for headings and dark surfaces
+     instead of a generic Tailwind gray, so the two-tone brand look
+     (orange + charcoal) carries through the whole UI. */
+@theme {
+  --color-brand-50: #fff4ea;
+  --color-brand-100: #ffe4cc;
+  --color-brand-200: #ffc48a;
+  --color-brand-500: #fb7a02;
+  --color-brand-600: #ad4900;
+  --color-brand-700: #8a3a00;
+  --color-accent-500: #fb7a02;
+  --color-ink: #1f1f1f;
+
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Visually hidden until focused - the "Skip to main content" link in both
+   layouts. Standard accessible pattern: present in the DOM and reachable
+   by keyboard/screen reader, invisible otherwise. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 50;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+/* Consistent, on-brand keyboard focus indicator for every interactive
+   element site-wide (Phase 9 accessibility pass) - one rule here instead
+   of repeating focus-visible utility classes on every button/link/input
+   across every page, so nothing is ever missed and future pages get it
+   for free. Only applies for :focus-visible (keyboard/programmatic focus),
+   not on a plain mouse click, matching modern browser default behavior. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}

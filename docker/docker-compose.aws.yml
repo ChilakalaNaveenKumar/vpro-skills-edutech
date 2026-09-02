@@ -1,0 +1,55 @@
+# AWS production deployment ("Balanced" tier). Unlike docker-compose.prod.yml
+# (a self-contained single-box deployment with its own local Postgres
+# container), this file has NO postgres service - the database is Amazon
+# RDS (infra/aws/rds.tf), reachable only from this instance's security
+# group, never a container here. Adds an nginx reverse proxy in front of
+# the backend instead of exposing it directly.
+#
+# Deployed by the Jenkinsfile's Deploy stage, from within Jenkins' own
+# checked-out workspace on the app instance (Jenkins runs colocated with
+# the app - see docs/ARCHITECTURE.md's "AWS Deployment" section for why).
+# Before this runs, docker/fetch-secrets.sh must have written a real
+# backend/.env (JWT_SECRET/DATABASE_URL/CORS_ORIGINS, fetched from SSM
+# Parameter Store) - the Jenkinsfile does this automatically. Run it
+# yourself the same way if deploying by hand:
+#
+#   cd docker
+#   ./fetch-secrets.sh
+#   docker compose -f docker-compose.aws.yml pull
+#   docker compose -f docker-compose.aws.yml up -d
+
+services:
+  backend:
+    image: ${ECR_IMAGE:-vpro-skills-backend:latest}
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      # Disables interactive API docs (see backend/app/main.py) - same as
+      # docker-compose.prod.yml.
+      ENVIRONMENT: production
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    # No host port mapping - only nginx below talks to this container,
+    # over the internal compose network.
+
+  nginx:
+    # Built from ./nginx (docker/nginx/Dockerfile), not pulled as a
+    # plain image with a bind-mounted config - see that Dockerfile's
+    # header comment for why (Jenkins runs "Docker outside of Docker",
+    # so runtime bind mounts resolve against the HOST's filesystem, not
+    # Jenkins' own workspace, and fail).
+    build: ./nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      # 443 is not mapped yet - no certificate exists until a real domain
+      # is added (docs/AWS_DEPLOYMENT.md's "Adding a domain and HTTPS"
+      # section covers turning this on with Certbot).

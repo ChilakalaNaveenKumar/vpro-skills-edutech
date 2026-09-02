@@ -1,0 +1,57 @@
+# Production deployment. Self-contained rather than a partial override of
+# docker-compose.yml: Compose merges list-valued keys (like `ports`) across
+# `-f a -f b` files by concatenating them, not replacing them, so a
+# partial override cannot reliably *remove* docker-compose.yml's exposed
+# Postgres port - only a full replacement can guarantee it stays off the
+# host. Run this file alone:
+#
+#   cd docker
+#   cp .env.example .env   # fill in real POSTGRES_* values first
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# See docs/RUNBOOK.md for the full deployment/operations walkthrough.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in docker/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in docker/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in docker/.env}
+    # No host port mapping on purpose - only the backend service needs to
+    # reach Postgres, over the Docker network by service name. For ad-hoc
+    # admin access use `docker compose -f docker-compose.prod.yml exec
+    # postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"` (see the runbook).
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      # Overrides ../backend/.env: the container reaches Postgres by its
+      # Docker network name, using the same credentials as the postgres
+      # service above (not ../backend/.env's own DATABASE_URL, which is
+      # for local non-Docker dev against localhost).
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:?set POSTGRES_USER in docker/.env}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in docker/.env}@postgres:5432/${POSTGRES_DB:?set POSTGRES_DB in docker/.env}
+      # Disables interactive API docs (see backend/app/main.py) - the one
+      # thing this deployment changes relative to local Docker dev.
+      ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
