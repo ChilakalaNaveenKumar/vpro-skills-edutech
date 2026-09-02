@@ -25,28 +25,25 @@ export default function CoursesAndSchedule() {
         <div className="shell">
           <SectionLabel id="courses" title="Courses and schedule" />
 
-          <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <h2
-              aria-label={`${COURSES.length} courses, taught live`}
-              className="display max-w-[16ch] text-[clamp(1.8rem,4vw,2.9rem)] text-[color:var(--on-ink)]"
-            >
-              <SplitWords text={`${COURSES.length} courses, taught live`} />
-            </h2>
+          <h2
+            aria-label="Every course, taught live"
+            className="display mt-7 max-w-[20ch] text-[clamp(1.8rem,4vw,2.9rem)] text-[color:var(--on-ink)]"
+          >
+            <SplitWords text="Every course, taught live" />
+          </h2>
 
-            <div className="lg:max-w-md">
-              <p className="lede">
-                Every course runs as a live batch with a named trainer. Open one for its full
-                curriculum and its batches.
-              </p>
-              <Link
-                to="/courses"
-                className="mt-4 inline-flex items-center gap-2 text-[0.86rem] font-medium text-[color:var(--signal-text)] underline decoration-[color:var(--rule)] underline-offset-4 hover:decoration-[color:var(--signal)]"
-              >
-                Compare all {COURSES.length}
-                <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-          </div>
+          <p className="lede rise mt-5 max-w-2xl">
+            Each one runs as a live batch with a named trainer. Open a course for its full
+            curriculum and its scheduled batches.
+          </p>
+
+          <Link
+            to="/courses"
+            className="rise mt-6 inline-flex items-center gap-2 text-[0.86rem] font-medium text-[color:var(--signal-text)] underline decoration-[color:var(--rule)] underline-offset-4 hover:decoration-[color:var(--signal)]"
+          >
+            See all courses
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
         </div>
 
         {/* Rail. Bleeds to the viewport edge so it reads as continuing past it. */}
@@ -56,7 +53,7 @@ export default function CoursesAndSchedule() {
           aria-label="Courses"
         >
           <span aria-hidden="true" className="shrink-0 basis-[max(1.25rem,calc((100vw-78rem)/2+5rem))]" />
-          {COURSES.map((course, index) => (
+          {COURSES.map((course) => (
             <div
               key={course.slug}
               role="listitem"
@@ -65,7 +62,6 @@ export default function CoursesAndSchedule() {
               <CourseCard
                 course={course}
                 scheduled={scheduled.has(course.name.toLowerCase())}
-                priority={index < 2}
               />
             </div>
           ))}

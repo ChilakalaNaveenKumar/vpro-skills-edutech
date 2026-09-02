@@ -35,10 +35,10 @@ export default function CoursesPage() {
       <p className="eyebrow">Courses</p>
 
       <h1
-        aria-label={`${COURSES.length} courses, every one taught live`}
+        aria-label={'Every course, taught live'}
         className="display mt-6 max-w-[24ch] text-[clamp(2rem,5vw,3.4rem)] text-[color:var(--on-ink)]"
       >
-        <SplitWords text={`${COURSES.length} courses, every one taught live`} />
+        <SplitWords text={'Every course, taught live'} />
       </h1>
 
       <p className="lede rise mt-6 max-w-2xl">
@@ -51,12 +51,11 @@ export default function CoursesPage() {
       </div>
 
       <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {COURSES.map((course, index) => (
+        {COURSES.map((course) => (
           <li key={course.slug} className="h-full">
             <CourseCard
               course={course}
               scheduled={liveCourseNames.has(course.name.toLowerCase())}
-              priority={index < 3}
             />
           </li>
         ))}

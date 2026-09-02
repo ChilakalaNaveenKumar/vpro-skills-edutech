@@ -18,10 +18,28 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-// Section anchors, shown only on the journey route. The last entry becomes the
-// header's primary button, so it is peeled off the anchor list.
-const ANCHORS = NAV_SECTIONS.slice(0, -1)
-const PRIMARY_ANCHOR = NAV_SECTIONS[NAV_SECTIONS.length - 1]
+// The header carries route navigation only. In-page section navigation is the
+// SectionRail's job on the home page, and duplicating it here was actively
+// harmful: the anchor list rendered on every marketing page, but the sections it
+// points at only exist on "/", so on a course page or About the whole nav was
+// dead links. Paid traffic frequently lands directly on a course page, so that
+// was a dead end for exactly the visitors we pay for.
+const ROUTES = [
+  { to: '/courses', label: 'Courses' },
+  { to: '/about', label: 'About' },
+]
+
+/** The demo section lives on the home page, so reach it as an anchor from
+ *  there and as a cross-page link from anywhere else. */
+const DEMO_SECTION = NAV_SECTIONS[NAV_SECTIONS.length - 1].id
+
+/** Section jumps offered in the mobile menu on the home page: the demo is
+ *  already the menu's primary button, and a label matching a route link would
+ *  appear twice. */
+const ROUTE_LABELS = new Set(ROUTES.map((route) => route.label.toLowerCase()))
+const HOME_JUMPS = NAV_SECTIONS.filter(
+  (section) => section.id !== DEMO_SECTION && !ROUTE_LABELS.has(section.label.toLowerCase()),
+)
 
 // Shared chrome for public-facing pages.
 //
@@ -52,13 +70,33 @@ export default function PublicLayout() {
     navigate('/')
   }
 
+  const isHome = location.pathname === '/'
+
+  function isCurrent(to: string) {
+    return location.pathname === to || location.pathname.startsWith(`${to}/`)
+  }
+
   function navLinkClass(to: string) {
-    const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`)
     if (journey) {
-      return `rounded px-2 py-1 text-[color:var(--on-ink-mute)] transition-colors hover:text-[color:var(--on-ink)] ${FOCUS_RING}`
+      // The active route has to be visible here too. Without it a visitor deep in
+      // /courses/<slug> has no indication of where they are in the site.
+      return `rounded px-2 py-1 transition-colors ${FOCUS_RING} ${
+        isCurrent(to)
+          ? 'text-[color:var(--on-ink)]'
+          : 'text-[color:var(--on-ink-mute)] hover:text-[color:var(--on-ink)]'
+      }`
     }
     return `rounded px-2 py-1 ${FOCUS_RING} ${
-      isActive ? 'font-medium text-brand-600' : 'text-gray-600 hover:text-gray-900'
+      isCurrent(to) ? 'font-medium text-brand-600' : 'text-gray-600 hover:text-gray-900'
+    }`
+  }
+
+  /** Uppercase route link used across the marketing pages. */
+  function railLinkClass(to: string) {
+    return `rounded px-1 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] transition-colors ${FOCUS_RING} ${
+      isCurrent(to)
+        ? 'text-[color:var(--signal)]'
+        : 'text-[color:var(--on-ink-faint)] hover:text-[color:var(--on-ink)]'
     }`
   }
 
@@ -91,14 +129,15 @@ export default function PublicLayout() {
 
           <nav className="hidden items-center gap-5 text-sm md:flex">
             {journey &&
-              ANCHORS.map((section) => (
-                <a
-                  key={section.id}
-                  href={`#${section.id}`}
-                  className={`rounded px-1 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-[color:var(--on-ink-faint)] transition-colors hover:text-[color:var(--on-ink)] ${FOCUS_RING}`}
+              ROUTES.map((route) => (
+                <Link
+                  key={route.to}
+                  to={route.to}
+                  aria-current={isCurrent(route.to) ? 'page' : undefined}
+                  className={railLinkClass(route.to)}
                 >
-                  {section.label}
-                </a>
+                  {route.label}
+                </Link>
               ))}
 
             {user ? (
@@ -138,7 +177,7 @@ export default function PublicLayout() {
 
             {journey && (
               <a
-                href={`#${PRIMARY_ANCHOR.id}`}
+                href={isHome ? `#${DEMO_SECTION}` : `/#${DEMO_SECTION}`}
                 className={`rounded-full bg-[color:var(--signal)] px-5 py-2 text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-[filter] duration-200 hover:brightness-110 ${FOCUS_RING}`}
               >
                 Book a free demo
@@ -171,17 +210,43 @@ export default function PublicLayout() {
               journey ? 'border border-[color:var(--rule)] bg-[color:var(--ink-2)]' : ''
             }`}
           >
-            {journey &&
-              NAV_SECTIONS.map((section) => (
+            {journey && (
+              <>
+                {ROUTES.map((route) => (
+                  <Link
+                    key={route.to}
+                    to={route.to}
+                    onClick={() => setIsMenuOpen(false)}
+                    aria-current={isCurrent(route.to) ? 'page' : undefined}
+                    className={navLinkClass(route.to)}
+                  >
+                    {route.label}
+                  </Link>
+                ))}
+
+                {/* Section jumps are only real on the home page, and a jump whose
+                    label repeats a route link just reads as a duplicate. */}
+                {isHome &&
+                  HOME_JUMPS.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#${section.id}`}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`rounded px-2 py-2 text-[color:var(--on-ink-faint)] ${FOCUS_RING}`}
+                    >
+                      {section.label}
+                    </a>
+                  ))}
+
                 <a
-                  key={section.id}
-                  href={`#${section.id}`}
+                  href={isHome ? `#${DEMO_SECTION}` : `/#${DEMO_SECTION}`}
                   onClick={() => setIsMenuOpen(false)}
-                  className={`rounded px-2 py-2 text-[color:var(--on-ink-mute)] ${FOCUS_RING}`}
+                  className={`mt-1 rounded-full bg-[color:var(--signal)] px-4 py-2.5 text-center text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] ${FOCUS_RING}`}
                 >
-                  {section.label}
+                  Book a free demo
                 </a>
-              ))}
+              </>
+            )}
             {user ? (
               <>
                 <span className={`px-2 py-1 ${journey ? 'text-[color:var(--on-ink-faint)]' : 'text-gray-500'}`}>
