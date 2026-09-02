@@ -137,7 +137,7 @@ export default function PublicLayout() {
             {journey && (
               <a
                 href={`#${PRIMARY_ANCHOR.id}`}
-                className={`rounded-full bg-[color:var(--signal)] px-5 py-2 text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-transform duration-300 hover:scale-[1.03] ${FOCUS_RING}`}
+                className={`rounded-full bg-[color:var(--signal)] px-5 py-2 text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-[filter] duration-200 hover:brightness-110 ${FOCUS_RING}`}
               >
                 Book a free demo
               </a>

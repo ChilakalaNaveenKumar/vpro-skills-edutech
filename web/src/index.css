@@ -431,8 +431,8 @@ textarea:focus-visible {
    accessible name so a screen reader hears the whole thought. */
 
 [data-journey] .cycle {
-  display: block;
-  position: relative;
+  display: grid;
+  grid-template-areas: "phrase";
 }
 
 /* The variants cross-fade in place, so they are absolutely positioned and cannot
@@ -440,15 +440,15 @@ textarea:focus-visible {
    width - which breaks the moment a phrase wraps - the longest phrase is laid
    out for real and hidden, so the box is always exactly as tall as it needs to
    be at the current width and font size. */
+/* Kept for older markup: as a grid item it simply contributes its own height. */
 [data-journey] .cycle-sizer {
-  display: block;
+  grid-area: phrase;
   visibility: hidden;
+  pointer-events: none;
 }
 
 [data-journey] .cycle > span:not(.cycle-sizer) {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
+  grid-area: phrase;
   color: var(--signal);
   opacity: 0;
   animation: phrase 21s cubic-bezier(0.2, 0, 0.2, 1) var(--d) infinite backwards;
@@ -880,4 +880,9 @@ textarea:focus-visible {
   [data-journey] .ticker-item:nth-child(2) {
     display: none;
   }
+}
+
+/* No hover scaling on controls. */
+[data-journey] .no-hover-scale:hover {
+  transform: none;
 }
