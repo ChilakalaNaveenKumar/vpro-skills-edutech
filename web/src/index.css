@@ -776,3 +776,25 @@ textarea:focus-visible {
   [data-journey] .cycle > span:not(.cycle-sizer) { position: static; display: none; }
   [data-journey] .cycle > span:not(.cycle-sizer):first-of-type { display: block; opacity: 1; }
 }
+
+/* Local contrast for hero copy over the photograph. Authored per-edge rather
+   than a flat blanket, so the studio image stays visible on the right. */
+[data-journey] .hero-scrim {
+  background:
+    linear-gradient(
+      100deg,
+      rgb(from var(--ink) r g b / 0.94) 0%,
+      rgb(from var(--ink) r g b / 0.86) 34%,
+      rgb(from var(--ink) r g b / 0.42) 62%,
+      rgb(from var(--ink) r g b / 0.12) 100%
+    ),
+    linear-gradient(to top, rgb(from var(--ink) r g b / 0.72) 0%, transparent 42%);
+}
+
+@supports not (color: rgb(from red r g b / 0.5)) {
+  [data-journey] .hero-scrim {
+    background:
+      linear-gradient(100deg, rgba(16, 10, 6, 0.94) 0%, rgba(16, 10, 6, 0.86) 34%, rgba(16, 10, 6, 0.42) 62%, rgba(16, 10, 6, 0.12) 100%),
+      linear-gradient(to top, rgba(16, 10, 6, 0.72) 0%, transparent 42%);
+  }
+}

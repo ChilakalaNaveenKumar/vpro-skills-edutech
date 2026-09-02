@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom'
 import { PLATFORM, HERO_ENDINGS } from '../content/platform'
 import SplitWords from '../motion/SplitWords'
 import LiveType from '../motion/LiveType'
 import CtaLink from '../components/CtaLink'
-import WeekTimetable from '../components/WeekTimetable'
+import HeroDepth from '../components/HeroDepth'
 import Section from './Section'
 
 // The hero answers "what is this place", not "buy this course".
@@ -19,10 +20,12 @@ import Section from './Section'
 // footer and the page metadata where somebody looking for it will look.
 export default function Hero() {
   return (
-    <Section id="hero">
+    <Section id="hero" className="relative isolate min-h-[94svh] items-center overflow-hidden">
+      <HeroDepth />
+      <div className="hero-scrim pointer-events-none absolute inset-0" aria-hidden="true" />
       <LiveType>
-        <div className="shell grid items-center gap-12 pb-16 pt-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-16 lg:pb-24 lg:pt-32">
-          <div>
+        <div className="shell relative z-10 pb-20 pt-28 lg:pb-28 lg:pt-36">
+          <div className="max-w-2xl">
             <p className="eyebrow rise">{PLATFORM.eyebrow}</p>
 
             <h1
@@ -71,24 +74,21 @@ export default function Hero() {
               >
                 Ask about the next batch
               </CtaLink>
-              <a
-                href="#why"
+              <Link
+                to="/courses"
                 className="group inline-flex items-center gap-2 rounded-full border border-[color:var(--rule)] px-7 py-3.5 text-sm font-medium text-[color:var(--on-ink-mute)] transition-colors duration-300 hover:border-[color:var(--on-ink-faint)] hover:text-[color:var(--on-ink)]"
               >
-                Why it works this way
+                View all courses
                 <span
                   aria-hidden="true"
-                  className="transition-transform duration-300 group-hover:translate-y-0.5"
+                  className="transition-transform duration-300 group-hover:translate-x-1"
                 >
-                  ↓
+                  &rarr;
                 </span>
-              </a>
+              </Link>
             </div>
           </div>
 
-          <div className="rise">
-            <WeekTimetable />
-          </div>
         </div>
       </LiveType>
     </Section>
