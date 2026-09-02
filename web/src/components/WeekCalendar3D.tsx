@@ -17,7 +17,7 @@ import { minutesOfDay, nowInIst, type ScheduleRow } from '../utils/schedule'
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const DAY_W = 1.32
 const HOUR_D = 0.62
-const FOCAL = 760
+
 
 interface Vec3 {
   x: number
@@ -49,7 +49,7 @@ interface Camera {
   dist: number
 }
 
-function project(p: Vec3, cam: Camera, cx: number, cy: number): Projected {
+function project(p: Vec3, cam: Camera, cx: number, cy: number, focal: number): Projected {
   const cosY = Math.cos(cam.yaw)
   const sinY = Math.sin(cam.yaw)
   const x1 = p.x * cosY - p.z * sinY
@@ -62,7 +62,7 @@ function project(p: Vec3, cam: Camera, cx: number, cy: number): Projected {
 
   const zc = z2 + cam.dist
   const safe = Math.max(0.35, zc)
-  const scale = FOCAL / safe
+  const scale = focal / safe
   return { sx: cx + x1 * scale, sy: cy - y2 * scale, depth: safe, scale }
 }
 
@@ -224,8 +224,31 @@ export default function WeekCalendar3D({ rows, failed }: Props) {
         dist: (reduce ? 12.4 : 12.4 - scroll * 2.6),
       }
       // On wide viewports the copy owns the left half, so the calendar sits right.
-      const cx = width * (width >= 1024 ? 0.68 : 0.5)
-      const cy = height * (width >= 1024 ? 0.54 : 0.62)
+      const halfDaysFit = (DAYS.length * DAY_W) / 2
+      const spanFit = hourTo - hourFrom
+      const zFrom = -(spanFit * HOUR_D) / 2
+      const zTo = (spanFit * HOUR_D) / 2
+
+      // Project the scene's corners at focal 1, then choose the focal length and
+      // centre that fit those bounds inside this container with a small margin.
+      let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity
+      for (const cornerX of [-halfDaysFit, halfDaysFit]) {
+        for (const cornerZ of [zFrom - 0.6, zTo]) {
+          for (const cornerY of [0, 0.45]) {
+            const unit = project({ x: cornerX, y: cornerY, z: cornerZ }, cam, 0, 0, 1)
+            minU = Math.min(minU, unit.sx)
+            maxU = Math.max(maxU, unit.sx)
+            minV = Math.min(minV, unit.sy)
+            maxV = Math.max(maxV, unit.sy)
+          }
+        }
+      }
+      const spreadU = Math.max(0.001, maxU - minU)
+      const spreadV = Math.max(0.001, maxV - minV)
+      // Leave room on the left for the hour labels drawn outside the grid.
+      const focal = Math.min((width * 0.82) / spreadU, (height * 0.84) / spreadV)
+      const cx = width / 2 - focal * ((minU + maxU) / 2) + width * 0.05
+      const cy = height / 2 - focal * ((minV + maxV) / 2)
 
       ctx.clearRect(0, 0, width, height)
 
@@ -233,7 +256,7 @@ export default function WeekCalendar3D({ rows, failed }: Props) {
       const zOf = (hour: number) => (hour - hourFrom) * HOUR_D - (span * HOUR_D) / 2
       const xOf = (day: number) => day * DAY_W - halfDays + DAY_W / 2
 
-      const p = (x: number, y: number, z: number) => project({ x, y, z }, cam, cx, cy)
+      const p = (x: number, y: number, z: number) => project({ x, y, z }, cam, cx, cy, focal)
 
       // Grid: hour rings and day rails on the floor plane.
       for (let hour = hourFrom; hour <= hourTo; hour += 1) {

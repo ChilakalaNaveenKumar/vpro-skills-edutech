@@ -886,3 +886,35 @@ textarea:focus-visible {
 [data-journey] .no-hover-scale:hover {
   transform: none;
 }
+
+/* --- Horizontal rail ------------------------------------------------------ */
+
+[data-journey] .rail {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  scroll-padding-inline: 1.25rem;
+  overscroll-behavior-x: contain;
+}
+
+[data-journey] .rail::-webkit-scrollbar {
+  height: 6px;
+}
+
+[data-journey] .rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-journey] .rail::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 999px;
+}
+
+[data-journey] .rail:hover::-webkit-scrollbar-thumb {
+  background: var(--on-ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .rail {
+    scroll-snap-type: none;
+  }
+}

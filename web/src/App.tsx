@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './layouts/AdminLayout'
 import HomePage from './pages/HomePage'
+import AboutPage from './pages/AboutPage'
 import CoursesPage from './pages/CoursesPage'
 import CourseDetailPage from './pages/CourseDetailPage'
 import LoginPage from './pages/LoginPage'
@@ -26,6 +27,7 @@ function App() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<CourseDetailPage />} />
         <Route path="/login" element={<LoginPage />} />

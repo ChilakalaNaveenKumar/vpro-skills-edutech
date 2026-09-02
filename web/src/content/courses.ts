@@ -39,6 +39,21 @@ export interface CourseContent {
   flagship?: boolean
 }
 
+/** Course images live at a path derived from the slug. */
+export function courseImage(slug: string): string {
+  return `/courses/${slug}.webp`
+}
+
+/** What each object is, for the image's alt text. */
+export const COURSE_IMAGE_ALT: Record<string, string> = {
+  'agentic-ai': 'Machined metal spheres orbiting a larger engraved core',
+  'python-full-stack': 'Five machined slabs stacked with gaps between the layers',
+  'java-full-stack': 'A dark espresso cup on a machined metal saucer',
+  'dotnet-full-stack': 'A woven lattice of fine dark metal wire',
+  'forward-deployment-engineer': 'An open rugged field case holding cables and connectors',
+  'quantum-computing': 'A gold-plated quantum refrigerator chandelier',
+}
+
 const AGENTIC_AI: CourseContent = {
   slug: 'agentic-ai',
   name: 'Agentic AI',

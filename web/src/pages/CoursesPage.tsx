@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { COURSES } from '../content/courses'
 import { listBatches } from '../services/batchesService'
+import CourseCard from '../components/CourseCard'
 import LiveClassesPanel from '../components/LiveClassesPanel'
 import CtaLink from '../components/CtaLink'
 import SplitWords from '../motion/SplitWords'
@@ -50,61 +50,16 @@ export default function CoursesPage() {
         <LiveClassesPanel />
       </div>
 
-      <ul className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-[color:var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
-        {COURSES.map((course) => {
-          const scheduled = liveCourseNames.has(course.name.toLowerCase())
-          return (
-            <li key={course.slug} className="bg-[color:var(--ink-2)]">
-              <Link
-                to={`/courses/${course.slug}`}
-                className="group flex h-full flex-col p-7 outline-offset-2 transition-colors duration-300 hover:bg-[color:var(--ink-3)] focus-visible:outline-2 focus-visible:outline-[color:var(--signal)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="display text-[1.15rem] text-[color:var(--on-ink)]">{course.name}</h2>
-                  {course.flagship && (
-                    <span className="shrink-0 rounded-full bg-[color:var(--signal)] px-2 py-0.5 text-[0.52rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)]">
-                      Flagship
-                    </span>
-                  )}
-                </div>
-
-                <p className="mt-2 text-[0.86rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-                  {course.tagline}
-                </p>
-
-                <dl className="tnum mt-6 flex flex-wrap gap-x-5 gap-y-1 text-[0.72rem] text-[color:var(--on-ink-faint)]">
-                  <div className="flex gap-1.5">
-                    <dt className="sr-only">Modules</dt>
-                    <dd>{course.modules.length} modules</dd>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <dt className="sr-only">Projects</dt>
-                    <dd>{course.projects.length} projects</dd>
-                  </div>
-                </dl>
-
-                <p className="mt-4 text-[0.72rem] text-[color:var(--on-ink-faint)]">{course.level}</p>
-
-                <div className="mt-auto flex items-center justify-between gap-3 pt-7">
-                  <span className="text-[0.78rem] font-medium text-[color:var(--signal-text)]">
-                    See the curriculum
-                    <span
-                      className="ml-1.5 inline-block transition-transform duration-300 group-hover:translate-x-1"
-                      aria-hidden="true"
-                    >
-                      &rarr;
-                    </span>
-                  </span>
-                  {scheduled && (
-                    <span className="text-[0.62rem] uppercase tracking-[0.12em] text-[color:var(--on-ink-faint)]">
-                      Batch scheduled
-                    </span>
-                  )}
-                </div>
-              </Link>
-            </li>
-          )
-        })}
+      <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {COURSES.map((course, index) => (
+          <li key={course.slug} className="h-full">
+            <CourseCard
+              course={course}
+              scheduled={liveCourseNames.has(course.name.toLowerCase())}
+              priority={index < 3}
+            />
+          </li>
+        ))}
       </ul>
 
       <div className="mt-16 flex flex-col gap-4 border-t border-[color:var(--rule)] pt-10 sm:flex-row sm:items-center sm:justify-between">

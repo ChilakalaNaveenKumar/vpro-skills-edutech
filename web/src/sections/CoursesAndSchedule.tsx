@@ -1,83 +1,86 @@
 import { Link } from 'react-router-dom'
 import { COURSES } from '../content/courses'
+import CourseCard from '../components/CourseCard'
 import LiveClassesPanel from '../components/LiveClassesPanel'
 import WeekCalendar3D from '../components/WeekCalendar3D'
-import { useSchedule } from '../utils/schedule'
 import SplitWords from '../motion/SplitWords'
+import { useSchedule } from '../utils/schedule'
 import Section, { SectionLabel } from './Section'
 
-// What is teaching right now, and the courses it belongs to.
+// What exists, and what is running.
 //
-// The full curriculum deliberately does not live here. A home page that unrolls
-// six syllabi is a page nobody finishes; each course owns its own page, and this
-// section's job is to say what exists and what is running.
+// The courses are a horizontal rail rather than a six-card grid: six cards
+// stacked vertically pushed everything below off the screen, and a rail is
+// navigable by swipe, wheel, keyboard and scrollbar without leaving the section.
+// The full curriculum lives on each course's own page.
 export default function CoursesAndSchedule() {
   const { rows, failed } = useSchedule()
+  const scheduled = new Set(
+    (rows ?? []).map((row) => row.batch.course_name.trim().toLowerCase()),
+  )
 
   return (
     <Section id="courses" className="border-y border-[color:var(--rule)]">
-      <div className="shell py-24 lg:py-32">
-        <SectionLabel id="courses" title="Courses and schedule" />
+      <div className="py-20 lg:py-28">
+        <div className="shell">
+          <SectionLabel id="courses" title="Courses and schedule" />
 
-        <div className="mt-8 grid gap-x-16 gap-y-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
-          <div>
+          <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <h2
               aria-label={`${COURSES.length} courses, taught live`}
-              className="display max-w-[18ch] text-[clamp(1.9rem,4.6vw,3.2rem)] text-[color:var(--on-ink)]"
+              className="display max-w-[16ch] text-[clamp(1.8rem,4vw,2.9rem)] text-[color:var(--on-ink)]"
             >
               <SplitWords text={`${COURSES.length} courses, taught live`} />
             </h2>
 
-            <p className="lede rise mt-6 max-w-lg">
-              Every course runs as a live batch with a named trainer. Open one to see its full
-              curriculum, its projects, and the batches scheduled for it.
-            </p>
-
-            <ul className="rise-stagger mt-10 space-y-px">
-              {COURSES.map((course) => (
-                <li key={course.slug} className="border-t border-[color:var(--rule)] last:border-b">
-                  <Link
-                    to={`/courses/${course.slug}`}
-                    className="group flex items-baseline justify-between gap-4 py-3.5 outline-offset-2 focus-visible:outline-2 focus-visible:outline-[color:var(--signal)]"
-                  >
-                    <span className="flex items-baseline gap-3">
-                      <span className="text-[0.95rem] font-medium text-[color:var(--on-ink)]">
-                        {course.name}
-                      </span>
-                      {course.flagship && (
-                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.12em] text-[color:var(--signal-text)]">
-                          Flagship
-                        </span>
-                      )}
-                    </span>
-                    <span className="tnum flex shrink-0 items-baseline gap-4 text-[0.74rem] text-[color:var(--on-ink-faint)]">
-                      {course.modules.length} modules
-                      <span
-                        className="inline-block transition-transform duration-300 group-hover:translate-x-1 text-[color:var(--signal-text)]"
-                        aria-hidden="true"
-                      >
-                        &rarr;
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              to="/courses"
-              className="rise mt-8 inline-flex items-center gap-2 text-[0.86rem] font-medium text-[color:var(--signal-text)] underline decoration-[color:var(--rule)] underline-offset-4 hover:decoration-[color:var(--signal)]"
-            >
-              Compare all {COURSES.length} courses
-            </Link>
-          </div>
-
-          <div className="rise lg:sticky lg:top-28">
-            <div className="relative mb-6 h-[20rem] overflow-hidden rounded-2xl border border-[color:var(--rule)] sm:h-[24rem]">
-              <WeekCalendar3D rows={rows} failed={failed} />
+            <div className="lg:max-w-md">
+              <p className="lede">
+                Every course runs as a live batch with a named trainer. Open one for its full
+                curriculum and its batches.
+              </p>
+              <Link
+                to="/courses"
+                className="mt-4 inline-flex items-center gap-2 text-[0.86rem] font-medium text-[color:var(--signal-text)] underline decoration-[color:var(--rule)] underline-offset-4 hover:decoration-[color:var(--signal)]"
+              >
+                Compare all {COURSES.length}
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
             </div>
-            <LiveClassesPanel />
           </div>
+        </div>
+
+        {/* Rail. Bleeds to the viewport edge so it reads as continuing past it. */}
+        <div
+          className="rail mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4"
+          role="list"
+          aria-label="Courses"
+        >
+          <span aria-hidden="true" className="shrink-0 basis-[max(1.25rem,calc((100vw-78rem)/2+5rem))]" />
+          {COURSES.map((course, index) => (
+            <div
+              key={course.slug}
+              role="listitem"
+              className="w-[19rem] shrink-0 snap-start sm:w-[21rem]"
+            >
+              <CourseCard
+                course={course}
+                scheduled={scheduled.has(course.name.toLowerCase())}
+                priority={index < 2}
+              />
+            </div>
+          ))}
+          <span aria-hidden="true" className="shrink-0 basis-6" />
+        </div>
+
+        {/* The week, then the same information as a list underneath it. */}
+        <div className="shell mt-20 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-12">
+          <div className="relative aspect-[16/11] overflow-hidden rounded-2xl border border-[color:var(--rule)] bg-[color:var(--ink-2)] sm:aspect-[16/9]">
+            <WeekCalendar3D rows={rows} failed={failed} />
+            <p className="pointer-events-none absolute left-5 top-4 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-[color:var(--on-ink-faint)]">
+              This week
+            </p>
+          </div>
+          <LiveClassesPanel />
         </div>
       </div>
     </Section>
