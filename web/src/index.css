@@ -455,9 +455,9 @@ textarea:focus-visible {
 }
 
 @keyframes phrase {
-  0% { opacity: 0; transform: translateY(0.42em); }
-  2%, 27% { opacity: 1; transform: translateY(0); }
-  30%, 100% { opacity: 0; transform: translateY(-0.34em); }
+  0% { opacity: 0; transform: translateY(0.26em); }
+  1%, 24% { opacity: 1; transform: translateY(0); }
+  25%, 100% { opacity: 0; transform: translateY(-0.26em); }
 }
 
 /* --- Scanning sheen ------------------------------------------------------- */
