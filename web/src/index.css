@@ -57,3 +57,83 @@ textarea:focus-visible {
   outline: 2px solid var(--color-brand-500);
   outline-offset: 2px;
 }
+
+/* --- Dawn Ascent (2026-09-01) ---
+   Night-side tokens for the scroll journey. The brand-* and ink tokens above
+   keep their exact roles and contrast ratios; nothing here changes them. */
+@theme {
+  --color-night-900: #05070c;
+  --color-night-800: #070b13;
+  --color-night-700: #131a24;
+  --color-night-600: #1e2836;
+  --color-bone: #f5efe6;
+  --color-ember: #fb7a02;
+
+  /* Display face for the journey's oversized headings and numerals. Poppins
+     stays --font-display so every existing page renders unchanged. */
+  --font-editorial: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Word-by-word heading reveal. The unsplit phrase stays the accessible name
+   via aria-label; these wrappers are presentational only. */
+.word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.42em);
+  filter: blur(6px);
+  transition:
+    opacity 0.72s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 72ms);
+}
+
+.is-active .word,
+.reveal-now .word {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* Supporting beats reveal independently of the heading. */
+.beat {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: calc(var(--d, 0) * 1ms);
+}
+
+.is-active .beat {
+  opacity: 1;
+  transform: none;
+}
+
+/* Local contrast under copy sitting on the live world - an authored scrim per
+   reading block, never an opaque blanket over the whole scene. */
+.scrim {
+  background: radial-gradient(
+    120% 100% at 20% 50%,
+    rgb(5 7 12 / 82%) 0%,
+    rgb(5 7 12 / 62%) 45%,
+    rgb(5 7 12 / 0%) 100%
+  );
+}
+
+.chapter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word,
+  .beat {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}

@@ -1,12 +1,9 @@
-// Small reusable brand mark (real VPro Skills logo, supplied directly by
-// the user post-launch - replaces the earlier Phase 9 placeholder SVG that
-// stood in for it). The logo already bakes in the wordmark, so this is
-// just an <img> at a controlled height - no separate text needed. Cropped
-// tight to the artwork (public/logo-wide.png) so it doesn't carry the
-// large white margins the original square upload had. Used in both
-// PublicLayout.tsx's and AdminLayout.tsx's headers, and HomePage.tsx's hero.
+// Real VPro Skills logo (public/logo-wide.png) on light surfaces. That file has
+// a solid white background and a charcoal half, so on the dark journey it is
+// replaced by an authored typographic wordmark rather than a white box.
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
+  onDark?: boolean
 }
 
 const HEIGHT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
@@ -15,7 +12,24 @@ const HEIGHT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
   lg: 'h-14',
 }
 
-export default function Logo({ size = 'md' }: LogoProps) {
+const DARK_TEXT_CLASS: Record<NonNullable<LogoProps['size']>, string> = {
+  sm: 'text-base',
+  md: 'text-lg',
+  lg: 'text-2xl',
+}
+
+export default function Logo({ size = 'md', onDark = false }: LogoProps) {
+  if (onDark) {
+    return (
+      <span
+        className={`font-editorial inline-flex items-baseline gap-1.5 font-semibold ${DARK_TEXT_CLASS[size]}`}
+      >
+        <span className="text-ember">VPro</span>
+        <span className="text-bone/85 text-[0.62em] uppercase tracking-[0.34em]">Skills</span>
+      </span>
+    )
+  }
+
   return (
     <img
       src="/logo-wide.png"

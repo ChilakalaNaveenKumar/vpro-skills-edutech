@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
+import { CONTACT, whatsappUrl } from '../content/contact'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
 
@@ -15,27 +16,28 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
-// Shared header/footer chrome for public-facing pages (Phase 9 redesign;
-// recolored + restyled post-launch with the real brand logo - see
-// docs/ARCHITECTURE.md's "Design system" section).
+// Chapter anchors, shown only on the journey route.
+const JOURNEY_NAV = [
+  { href: '#stakes', label: 'Why AI' },
+  { href: '#path', label: 'Curriculum' },
+  { href: '#mentor', label: 'Mentor' },
+  { href: '#horizon', label: 'Schedule' },
+]
+
+// Shared chrome for public-facing pages. On the journey route ("/") the header
+// goes transparent over the live world; every other route keeps the light shell.
 //
-// Two rounds of post-launch nav feedback, both real UX issues, not just
-// taste:
-// 1) The nav used to show the signed-in user's bare full_name as the
-//    dashboard link's text (e.g. "Admin" for the demo admin account)
-//    right next to the actual admin-only "Admin" panel link - visually
-//    indistinguishable for any user literally named "Admin".
-// 2) For an admin, having both a "Dashboard" link (the student "My
-//    Courses" view - meaningless for an account that isn't enrolled in
-//    anything) and a separate "Admin Panel" link was redundant. Admins now
-//    get a single primary nav link straight to the Admin Panel; students
-//    still get a single "Dashboard" link. The user's name moved out of
-//    the link entirely into a plain, non-clickable, time-of-day greeting.
+// Two rounds of post-launch nav feedback, both real UX issues, not just taste:
+// 1) The nav used to show the signed-in user's bare full_name as the dashboard
+//    link's text, visually indistinguishable from the admin-only "Admin" link.
+// 2) Admins got both a student "Dashboard" link and an "Admin Panel" link.
+//    Admins now get one primary link; the name is a plain greeting.
 export default function PublicLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const journey = location.pathname === '/'
 
   function handleLogout() {
     logout()
@@ -45,34 +47,60 @@ export default function PublicLayout() {
 
   function navLinkClass(to: string) {
     const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`)
+    if (journey) {
+      return `rounded px-2 py-1 text-bone/70 transition-colors hover:text-bone ${FOCUS_RING}`
+    }
     return `rounded px-2 py-1 ${FOCUS_RING} ${
       isActive ? 'font-medium text-brand-600' : 'text-gray-600 hover:text-gray-900'
     }`
   }
 
   const primaryLink =
-    user?.role === 'ADMIN' ? { to: '/admin', label: 'Admin Panel' } : { to: '/dashboard', label: 'Dashboard' }
+    user?.role === 'ADMIN'
+      ? { to: '/admin', label: 'Admin Panel' }
+      : { to: '/dashboard', label: 'Dashboard' }
+
+  const headerClass = journey
+    ? 'absolute top-0 left-0 right-0 z-40 px-4 py-4'
+    : 'sticky top-0 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur'
+
+  const iconClass = journey ? 'text-bone/80' : 'text-gray-700'
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <a href="#main-content" className="skip-link rounded bg-brand-600 px-3 py-2 text-sm text-white">
+    <div className={`flex min-h-screen flex-col ${journey ? 'text-bone' : 'bg-white'}`}>
+      <a
+        href="#main-content"
+        className="skip-link rounded bg-brand-600 px-3 py-2 text-sm text-white"
+      >
         Skip to main content
       </a>
 
-      <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
+      <header className={headerClass}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6">
           <Link to="/" className={`rounded ${FOCUS_RING}`}>
-            <Logo />
+            <Logo onDark={journey} />
           </Link>
 
-          {/* Inline nav from sm upward */}
-          <nav className="hidden items-center gap-4 text-sm sm:flex">
+          <nav className="hidden items-center gap-5 text-sm md:flex">
+            {journey &&
+              JOURNEY_NAV.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded px-1 py-1 text-[0.82rem] uppercase tracking-[0.14em] text-bone/60 transition-colors hover:text-bone ${FOCUS_RING}`}
+                >
+                  {item.label}
+                </a>
+              ))}
+
             {user ? (
               <>
-                <span className="text-gray-500">
-                  {getGreeting()}, <span className="font-medium text-ink">{user.full_name}</span>
+                <span className={journey ? 'text-bone/50' : 'text-gray-500'}>
+                  {getGreeting()},{' '}
+                  <span className={journey ? 'font-medium text-bone' : 'font-medium text-ink'}>
+                    {user.full_name}
+                  </span>
                 </span>
-                <span className="h-4 w-px bg-gray-200" aria-hidden="true" />
                 <Link to={primaryLink.to} className={navLinkClass(primaryLink.to)}>
                   {primaryLink.label}
                 </Link>
@@ -82,25 +110,33 @@ export default function PublicLayout() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className={`rounded px-2 py-1 text-gray-600 hover:text-gray-900 ${FOCUS_RING}`}
+                  className={`rounded px-2 py-1 ${
+                    journey ? 'text-bone/70 hover:text-bone' : 'text-gray-600 hover:text-gray-900'
+                  } ${FOCUS_RING}`}
                 >
                   Log out
                 </button>
               </>
             ) : (
-              <Link to="/login" className={navLinkClass('/login')}>
+              <Link
+                to="/login"
+                className={
+                  journey
+                    ? `rounded-full border border-bone/25 px-4 py-2 text-[0.82rem] text-bone/85 transition-colors hover:border-bone/50 hover:text-bone ${FOCUS_RING}`
+                    : navLinkClass('/login')
+                }
+              >
                 Student Login
               </Link>
             )}
           </nav>
 
-          {/* Hamburger toggle below sm */}
           <button
             type="button"
             onClick={() => setIsMenuOpen((v) => !v)}
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-            className={`rounded p-2 text-gray-700 sm:hidden ${FOCUS_RING}`}
+            className={`rounded p-2 md:hidden ${iconClass} ${FOCUS_RING}`}
           >
             {isMenuOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -108,24 +144,36 @@ export default function PublicLayout() {
               </svg>
             ) : (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M4 7h16M4 12h16M4 17h16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             )}
           </button>
         </div>
 
-        {/* Mobile menu panel below sm */}
         {isMenuOpen && (
-          <nav className="mt-3 flex flex-col gap-1 text-sm sm:hidden">
+          <nav
+            className={`mt-3 flex flex-col gap-1 rounded-2xl p-3 text-sm md:hidden ${
+              journey ? 'bg-night-900/92 backdrop-blur' : ''
+            }`}
+          >
+            {journey &&
+              JOURNEY_NAV.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`rounded px-2 py-2 text-bone/70 ${FOCUS_RING}`}
+                >
+                  {item.label}
+                </a>
+              ))}
             {user ? (
               <>
-                <span className="px-2 py-1 text-gray-500">
-                  {getGreeting()}, <span className="font-medium text-ink">{user.full_name}</span>
+                <span className={`px-2 py-1 ${journey ? 'text-bone/50' : 'text-gray-500'}`}>
+                  {getGreeting()},{' '}
+                  <span className={journey ? 'font-medium text-bone' : 'font-medium text-ink'}>
+                    {user.full_name}
+                  </span>
                 </span>
                 <Link
                   to={primaryLink.to}
@@ -134,27 +182,21 @@ export default function PublicLayout() {
                 >
                   {primaryLink.label}
                 </Link>
-                <Link
-                  to="/results"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={navLinkClass('/results')}
-                >
+                <Link to="/results" onClick={() => setIsMenuOpen(false)} className={navLinkClass('/results')}>
                   My Results
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className={`rounded px-2 py-1 text-left text-gray-600 hover:text-gray-900 ${FOCUS_RING}`}
+                  className={`rounded px-2 py-1 text-left ${
+                    journey ? 'text-bone/70' : 'text-gray-600 hover:text-gray-900'
+                  } ${FOCUS_RING}`}
                 >
                   Log out
                 </button>
               </>
             ) : (
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className={navLinkClass('/login')}
-              >
+              <Link to="/login" onClick={() => setIsMenuOpen(false)} className={navLinkClass('/login')}>
                 Student Login
               </Link>
             )}
@@ -166,10 +208,49 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-gray-200 bg-ink px-4 py-6 text-sm text-gray-300">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-1 sm:flex-row sm:justify-between">
-          <span>© {new Date().getFullYear()} VPRO Skills EduTech</span>
-          <span className="text-gray-400">Practical, instructor-led tech training — deployed automatically via CI/CD.</span>
+      <footer
+        className={
+          journey
+            ? 'relative z-10 border-t border-bone/10 px-6 py-14 text-sm text-bone/60'
+            : 'border-t border-gray-200 bg-ink px-4 py-6 text-sm text-gray-300'
+        }
+      >
+        <div className="mx-auto flex max-w-6xl flex-col gap-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className={journey ? 'font-editorial text-base text-bone' : 'font-display text-base text-white'}>
+                VPro Skills
+              </p>
+              <p className="mt-1">{CONTACT.location}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <a
+                href={whatsappUrl('footer_whatsapp')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`rounded ${FOCUS_RING} hover:text-ember`}
+              >
+                WhatsApp {CONTACT.phoneDisplay}
+              </a>
+              <a href={`tel:${CONTACT.phoneDial}`} className={`rounded ${FOCUS_RING} hover:text-ember`}>
+                Call {CONTACT.phoneDisplay}
+              </a>
+            </div>
+            <nav className="flex flex-col gap-2">
+              <Link to="/privacy" className={`rounded ${FOCUS_RING} hover:text-ember`}>
+                Privacy Policy
+              </Link>
+              <Link to="/terms" className={`rounded ${FOCUS_RING} hover:text-ember`}>
+                Terms &amp; Conditions
+              </Link>
+              <Link to="/data-deletion" className={`rounded ${FOCUS_RING} hover:text-ember`}>
+                Data Deletion
+              </Link>
+            </nav>
+          </div>
+          <p className={journey ? 'text-bone/40' : 'text-gray-400'}>
+            © {new Date().getFullYear()} VProSkills.com. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
