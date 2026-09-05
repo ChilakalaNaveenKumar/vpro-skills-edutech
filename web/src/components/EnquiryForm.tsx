@@ -6,21 +6,31 @@ const FIELD =
   'w-full min-h-[48px] bg-[color:var(--ink)] px-4 py-3.5 text-base text-[color:var(--on-ink)] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.24)]'
 const LABEL = 'mono text-[color:var(--on-ink-faint)]'
 
-export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }) {
+export default function EnquiryForm({
+  batchOptions,
+  neutralBatchOption,
+}: {
+  batchOptions: string[]
+  neutralBatchOption: string
+}) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [batch, setBatch] = useState(batchOptions[0] ?? '')
+  const [batch, setBatch] = useState(neutralBatchOption)
   const [background, setBackground] = useState('')
+  const selectedBatch = batchOptions.includes(batch) ? batch : neutralBatchOption
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const url = whatsappRawUrl(composeEnquiry({ name, phone, batch, background }))
+    const url = whatsappRawUrl(
+      composeEnquiry({ name, phone, batch: selectedBatch, background }),
+    )
     window.open(url, '_blank', 'noopener')
   }
 
   return (
     <form
       onSubmit={handleSubmit}
+      aria-describedby="enquiry-note"
       className="grid gap-5 bg-[color:var(--ink-2)] p-8 shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)] lg:p-10"
     >
       <label className="grid gap-2">
@@ -50,7 +60,7 @@ export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }
       <label className="grid gap-2">
         <span className={LABEL}>Which batch</span>
         <select
-          value={batch}
+          value={selectedBatch}
           onChange={(event) => setBatch(event.target.value)}
           className={FIELD}
         >
@@ -77,7 +87,7 @@ export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }
         Send my enquiry
       </button>
 
-      <p className="text-sm text-[color:var(--on-ink-faint)]">
+      <p id="enquiry-note" className="text-sm text-[color:var(--on-ink-faint)]">
         No fee is taken at this stage. Sending this opens WhatsApp with your details filled in.
       </p>
     </form>

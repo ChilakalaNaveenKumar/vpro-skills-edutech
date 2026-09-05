@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { composeEnquiry } from './enquiry'
-import { MESSAGES } from '../content/contact'
+import { MESSAGES, whatsappRawUrl } from '../content/contact'
 
 describe('composeEnquiry', () => {
   it('opens with the shared batch_enquiry line, then one field per line', () => {
@@ -38,5 +38,17 @@ describe('composeEnquiry', () => {
 
   it('substitutes an em dash for a field left empty', () => {
     expect(composeEnquiry({ name: '', phone: '9876543210', batch: 'B' })).toContain('Name: —')
+  })
+
+  it('round-trips special characters through the WhatsApp URL', () => {
+    const message = composeEnquiry({
+      name: 'Asha & Ravi #1',
+      phone: '+91 98765',
+      batch: 'Agentic AI + Python',
+      background: 'Switching careers\nReady to learn 🚀',
+    })
+    const url = new URL(whatsappRawUrl(message))
+
+    expect(url.searchParams.get('text')).toBe(message)
   })
 })
