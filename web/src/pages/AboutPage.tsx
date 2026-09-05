@@ -2,7 +2,6 @@ import { WHY_THIS_WAY } from '../content/narrative'
 import { STEPS } from '../content/howItWorks'
 import { MENTOR } from '../content/mentor'
 import { Prose } from '../components/Prose'
-import SplitWords from '../motion/SplitWords'
 import CtaLink from '../components/CtaLink'
 
 // The argument for the format, moved off the home page.
@@ -19,14 +18,17 @@ export default function AboutPage() {
         aria-label={WHY_THIS_WAY.heading}
         className="display mt-6 max-w-[26ch] text-[clamp(2rem,4.6vw,3.4rem)] text-[color:var(--on-ink)]"
       >
-        <SplitWords text={WHY_THIS_WAY.heading} />
+        {WHY_THIS_WAY.heading}
       </h1>
 
       <div className="mt-14 grid gap-x-16 gap-y-14 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-start">
-        <Prose paras={WHY_THIS_WAY.paras} className="max-w-2xl" />
+        <Prose
+          paras={WHY_THIS_WAY.paras}
+          className="lede max-w-2xl text-[color:var(--on-ink-mute)]"
+        />
 
-        <aside className="rounded-2xl border border-[color:var(--rule)] bg-[color:var(--ink-2)] p-7 lg:sticky lg:top-28">
-          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-[color:var(--on-ink-mute)]">
+        <aside className="bg-[color:var(--ink-2)] p-7 shadow-[inset_0_0_0_1px_var(--rule)] lg:sticky lg:top-28">
+          <p className="mono text-[color:var(--on-ink-faint)]">
             The loop
           </p>
           <ol className="mt-5">
@@ -36,10 +38,10 @@ export default function AboutPage() {
                 className="border-t border-[color:var(--rule)] py-4 first:border-t-0 first:pt-0"
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="tnum text-[0.62rem] text-[color:var(--signal-text)]">
+                  <span className="mono tnum text-[color:var(--signal)]">
                     {String(index + 1).padStart(2, '0')}
                   </span>
-                  <h2 className="text-[0.98rem] font-semibold leading-snug text-[color:var(--on-ink)]">
+                  <h2 className="display text-[1.1rem] leading-snug text-[color:var(--on-ink)]">
                     {step.title}
                   </h2>
                 </div>
@@ -70,7 +72,7 @@ export default function AboutPage() {
           <h2 className="display text-[clamp(1.5rem,3vw,2.2rem)] text-[color:var(--on-ink)]">
             {MENTOR.name}
           </h2>
-          <p className="mt-3 text-[0.78rem] uppercase tracking-[0.2em] text-[color:var(--signal-text)]">
+          <p className="mono mt-3 text-[color:var(--signal)]">
             {MENTOR.roles.join(' · ')}
           </p>
           <p className="mt-6 max-w-xl leading-relaxed text-[color:var(--on-ink-mute)]">{MENTOR.bio}</p>
@@ -81,7 +83,7 @@ export default function AboutPage() {
                 <dt className="display text-[clamp(1.3rem,2.4vw,1.8rem)] text-[color:var(--on-ink)]">
                   {stat.value}
                 </dt>
-                <dd className="mt-1.5 text-[0.76rem] text-[color:var(--on-ink-faint)]">{stat.label}</dd>
+                <dd className="mono mt-1.5 text-[color:var(--on-ink-faint)]">{stat.label}</dd>
               </div>
             ))}
           </dl>
@@ -89,7 +91,7 @@ export default function AboutPage() {
           <CtaLink
             cta="talk_to_trainer"
             chapter="about"
-            className="mt-10 inline-flex items-center rounded-full border border-[color:var(--signal)] px-7 py-3.5 text-sm font-semibold text-[color:var(--signal)] transition-colors duration-300 hover:bg-[color:var(--signal)] hover:text-[color:var(--ink)]"
+            className="btn-primary mt-10"
           >
             Talk to the trainer
           </CtaLink>
