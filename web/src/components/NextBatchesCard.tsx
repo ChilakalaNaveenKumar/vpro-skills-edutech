@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import CtaLink from './CtaLink'
-import { useSchedule } from '../utils/schedule'
+import { nowInIst, useSchedule } from '../utils/schedule'
 import type { ScheduleRow } from '../utils/schedule'
 
 function longDate(iso: string): string {
@@ -14,19 +14,24 @@ function hourWindow(row: ScheduleRow): string {
   return `${row.batch.start_time.slice(0, 5)} – ${row.batch.end_time.slice(0, 5)}`
 }
 
-// `state === 'today'` means a session runs later today, which is also true of
-// a batch that began weeks ago. "Next batches" must mean batches a student can
-// still join from the beginning, so this asks the start date directly.
-function hasNotStarted(isoDate: string): boolean {
-  const start = new Date(`${isoDate}T00:00:00`)
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  return start.getTime() >= today.getTime()
+// The schedule classifies in IST, so this must too - otherwise a visitor
+// abroad sees a different set of batches from the one the schedule means.
+// `state === 'today'` covers both "starts today" and "a session runs later
+// today in a batch that began weeks ago", so the start date settles which.
+function istTodayIso(): string {
+  const { date } = nowInIst()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
 }
 
 export default function NextBatchesCard() {
   const { rows, liveNow } = useSchedule()
-  const upcoming = (rows ?? []).filter((row) => hasNotStarted(row.batch.start_date))
+  const today = istTodayIso()
+  const upcoming = (rows ?? []).filter(
+    (row) =>
+      row.state === 'upcoming' || (row.state === 'today' && row.batch.start_date === today),
+  )
 
   if (!rows) return null
 
