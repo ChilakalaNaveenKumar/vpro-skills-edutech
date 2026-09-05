@@ -15,7 +15,6 @@ export default function AboutPage() {
       <p className="eyebrow">{WHY_THIS_WAY.eyebrow}</p>
 
       <h1
-        aria-label={WHY_THIS_WAY.heading}
         className="display mt-6 max-w-[26ch] text-[clamp(2rem,4.6vw,3.4rem)] text-[color:var(--on-ink)]"
       >
         {WHY_THIS_WAY.heading}

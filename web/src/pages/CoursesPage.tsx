@@ -15,13 +15,12 @@ export default function CoursesPage() {
       <p className="eyebrow">Courses</p>
 
       <h1
-        aria-label={'Every course, taught live'}
         className="display mt-6 max-w-[24ch] text-[clamp(2rem,5vw,3.4rem)] text-[color:var(--on-ink)]"
       >
         Every course, taught live
       </h1>
 
-      <p className="lede rise mt-6 max-w-2xl">
+      <p className="lede mt-6 max-w-2xl">
         Each course runs as a live batch with a named trainer at a fixed time, topics in order, and
         an assessment after each one. Open a course to see its full curriculum.
       </p>

@@ -11,7 +11,7 @@ export function Prose({ paras, className = '' }: { paras: Segment[][]; className
   return (
     <div className={className}>
       {paras.map((para, index) => (
-        <p key={index} className="rise lede mt-7 max-w-[62ch] first:mt-0">
+        <p key={index} className="lede mt-7 max-w-[62ch] first:mt-0">
           {para.map((segment, segmentIndex) => {
             if (typeof segment === 'string') return segment
             if ('strike' in segment) {
