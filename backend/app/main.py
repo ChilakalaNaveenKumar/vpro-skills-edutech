@@ -8,6 +8,10 @@ from app.assessments.router import admin_router as assessments_admin_router, rou
 from app.auth.router import router as auth_router
 from app.batches.router import admin_router as batches_admin_router, router as batches_router
 from app.courses.router import admin_router as courses_admin_router, router as courses_router
+from app.content.router import router as content_router
+from app.content.router import admin_router as content_admin_router
+from app.leads.router import router as leads_router
+from app.leads.router import admin_router as leads_admin_router
 from app.questions.router import admin_router as questions_admin_router
 from app.results.router import admin_router as results_admin_router, router as results_router
 from app.topics.router import admin_router as topics_admin_router, router as topics_router
@@ -55,6 +59,10 @@ for module_router in (
     results_router,
     results_admin_router,
     admin_router,
+    content_router,
+    content_admin_router,
+    leads_router,
+    leads_admin_router,
 ):
     app.include_router(module_router)
 

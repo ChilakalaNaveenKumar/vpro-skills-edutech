@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { courseStateFor, courseStateNote } from './courseState'
+import { courseBatches, courseStateFor } from './courseState'
 import type { ScheduleRow } from './schedule'
 import type { Batch } from '../types'
 
@@ -15,6 +15,8 @@ function batch(overrides: Partial<Batch> = {}): Batch {
     end_time: '21:00:00',
     trainer_name: 'Sambasiva Rao',
     trainer_email: 'trainer@example.com',
+    seats_note: null,
+    days_of_week: null,
     status: 'ACTIVE',
     progress_status: 'IN_PROGRESS',
     ...overrides,
@@ -64,12 +66,38 @@ describe('courseStateFor', () => {
   })
 })
 
-describe('courseStateNote', () => {
-  it('names the running batch and its start date', () => {
-    expect(courseStateNote('Agentic AI', [row('running')])).toBe('Batch A-04 · started 4 Aug')
+describe('courseBatches', () => {
+  it('carries the hour, the note and the message line for a running batch', () => {
+    expect(courseBatches('Agentic AI', [row('running')])).toEqual([
+      {
+        number: 'Batch A-04',
+        days: '',
+        daysHour: '7:30 \u2013 9:00 PM',
+        hour: '7:30 \u2013 9:00 PM',
+        note: 'Batch A-04, started 4 Aug',
+        line: 'Batch A-04, 7:30 \u2013 9:00 PM, 4 Aug to 2 Nov',
+      },
+    ])
   })
 
-  it('is null when nothing is running, so no note is rendered at all', () => {
-    expect(courseStateNote('Agentic AI', [row('upcoming')])).toBeNull()
+  it('returns every cohort running at once, not just the first', () => {
+    const evening = row('running')
+    const morning = row('running', {
+      id: 2,
+      batch_number: 'Batch A-05',
+      start_time: '07:00:00',
+      end_time: '08:30:00',
+    })
+    const found = courseBatches('Agentic AI', [evening, morning])
+    expect(found).toHaveLength(2)
+    expect(found.map((entry) => entry.note)).toEqual([
+      'Batch A-04, started 4 Aug',
+      'Batch A-05, started 4 Aug',
+    ])
+  })
+
+  it('is empty when nothing is running', () => {
+    expect(courseBatches('Agentic AI', [row('upcoming')])).toEqual([])
+    expect(courseBatches('Agentic AI', null)).toEqual([])
   })
 })

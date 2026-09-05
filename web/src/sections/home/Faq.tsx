@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import { FAQS } from '../../content/homeSections'
+import { useContentList } from '../../hooks/useContent'
+import type { FaqItem } from '../../services/contentService'
+
+const FALLBACK: FaqItem[] = FAQS.map((faq, index) => ({
+  id: -(index + 1),
+  question: faq.q,
+  answer: faq.a,
+}))
 import Accordion from '../../components/Accordion'
 import Reveal from '../../motion/Reveal'
 import CtaLink from '../../components/CtaLink'
 
 export default function Faq() {
   const [open, setOpen] = useState(0)
+  const faqs = useContentList<FaqItem>('faqs', FALLBACK)
 
   return (
     <section id="faq" className="shell pt-[140px]">
@@ -43,16 +52,16 @@ export default function Faq() {
             onToggle={(index) => setOpen(index === open ? -1 : index)}
             openDurationMs={480}
             opacityDurationMs={360}
-            items={FAQS.map((faq, index) => ({
-              id: `faq-${index}`,
+            items={faqs.map((faq) => ({
+              id: `faq-${faq.id}`,
               heading: (
                 <span className="display text-[clamp(20px,1.8vw,24px)] leading-[1.2] tracking-[-0.02em]">
-                  {faq.q}
+                  {faq.question}
                 </span>
               ),
               body: (
                 <p className="max-w-[56ch] text-base leading-[1.62] text-[rgb(237_231_222/0.72)]">
-                  {faq.a}
+                  {faq.answer}
                 </p>
               ),
             }))}

@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, String
+from sqlalchemy import ForeignKey, Index, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import EntityStatus
@@ -23,6 +23,13 @@ class Topic(Base, TimestampMixin):
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     topic_order: Mapped[int] = mapped_column(nullable=False)
+    # A topic is what the marketing site calls a module. These carry the copy
+    # the course page renders for it.
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    builds: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # Key into the frontend's explainer-canvas registry; unknown keys draw nothing.
+    visual: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    subtopics: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     status: Mapped[EntityStatus] = mapped_column(default=EntityStatus.ACTIVE, nullable=False)
     # The "attach an assessment to this topic" pointer (2026-08-31).
     # Deliberately NOT unique on the assessment side (see
@@ -38,5 +45,5 @@ class Topic(Base, TimestampMixin):
     # Read-only convenience for the results module's reporting joins
     # (Phase 7) - lets an attempt's course name be reached in one
     # eager-loaded chain (attempt -> topic -> course).
-    course: Mapped["Course"] = relationship()
+    course: Mapped["Course"] = relationship(back_populates="topics")
     assessment: Mapped["Assessment | None"] = relationship(back_populates="topics")

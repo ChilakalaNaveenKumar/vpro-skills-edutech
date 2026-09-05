@@ -20,6 +20,8 @@ class BatchCreate(BaseModel):
     end_time: time
     trainer_name: str = Field(min_length=1, max_length=150)
     trainer_email: EmailStr
+    seats_note: str | None = Field(default=None, max_length=80)
+    days_of_week: str | None = Field(default=None, max_length=120)
     status: EntityStatus = EntityStatus.ACTIVE
     progress_status: BatchProgressStatus = BatchProgressStatus.IN_PROGRESS
 
@@ -40,6 +42,8 @@ class BatchUpdate(BaseModel):
     end_time: time | None = None
     trainer_name: str | None = Field(default=None, min_length=1, max_length=150)
     trainer_email: EmailStr | None = None
+    seats_note: str | None = Field(default=None, max_length=80)
+    days_of_week: str | None = Field(default=None, max_length=120)
     status: EntityStatus | None = None
     progress_status: BatchProgressStatus | None = None
 
@@ -72,6 +76,8 @@ class BatchPublic(BaseModel):
     end_time: time
     trainer_name: str
     trainer_email: EmailStr | None
+    seats_note: str | None
+    days_of_week: str | None
     status: EntityStatus
     progress_status: BatchProgressStatus
 
@@ -93,6 +99,8 @@ class BatchPublic(BaseModel):
             end_time=batch.end_time,
             trainer_name=batch.trainer_name,
             trainer_email=batch.trainer_email,
+            seats_note=batch.seats_note,
+            days_of_week=batch.days_of_week,
             status=batch.status,
             progress_status=batch.progress_status,
         )

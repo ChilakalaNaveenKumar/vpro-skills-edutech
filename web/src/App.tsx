@@ -4,9 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import AdminLayout from './layouts/AdminLayout'
 import HomePage from './pages/HomePage'
-import AboutPage from './pages/AboutPage'
 import CoursesPage from './pages/CoursesPage'
-import CourseDetailPage from './pages/CourseDetailPage'
 import BatchesPage from './pages/BatchesPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -22,15 +20,15 @@ import AdminBatchesPage from './pages/AdminBatchesPage'
 import AdminStudentsPage from './pages/AdminStudentsPage'
 import AdminStudentEnrollmentsPage from './pages/AdminStudentEnrollmentsPage'
 import AdminResultsPage from './pages/AdminResultsPage'
+import AdminContentPage from './pages/AdminContentPage'
 
 function App() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<HomePage />} />
-        <Route path="/about" element={<AboutPage />} />
         <Route path="/courses" element={<CoursesPage />} />
-        <Route path="/courses/:slug" element={<CourseDetailPage />} />
+        <Route path="/courses/:slug" element={<HomePage />} />
         <Route path="/batches" element={<BatchesPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
@@ -62,6 +60,7 @@ function App() {
             element={<AdminStudentEnrollmentsPage />}
           />
           <Route path="results" element={<AdminResultsPage />} />
+          <Route path="content" element={<AdminContentPage />} />
         </Route>
       </Route>
     </Routes>
