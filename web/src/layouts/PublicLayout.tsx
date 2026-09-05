@@ -58,10 +58,11 @@ export default function PublicLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  // The marketing surface: the home journey and every course page.
+  // The marketing surface: home, courses, the batch schedule and about.
   const journey =
     location.pathname === '/' ||
     location.pathname.startsWith('/courses') ||
+    location.pathname === '/batches' ||
     location.pathname === '/about'
 
   function handleLogout() {

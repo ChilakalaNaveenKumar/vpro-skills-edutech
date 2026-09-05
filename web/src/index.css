@@ -59,1193 +59,133 @@ textarea:focus-visible {
 }
 
 /* ===========================================================================
-   THE JOURNEY  (public home page only, scoped to [data-journey])
+   PUBLIC MARKETING SURFACE  (scoped to [data-journey])
    ---------------------------------------------------------------------------
-   Ground is warm charcoal, not white. Two reasons, both practical:
+   Dark editorial. Ground is a cool near-black, type is warm bone, and the one
+   accent is a muted copper. Scoped to [data-journey] so the student portal and
+   the admin panel keep the light brand palette untouched - they never read
+   these properties.
 
-   1. Contrast. Light type on a dark warm ground clears AA everywhere by a wide
-      margin, and it does it without the brittleness of near-white paper, where
-      every muted grey has to be hand-checked against a background that is
-      itself almost the same value. The orange this brand owns is also a
-      mid-lightness colour: on white it fails as text and has to be darkened
-      into a different colour; on charcoal it is legible at full saturation, so
-      the brand reads as itself.
-   2. It is a stage. A dark ground lets light be the emphasis - a lit block, a
-      drawn rule, a spotlight, a highlighter - instead of the page shouting with
-      weight and size alone.
-
-   Warm paper bands still exist, as deliberate contrast for the long-form
-   reading passages. Paper is the exception here, not the default.
-
-   Everything is OKLCH so the tints are derived rather than eyeballed:
-   color-mix in OKLCH keeps hue and chroma stable while only lightness moves,
-   which is why the greys stay warm instead of drifting blue.
-
-   The brand-* and ink tokens above are untouched - the portal and admin pages
-   keep their exact palette and contrast ratios.
+   The contrast floor is a hard rule, not a preference: on this ground, bone
+   below 0.62 alpha fails AA at text sizes under 16px. --on-ink-faint sits at
+   exactly that floor and is the smallest permitted value for small text.
    =========================================================================== */
 
-/* Registered so they can be transitioned and animated. An unregistered custom
-   property is just a string and jumps between values; these interpolate. */
-@property --w {
-  syntax: "<number>";
-  initial-value: 0.5;
-  inherits: true;
-}
-
-@property --p {
-  syntax: "<number>";
-  initial-value: 0;
-  inherits: true;
-}
-
 [data-journey] {
-  --ink: oklch(0.152 0.014 62);
-  --ink-2: oklch(0.201 0.016 62);
-  --ink-3: oklch(0.262 0.017 62);
+  --ink: #14161c;
+  --ink-2: #191c23;
 
-  --paper: oklch(0.958 0.014 84);
-  --paper-2: oklch(0.918 0.018 84);
+  --on-ink: #ede7de;
+  --on-ink-mute: rgb(237 231 222 / 0.78);
+  --on-ink-faint: rgb(237 231 222 / 0.62);
 
-  /* The logo orange, kept at full saturation because it can be, on this ground. */
-  --signal: oklch(0.735 0.185 52);
-  --signal-dim: oklch(0.64 0.165 52);
-  --signal-deep: oklch(0.48 0.14 52);
+  --signal: #c87046;
+  --tan: #c3a47b;
+  --rule: rgb(237 231 222 / 0.14);
 
-  --on-ink: oklch(0.968 0.008 84);
-  --on-ink-mute: oklch(0.788 0.013 80);
-  --on-ink-faint: oklch(0.632 0.014 78);
-  --on-paper: oklch(0.185 0.016 62);
-  --on-paper-mute: oklch(0.435 0.018 62);
-  --on-paper-faint: oklch(0.5 0.016 62);
+  --btn-primary: #7a3b1f;
+  --btn-primary-hover: #92492a;
+  --btn-secondary: #232733;
+  --btn-secondary-hover: #2c313f;
+  --btn-secondary-rule: rgb(237 231 222 / 0.22);
 
-  --rule: oklch(0.315 0.016 62);
-  --rule-paper: oklch(0.845 0.02 84);
-
-  --gutter: clamp(1.25rem, 5vw, 5rem);
-
-  --dur-micro: 140ms;
-  --dur-enter: 560ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --gutter: clamp(1.25rem, 5vw, 2.75rem);
+  --ease-reveal: cubic-bezier(0.2, 0.85, 0.2, 1);
 
   background: var(--ink);
   color: var(--on-ink);
-}
-
-/* Warm paper contrast band. Everything inside flips to the paper palette, so a
-   section only has to declare which ground it is on. */
-[data-journey] .band-paper {
-  --on-ink: var(--on-paper);
-  --on-ink-mute: var(--on-paper-mute);
-  --on-ink-faint: var(--on-paper-faint);
-  --rule: var(--rule-paper);
-  --ink-2: oklch(1 0 0);
-  --ink-3: var(--paper-2);
-  /* Orange has to darken on paper to stay AA as text. */
-  --signal-text: var(--signal-deep);
-  background: var(--paper);
-  color: var(--on-paper);
-}
-
-[data-journey] {
-  --signal-text: var(--signal);
-}
-
-/* Film grain. The single cheapest thing that stops large flat fields reading as
-   a screenshot of a design tool rather than a surface. */
-[data-journey]::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0.04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* --- Type ----------------------------------------------------------------- */
-
-/* Bricolage Grotesque carries weight, width and optical-size axes, which is
-   what makes the cursor-reactive headline possible at all - a static font can
-   only fake it with transforms. */
-[data-journey] .display {
-  font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  font-weight: 620;
-  letter-spacing: -0.035em;
-  line-height: 0.94;
-  text-wrap: balance;
-}
-
-[data-journey] .eyebrow {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--on-ink-faint);
-}
-
-[data-journey] .lede {
-  font-size: clamp(1.05rem, 0.4vw + 0.95rem, 1.22rem);
-  line-height: 1.68;
-  color: var(--on-ink-mute);
-  text-wrap: pretty;
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 [data-journey] ::selection {
   background: var(--signal);
-  color: var(--ink);
-}
-
-/* --- Word reveal ---------------------------------------------------------- */
-
-[data-journey] .word {
-  display: inline-block;
-  animation: word-rise var(--dur-enter) var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 45ms + 120ms);
-}
-
-@keyframes word-rise {
-  from { opacity: 0; transform: translateY(0.55em) rotate(2.5deg); }
-  to { opacity: 1; transform: none; }
-}
-
-/* --- Scroll-linked reveals ------------------------------------------------ */
-/* Driven by the element's own trip through the viewport. No listeners, no
-   observers, and exactly reversible when you scroll back up. */
-
-@supports (animation-timeline: view()) {
-  [data-journey] .rise {
-    animation: rise-in linear both;
-    animation-timeline: view();
-    animation-range: entry 4% cover 26%;
-  }
-
-  [data-journey] .rise-stagger > * {
-    animation: rise-in linear both;
-    animation-timeline: view();
-    animation-range: entry 2% cover 24%;
-    animation-delay: calc((sibling-index() - 1) * 45ms);
-  }
-
-  [data-journey] .rule-draw {
-    animation: draw linear both;
-    animation-timeline: view();
-    animation-range: entry 0% entry 85%;
-  }
-
-  [data-journey] .mark {
-    animation: mark-sweep linear both;
-    animation-timeline: view();
-    animation-range: entry 32% entry 80%;
-  }
-
-  /* A list where the item passing the middle of the screen is the lit one. */
-  [data-journey] .focus-step {
-    animation: step-focus linear both;
-    animation-timeline: view();
-    animation-range: cover 10% cover 60%;
-  }
-}
-
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(1.5rem); }
-  to { opacity: 1; transform: none; }
-}
-
-@keyframes draw {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@keyframes step-focus {
-  0% { opacity: 0.3; }
-  35%, 100% { opacity: 1; }
-}
-
-[data-journey] .rule-draw {
-  transform-origin: left;
-  block-size: 1px;
-  background: currentColor;
-  opacity: 0.24;
-}
-
-/* --- Highlighter ---------------------------------------------------------- */
-/* A marker drawn across the load-bearing phrase as the line crosses the
-   viewport. Scarce on purpose: a page where everything is marked marks nothing. */
-
-[data-journey] .mark {
-  --mark-fill: color-mix(in oklch, var(--signal), transparent 74%);
-  /* <mark> ships with a bright yellow background-color. The sweep animates
-     background-size on a gradient image, so at 0% the element's own background
-     colour is what shows - which meant the highlight rendered as browser yellow
-     before the sweep and orange after. */
-  background-color: transparent;
-  background-image: linear-gradient(to right, var(--mark-fill) 0%, var(--mark-fill) 100%);
-  background-repeat: no-repeat;
-  background-position: 0 0.06em;
-  background-size: 0% 86%;
-  padding: 0 0.08em;
   color: var(--on-ink);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 
-@keyframes mark-sweep {
-  from { background-size: 0% 86%; }
-  to { background-size: 100% 86%; }
-}
-
-@supports not (animation-timeline: view()) {
-  [data-journey] .mark { background-size: 100% 86%; }
-  [data-journey] .rule-draw { transform: none; }
-  [data-journey] .rise, [data-journey] .rise-stagger > * { opacity: 1; transform: none; }
-}
-
-[data-journey] .strike {
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in oklch, var(--signal), transparent 45%);
-  text-decoration-thickness: 2px;
-  color: var(--on-ink-faint);
-}
-
-/* --- Live indicator ------------------------------------------------------- */
-
-[data-journey] .pip {
-  inline-size: 0.45rem;
-  block-size: 0.45rem;
-  border-radius: 999px;
-  background: var(--signal);
-  animation: pip 2.4s ease-out infinite;
-}
-
-@keyframes pip {
-  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--signal), transparent 30%); }
-  70% { box-shadow: 0 0 0 0.6rem color-mix(in oklch, var(--signal), transparent 100%); }
-  100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--signal), transparent 100%); }
-}
-
-/* --- Pointer flourishes --------------------------------------------------- */
-
-[data-journey] .magnetic {
-  transition:
-    transform var(--dur-micro) var(--ease-spring),
-    background-color var(--dur-micro) ease,
-    color var(--dur-micro) ease;
-}
-
-[data-journey] .spotlight {
-  position: relative;
-  isolation: isolate;
-}
-
-[data-journey] .spotlight::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  z-index: -1;
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 240ms ease;
-  background: radial-gradient(
-    18rem circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in oklch, var(--signal), transparent 88%),
-    transparent 65%
-  );
-}
-
-[data-journey] .spotlight:hover::before { opacity: 1; }
-
-/* --- Live type ------------------------------------------------------------ */
-/* The headline is the moving part. Weight and width track the cursor, a warm
-   light follows it, and an idle drift keeps the ground alive with no pointer at
-   all. `overflow: clip` because the glow overshoots the box on purpose. */
-
-[data-journey] .livetype {
-  position: relative;
-  overflow: clip;
-  --mx: 50%;
-  --my: 50%;
-  --w: 0.5;
-  transition: --w 320ms cubic-bezier(0.2, 0, 0.2, 1);
-}
-
-[data-journey] .livetype::before {
-  content: "";
-  position: absolute;
-  inset: -22% -12%;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 520ms ease;
-  background: radial-gradient(
-    32rem circle at var(--mx) var(--my),
-    color-mix(in oklch, var(--signal), transparent 88%),
-    transparent 62%
-  );
-}
-
-[data-journey] .livetype:hover::before { opacity: 1; }
-
-[data-journey] .livetype::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background: radial-gradient(
-    38rem circle at 22% 42%,
-    color-mix(in oklch, var(--signal), transparent 93%),
-    transparent 60%
-  );
-  animation: drift 24s ease-in-out infinite alternate;
-}
-
-@keyframes drift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(14%, 6%, 0); }
-}
-
-[data-journey] .livetype .display {
-  font-variation-settings:
-    "wght" calc(540 + var(--w) * 300),
-    "wdth" calc(86 + var(--w) * 24),
-    "opsz" 48;
-}
-
-[data-journey] .caret {
-  display: inline-block;
-  inline-size: 0.08em;
-  block-size: 0.76em;
-  margin-inline-start: 0.12em;
-  vertical-align: -0.04em;
-  background: var(--signal);
-  animation: caret 1.15s steps(1, end) infinite;
-}
-
-@keyframes caret {
-  0%, 55% { opacity: 1; }
-  56%, 100% { opacity: 0; }
-}
-
-/* --- Cycling phrase ------------------------------------------------------- */
-/* Alive at rest, no cursor required. The parent carries all variants as its
-   accessible name so a screen reader hears the whole thought. */
-
-[data-journey] .cycle {
-  display: grid;
-  grid-template-areas: "phrase";
-}
-
-/* The variants cross-fade in place, so they are absolutely positioned and cannot
-   push this box open. Rather than guessing a min-height that holds at every
-   width - which breaks the moment a phrase wraps - the longest phrase is laid
-   out for real and hidden, so the box is always exactly as tall as it needs to
-   be at the current width and font size. */
-/* Kept for older markup: as a grid item it simply contributes its own height. */
-[data-journey] .cycle-sizer {
-  grid-area: phrase;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-[data-journey] .cycle > span:not(.cycle-sizer) {
-  grid-area: phrase;
-  color: var(--signal);
-  opacity: 0;
-  animation: phrase 21s cubic-bezier(0.2, 0, 0.2, 1) var(--d) infinite backwards;
-}
-
-@keyframes phrase {
-  0% { opacity: 0; transform: translateY(0.26em); }
-  1%, 24% { opacity: 1; transform: translateY(0); }
-  25%, 100% { opacity: 0; transform: translateY(-0.26em); }
-}
-
-/* --- Scanning sheen ------------------------------------------------------- */
-
-[data-journey] .sheen {
-  position: relative;
-  isolation: isolate;
-}
-
-[data-journey] .sheen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    105deg,
-    transparent 42%,
-    color-mix(in oklch, var(--signal), transparent 86%) 50%,
-    transparent 58%
-  );
-  background-size: 280% 100%;
-  animation: sheen 6.5s ease-in-out var(--sheen-delay, 0s) infinite;
-}
-
-@keyframes sheen {
-  0%, 62% { background-position: 130% 0; }
-  85%, 100% { background-position: -30% 0; }
-}
-
-/* ===========================================================================
-   PINNED SCROLL SCENE
-   The section owns the scroll distance; the stage sticks inside it. `--p` is
-   written once per frame by the scene and every caption's opacity is pure CSS
-   arithmetic on it - so the copy is scrubbed by scroll, never by a timer, and
-   reversing the scroll reverses the sequence exactly.
-   =========================================================================== */
-
-[data-journey] .story {
-  position: relative;
-}
-
-[data-journey] .story-pin {
-  position: sticky;
-  inset-block-start: 0;
-  block-size: 100svh;
-  overflow: hidden;
-}
-
-[data-journey] .field {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-[data-journey] .field canvas {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-}
-
-/* Grades the scene so type always reads over it, whatever the scene is doing. */
-[data-journey] .story-pin::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(
-      100deg,
-      color-mix(in oklch, var(--ink), transparent 10%) 0%,
-      color-mix(in oklch, var(--ink), transparent 55%) 46%,
-      transparent 72%
-    ),
-    linear-gradient(to top, color-mix(in oklch, var(--ink), transparent 20%), transparent 46%);
-}
-
-[data-journey] .story-copy {
-  position: relative;
-  z-index: 2;
-  block-size: 100%;
-  display: grid;
-  align-content: center;
-}
-
-/* All captions occupy one grid area, so they cross-fade in place instead of
-   the panel resizing under the reader. */
-[data-journey] .cap-stack {
-  display: grid;
-  grid-template-areas: "cap";
-  align-content: start;
-}
-
-[data-journey] .cap {
-  grid-area: cap;
-  --fade: 0.026;
-  opacity: calc(
-    clamp(0, calc((var(--p) - var(--in)) / var(--fade)), 1) *
-    clamp(0, calc((var(--out) - var(--p)) / var(--fade)), 1)
-  );
-  transform: translateY(
-    calc((1 - clamp(0, calc((var(--p) - var(--in)) / var(--fade)), 1)) * 0.9rem)
-  );
-}
-
-[data-journey] .story-rail {
-  position: absolute;
-  inset-block: 14%;
-  inset-inline-start: 0;
-  z-index: 2;
-  inline-size: 2px;
-  background: color-mix(in oklch, var(--rule), transparent 35%);
-  overflow: hidden;
-}
-
-[data-journey] .story-rail::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
-  block-size: 100%;
-  background: var(--signal);
-  transform: scaleY(var(--p));
-  transform-origin: top;
-}
-
-[data-journey] .readout {
-  font-variant-numeric: tabular-nums;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
-}
-
-/* --- Structure ------------------------------------------------------------ */
-
-[data-journey] .tnum {
-  font-variant-numeric: tabular-nums;
-}
-
-[data-journey] .section {
-  position: relative;
-  scroll-margin-top: 4.5rem;
-}
+/* --- Layout --------------------------------------------------------------- */
 
 [data-journey] .shell {
   width: 100%;
-  max-width: 78rem;
+  max-width: 1560px;
   margin-inline: auto;
-  padding-inline: clamp(1.25rem, 5vw, 5rem);
+  padding-inline: var(--gutter);
 }
 
-/* ===========================================================================
-   HERO TIMETABLE
-   An illustration of a teaching week, not a feed of one: no course names, no
-   dates, no times against any block, so it cannot be misread as this week's
-   real schedule. It lays itself out, one session is lit and breathing, and a
-   read head travels down the hours.
-   =========================================================================== */
+/* --- Type ----------------------------------------------------------------- */
 
-[data-journey] .tt-cell {
-  background: var(--ink-3);
-  animation: cell-in 0.66s var(--ease-out) both;
-  animation-delay: calc(var(--t, 0) * 1ms);
+[data-journey] .display {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  text-wrap: balance;
 }
 
-@keyframes cell-in {
-  from { opacity: 0; transform: scale(0.82); }
-  to { opacity: 1; transform: none; }
+[data-journey] .display em {
+  font-style: italic;
+  color: var(--signal);
 }
 
-[data-journey] .tt-live {
-  background: var(--signal);
-  animation:
-    cell-in 0.66s var(--ease-out) both,
-    live-breathe 3.4s ease-in-out infinite;
-  animation-delay: calc(var(--t, 0) * 1ms), calc(var(--t, 0) * 1ms + 700ms);
-}
-
-@keyframes live-breathe {
-  0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklch, var(--signal), transparent 40%), 0 6px 20px -8px color-mix(in oklch, var(--signal), transparent 40%); }
-  50% { box-shadow: 0 0 0 1px var(--signal), 0 16px 44px -6px color-mix(in oklch, var(--signal), transparent 10%); }
-}
-
-[data-journey] .tt-scan {
-  animation: scan-down 9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-}
-
-@keyframes scan-down {
-  0% { transform: translateY(0); opacity: 0; }
-  8%, 88% { opacity: 1; }
-  100% { transform: translateY(var(--scan-travel, 100%)); opacity: 0; }
-}
-
-[data-journey] .tt-head {
-  animation: head-in 0.5s ease-out both;
-  animation-delay: calc(var(--t, 0) * 1ms);
-}
-
-@keyframes head-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: none; }
-}
-
-/* --- Bracketed panels ----------------------------------------------------- */
-/* Small L-brackets at a panel's corners: the measured, instrumented feel. */
-
-[data-journey] .bracketed {
-  position: relative;
-}
-
-[data-journey] .bracketed::before,
-[data-journey] .bracketed::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-color: var(--signal);
-  pointer-events: none;
-}
-
-[data-journey] .bracketed::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1px solid;
-  border-left: 1px solid;
-}
-
-[data-journey] .bracketed::after {
-  right: -1px;
-  bottom: -1px;
-  border-right: 1px solid;
-  border-bottom: 1px solid;
-}
-
-/* --- Stepped scrub stage -------------------------------------------------- */
-/* Used by the "how it works" walkthrough, where the states are discrete screens
-   rather than a continuous flight. The section owns the scroll distance and the
-   stage sticks inside it. */
-
-[data-journey] .stage {
-  position: sticky;
-  top: 0;
-  display: flex;
-  min-height: 100svh;
-  align-items: center;
-  overflow: hidden;
-}
-
-/* Anchored high rather than centred: a centred stage leaves a band of dead
-   ground between the heading that just scrolled away and the panel itself. */
-[data-journey] .stage-top {
-  align-items: flex-start;
-}
-
-[data-journey] .plate-stack {
-  display: grid;
-  grid-template-areas: "plate";
-}
-
-[data-journey] .plate {
-  grid-area: plate;
-  opacity: 0;
-  transform: scale(1.015);
-  transition:
-    opacity 0.5s var(--ease-out),
-    transform 0.9s var(--ease-out);
-}
-
-[data-journey] .plate.is-current {
-  opacity: 1;
-  transform: none;
-}
-
-/* ===========================================================================
-   REDUCED MOTION
-   Everything resolves to its finished state. Nothing loops, nothing sweeps,
-   nothing pins, nothing waits on scroll.
-   =========================================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .word,
-  [data-journey] .rise,
-  [data-journey] .rise-stagger > *,
-  [data-journey] .focus-step,
-  [data-journey] .tt-cell,
-  [data-journey] .tt-live,
-  [data-journey] .tt-head,
-  [data-journey] .cycle > span,
-  [data-journey] .pip,
-  [data-journey] .rule-draw {
-    animation: none !important;
-    opacity: 1;
-    transform: none;
-  }
-
-  [data-journey] .mark { background-size: 100% 86%; animation: none; }
-  [data-journey] .plate { transition: none; transform: none; }
-  [data-journey] .sheen::after,
-  [data-journey] .tt-scan,
-  [data-journey] .caret,
-  [data-journey] .livetype::before,
-  [data-journey] .livetype::after { display: none; }
-  [data-journey] .livetype { transition: none; }
-
-  [data-journey] .story { block-size: auto !important; }
-  [data-journey] .story-pin {
-    position: static;
-    block-size: auto;
-    padding-block: 4rem;
-    overflow: visible;
-  }
-  [data-journey] .story-pin::after,
-  [data-journey] .field,
-  [data-journey] .story-rail { display: none; }
-  [data-journey] .cap-stack { grid-template-areas: none; gap: 2rem; }
-  [data-journey] .cap { grid-area: auto; opacity: 1; transform: none; }
-
-  [data-journey] .cycle-sizer { display: none; }
-  [data-journey] .cycle > span:not(.cycle-sizer) { position: static; display: none; }
-  [data-journey] .cycle > span:not(.cycle-sizer):first-of-type { display: block; opacity: 1; }
-}
-
-/* Local contrast for hero copy over the photograph. Authored per-edge rather
-   than a flat blanket, so the studio image stays visible on the right. */
-[data-journey] .hero-scrim {
-  background:
-    linear-gradient(
-      100deg,
-      rgb(from var(--ink) r g b / 0.94) 0%,
-      rgb(from var(--ink) r g b / 0.86) 34%,
-      rgb(from var(--ink) r g b / 0.42) 62%,
-      rgb(from var(--ink) r g b / 0.12) 100%
-    ),
-    linear-gradient(to top, rgb(from var(--ink) r g b / 0.72) 0%, transparent 42%);
-}
-
-@supports not (color: rgb(from red r g b / 0.5)) {
-  [data-journey] .hero-scrim {
-    background:
-      linear-gradient(100deg, rgba(16, 10, 6, 0.94) 0%, rgba(16, 10, 6, 0.86) 34%, rgba(16, 10, 6, 0.42) 62%, rgba(16, 10, 6, 0.12) 100%),
-      linear-gradient(to top, rgba(16, 10, 6, 0.72) 0%, transparent 42%);
-  }
-}
-
-/* --- Scroll-scrubbed sequence stage ------------------------------------- */
-
-/* The hero copy yields the stage to the object as the card comes apart. */
-[data-journey] .hero-copy {
-  transform: translateY(calc(var(--p, 0) * -1.4rem));
-}
-
-/* Captions timed to the deconstruction. Text only, never interactive. */
-[data-journey] .seq-stop {
-  opacity: 0;
-  pointer-events: none;
-}
-
-[data-journey] .seq-stop-2 {
-  opacity: min(
-    clamp(0, calc((var(--p, 0) - 0.34) / 0.1), 1),
-    clamp(0, calc((0.64 - var(--p, 0)) / 0.1), 1)
-  );
-}
-
-[data-journey] .seq-stop-3 {
-  opacity: clamp(0, calc((var(--p, 0) - 0.74) / 0.12), 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .hero-copy {
-    opacity: 1;
-    transform: none;
-  }
-  /* One caption, the concluding one, so the meaning survives without motion. */
-  [data-journey] .seq-stop-2 {
-    opacity: 0;
-  }
-  [data-journey] .seq-stop-3 {
-    opacity: 1;
-  }
-}
-
-/* Inside a pinned stage, a viewport-progress reveal never completes: the
-   element does not travel through the viewport, so animation-timeline: view()
-   freezes at whatever value matches its fixed position - which left the hero's
-   buttons stuck at partial opacity. Inside the hero, reveal on load instead. */
-[data-journey] #hero .rise,
-[data-journey] #hero .rise-stagger > * {
-  animation: none;
-  opacity: 1;
-  transform: none;
-}
-
-/* --- Live ticker ---------------------------------------------------------- */
-
-/* Fade the leading and trailing edges so a word cut mid-scroll reads as motion
-   passing out of view rather than as text colliding with the button beside it. */
-[data-journey] .ticker {
-  mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
-}
-
-[data-journey] .ticker-track {
-  display: flex;
-  width: max-content;
-  animation: ticker 42s linear infinite;
-}
-
-[data-journey] .ticker-item {
-  display: flex;
-  white-space: nowrap;
-}
-
-/* Two identical copies scroll past; translating by exactly half the track puts
-   the second copy where the first began, so the loop has no seam. */
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
-[data-journey] .ticker:hover .ticker-track {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .ticker-track {
-    animation: none;
-  }
-  /* Without motion the marquee becomes a single readable line, so it must not
-     be faded at the edges. */
-  [data-journey] .ticker-item:nth-child(2) {
-    display: none;
-  }
-  [data-journey] .ticker {
-    mask-image: none;
-  }
-}
-
-/* No hover scaling on controls. */
-[data-journey] .no-hover-scale:hover {
-  transform: none;
-}
-
-/* --- Horizontal rail ------------------------------------------------------ */
-
-[data-journey] .rail {
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule) transparent;
-  scroll-padding-inline: 1.25rem;
-  overscroll-behavior-x: contain;
-}
-
-[data-journey] .rail::-webkit-scrollbar {
-  height: 6px;
-}
-
-[data-journey] .rail::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-[data-journey] .rail::-webkit-scrollbar-thumb {
-  background: var(--rule);
-  border-radius: 999px;
-}
-
-[data-journey] .rail:hover::-webkit-scrollbar-thumb {
-  background: var(--on-ink-faint);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .rail {
-    scroll-snap-type: none;
-  }
-}
-
-/* --- Course cards --------------------------------------------------------- */
-
-/* At rest the marks are quiet and desaturated; hover or keyboard focus brings
-   them up in sequence into full colour. */
-[data-journey] .tech-mark {
-  display: flex;
-  opacity: 0.5;
-  filter: grayscale(1);
-  transform: translateY(0);
-  transition:
-    opacity 420ms var(--ease-out),
-    filter 420ms var(--ease-out),
-    transform 420ms var(--ease-out);
-  transition-delay: calc(var(--i, 0) * 45ms);
-}
-
-[data-journey] .course-card:hover .tech-mark,
-[data-journey] .course-card:focus-visible .tech-mark {
-  opacity: 1;
-  filter: grayscale(0);
-  transform: translateY(-3px);
-}
-
-/* A single light pass across the panel, so the card acknowledges the pointer
-   without moving or resizing. */
-[data-journey] .card-sweep {
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    rgb(255 255 255 / 6%) 48%,
-    transparent 66%
-  );
-  transform: translateX(-110%);
-  transition: transform 900ms var(--ease-out);
-}
-
-[data-journey] .course-card:hover .card-sweep,
-[data-journey] .course-card:focus-visible .card-sweep {
-  transform: translateX(110%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .tech-mark {
-    opacity: 1;
-    filter: grayscale(0);
-    transform: none;
-    transition: none;
-  }
-  [data-journey] .card-sweep {
-    display: none;
-  }
-}
-
-
-/* --- Course V scroller ---------------------------------------------------- */
-
-/* Cards sit on a V that opens away from the viewer: the one at the point is
-   closest and square-on, its neighbours step back along the two legs. Side
-   scrolling walks the formation through the point. */
-[data-journey] .vflow {
-  --v-card: 17rem;
-  --v-height: 27rem;
-}
-
-@media (min-width: 640px) {
-  [data-journey] .vflow {
-    --v-card: 19rem;
-    --v-height: 28rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  [data-journey] .vflow {
-    --v-card: 21rem;
-    --v-height: 29rem;
-  }
-}
-
-[data-journey] .vflow-stage {
-  position: relative;
-  height: var(--v-height);
-  perspective: 1700px;
-  perspective-origin: 50% 44%;
-  transform-style: preserve-3d;
-}
-
-[data-journey] .vflow-card {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: var(--v-card);
-  height: var(--v-height);
-  transform: translateX(-50%);
-  transform-style: preserve-3d;
-  /* No will-change: it promoted all six cards to permanent compositor layers,
-     each a full-size gradient panel. The transform still composites while it
-     animates. */
-  transition:
-    transform 480ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 480ms ease-out;
-}
-
-/* The floor the V stands on, which is what makes the formation read as depth
-   rather than as cards drifting apart. */
-[data-journey] .vflow-floor {
-  position: absolute;
-  left: 50%;
-  bottom: -2.5rem;
-  width: min(92%, 70rem);
-  height: 10rem;
-  translate: -50% 0;
-  transform: rotateX(76deg);
-  transform-origin: top center;
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in oklch, var(--signal), transparent 84%),
-    transparent 76%
-  );
-  pointer-events: none;
-}
-
-/* The scroll track sits under the stage. It is the real input surface: a thin
-   strip you scroll sideways, with one slot per course. */
-[data-journey] .vflow-track {
-  display: flex;
-  margin-top: 2.5rem;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  border-radius: 999px;
-}
-
-[data-journey] .vflow-track::-webkit-scrollbar {
-  display: none;
-}
-
-[data-journey] .vflow-track:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 4px;
-}
-
-[data-journey] .vflow-slot {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  height: 2.25rem;
-}
-
-/* Without motion the V is abandoned: the cards become a plain grid in document
-   order and the track is removed. */
-@media (prefers-reduced-motion: reduce) {
-  [data-journey] .vflow-stage {
-    display: grid;
-    height: auto;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-    gap: 1.5rem;
-    perspective: none;
-    padding-inline: var(--gutter);
-  }
-  [data-journey] .vflow-card {
-    position: static;
-    width: auto;
-    height: var(--v-height);
-    transform: none !important;
-  }
-  [data-journey] .vflow-floor,
-  [data-journey] .vflow-track {
-    display: none;
-  }
-}
-
-/* --- Course panel --------------------------------------------------------- */
-
-/* Built like a stand rather than a table row: a vivid accent head above a dark
-   body, with the name set large. --hue is set per course. */
-[data-journey] .course-card {
-  --accent: oklch(0.62 0.17 var(--hue, 52));
-  --accent-deep: oklch(0.34 0.11 var(--hue, 52));
-  background: var(--ink-2);
-  border: 1px solid var(--rule);
-  transition:
-    border-color 300ms ease,
-    transform 300ms var(--ease-out);
-}
-
-[data-journey] .course-card:hover,
-[data-journey] .course-card:focus-visible {
-  border-color: color-mix(in oklch, var(--accent), transparent 45%);
-}
-
-[data-journey] .card-head {
-  min-height: 9.5rem;
-  background:
-    radial-gradient(120% 140% at 12% 0%, color-mix(in oklch, var(--accent), transparent 62%) 0%, transparent 62%),
-    linear-gradient(155deg, var(--accent-deep) 0%, oklch(0.18 0.03 var(--hue, 52)) 78%);
-}
-
-[data-journey] .card-number {
-  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
-  font-size: 2.4rem;
-  font-weight: 620;
-  line-height: 0.8;
-  letter-spacing: -0.05em;
-  color: color-mix(in oklch, var(--on-ink), transparent 55%);
-  font-variant-numeric: tabular-nums;
-}
-
-[data-journey] .card-techline {
-  font-size: 0.62rem;
-  font-weight: 600;
+[data-journey] .eyebrow,
+[data-journey] .mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.69rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: color-mix(in oklch, var(--on-ink), transparent 32%);
 }
 
-[data-journey] .card-flag {
-  align-self: flex-start;
-  margin-bottom: 0.75rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: var(--signal);
-  color: var(--ink);
-  font-size: 0.52rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+[data-journey] .eyebrow {
+  color: var(--signal);
 }
 
-[data-journey] .card-title {
-  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(1.25rem, 1.6vw, 1.5rem);
-  font-weight: 620;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: var(--on-ink);
-}
-
-[data-journey] .card-tagline {
-  margin-top: 0.5rem;
-  font-size: 0.86rem;
-  line-height: 1.5;
+[data-journey] .lede {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: clamp(1.05rem, 0.4vw + 0.98rem, 1.24rem);
+  line-height: 1.6;
   color: var(--on-ink-mute);
+  text-wrap: pretty;
 }
 
-[data-journey] .card-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-top: 1.35rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--rule);
-}
+/* --- Buttons -------------------------------------------------------------- */
+/* Exactly two. Bone fills, plain outlines and copper-with-dark-text were all
+   rejected during the comp's design; the logo plate is the only bone fill. */
 
-[data-journey] .card-stats dt {
-  font-size: 0.56rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--on-ink-faint);
-}
-
-[data-journey] .card-stats dd {
-  margin-top: 0.2rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--on-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-[data-journey] .card-cta {
-  display: flex;
+[data-journey] .btn-primary,
+[data-journey] .btn-secondary {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 1.25rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: color-mix(in oklch, var(--accent), white 22%);
-}
-
-[data-journey] .course-card:hover .card-cta span,
-[data-journey] .course-card:focus-visible .card-cta span {
-  transform: translateX(4px);
-}
-
-[data-journey] .card-cta span {
-  transition: transform 300ms var(--ease-out);
-}
-
-/* --- Nav buttons shared by the triptych ---------------------------------- */
-
-[data-journey] .flow-nav {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  color: var(--on-ink-mute);
-  transition:
-    color 200ms ease,
-    border-color 200ms ease;
-}
-
-[data-journey] .flow-nav:hover {
+  min-height: 52px;
+  padding: 1.0625rem 1.75rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.69rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: var(--on-ink);
-  border-color: var(--on-ink-faint);
+  border: 0;
+  cursor: pointer;
+  transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-[data-journey] .flow-nav:focus-visible {
+[data-journey] .btn-primary {
+  background: var(--btn-primary);
+}
+
+[data-journey] .btn-primary:hover {
+  background: var(--btn-primary-hover);
+}
+
+[data-journey] .btn-secondary {
+  background: var(--btn-secondary);
+  box-shadow: inset 0 0 0 1px var(--btn-secondary-rule);
+}
+
+[data-journey] .btn-secondary:hover {
+  background: var(--btn-secondary-hover);
+}
+
+[data-journey] :focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
