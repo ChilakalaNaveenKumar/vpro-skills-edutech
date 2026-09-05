@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import CtaLink from '../components/CtaLink'
+import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 import { CONTACT, HOURS_DISPLAY } from '../content/contact'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
@@ -23,9 +24,15 @@ function getGreeting(): string {
 // points at only exist on "/", so on a course page or About the whole nav was
 // dead links. Paid traffic frequently lands directly on a course page, so that
 // was a dead end for exactly the visitors we pay for.
+// The comp's header. Three of these are sections of the home page rather than
+// routes; they carry the leading "/" so they still resolve from a course page
+// or /batches, where paid traffic often lands directly.
 const ROUTES = [
   { to: '/courses', label: 'Courses' },
   { to: '/batches', label: 'Batch schedule' },
+  { to: '/#loop', label: 'How it runs' },
+  { to: '/#trainer', label: 'Trainer' },
+  { to: '/#faq', label: 'FAQ' },
   { to: '/about', label: 'About' },
 ]
 
@@ -52,6 +59,18 @@ export default function PublicLayout() {
     location.pathname === '/batches' ||
     location.pathname === '/about'
 
+  // React Router does not scroll to a hash target, and three header links are
+  // home-page sections. Runs after paint so the section exists when we look.
+  useEffect(() => {
+    if (!location.hash) return
+    const target = document.getElementById(location.hash.slice(1))
+    if (!target) return
+    target.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+      block: 'start',
+    })
+  }, [location.pathname, location.hash])
+
   function handleLogout() {
     logout()
     setIsMenuOpen(false)
@@ -59,6 +78,7 @@ export default function PublicLayout() {
   }
 
   function isCurrent(to: string) {
+    if (to.includes('#')) return false
     return location.pathname === to || location.pathname.startsWith(`${to}/`)
   }
 

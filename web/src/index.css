@@ -233,6 +233,12 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* The header is fixed, so an anchored section would otherwise land underneath
+   it. Roughly header height plus a little air. */
+[data-journey] section[id] {
+  scroll-margin-top: 88px;
+}
+
 }
 /* end @layer components */
 
