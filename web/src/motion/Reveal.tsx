@@ -12,16 +12,13 @@ interface Props {
 export default function Reveal({ as, delayIndex = 0, className = '', children }: Props) {
   const Tag = (as ?? 'div') as ElementType
   const ref = useRef<HTMLElement | null>(null)
-  const [shown, setShown] = useState(false)
-  const [instant, setInstant] = useState(false)
+  // Read once, during the first render: a second render just to reveal content
+  // that was never going to animate is forty wasted renders on the home page.
+  const [instant] = useState(() => prefersReducedMotion())
+  const [shown, setShown] = useState(instant)
 
   useEffect(() => {
-    // Reduced motion means the content is simply present - not faded in faster.
-    if (prefersReducedMotion()) {
-      setInstant(true)
-      setShown(true)
-      return
-    }
+    if (instant) return
 
     const node = ref.current
     if (!node || typeof IntersectionObserver === 'undefined') {
@@ -50,7 +47,7 @@ export default function Reveal({ as, delayIndex = 0, className = '', children }:
       observer.disconnect()
       window.clearTimeout(failsafe)
     }
-  }, [])
+  }, [instant])
 
   const delay = (delayIndex % 3) * 80
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
 /**
  * One passive, rAF-throttled scroll listener. Every scroll-driven effect on a
@@ -7,7 +7,12 @@ import { useEffect, useRef } from 'react'
  */
 export function useScrollDriver(onScroll: (scrollY: number, maxScroll: number) => void): void {
   const callback = useRef(onScroll)
-  callback.current = onScroll
+
+  // Assigned in an effect, not during render: React 19 may discard a render,
+  // and a ref written during one would then hold a value that never happened.
+  useLayoutEffect(() => {
+    callback.current = onScroll
+  })
 
   useEffect(() => {
     let pending = false
