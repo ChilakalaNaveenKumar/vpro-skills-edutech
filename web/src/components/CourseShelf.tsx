@@ -18,9 +18,21 @@ export default function CourseShelf() {
 
   return (
     <>
+      <style>{`
+        @media (prefers-reduced-motion: reduce) {
+          .course-shelf-spine,
+          .course-shelf-label {
+            transition: none !important;
+          }
+
+          .course-shelf-panel {
+            animation: none !important;
+          }
+        }
+      `}</style>
       {/* Desktop: spines. A row of six vertical spines is unusable on a phone,
           so below md the same data renders as a plain stack (further down). */}
-      <div className="hidden h-[560px] gap-1 md:flex">
+      <div className="hidden h-[560px] items-stretch gap-[6px] md:flex">
         {COURSES.map((course, index) => {
           const isOpen = index === open
           // Null while loading and when the fetch fails. Claiming "Gathering
@@ -32,12 +44,14 @@ export default function CourseShelf() {
           return (
             <div
               key={course.slug}
-              className="relative overflow-hidden transition-[flex-grow] duration-700 ease-[var(--ease-reveal)] motion-reduce:transition-none"
+              className="course-shelf-spine relative min-w-0 cursor-pointer overflow-hidden"
               style={{
                 flexGrow: isOpen ? 7.2 : 1,
                 flexBasis: 0,
                 background: isOpen ? openBg(course.hue) : closedBg(course.hue),
                 boxShadow: `inset 0 0 0 1px rgb(237 231 222 / ${isOpen ? 0.28 : 0.12})`,
+                transition:
+                  'flex-grow 780ms var(--ease-open), background 500ms var(--ease-state), box-shadow 400ms',
               }}
               onMouseEnter={() => setOpen(index)}
               onFocusCapture={() => setOpen(index)}
@@ -48,50 +62,65 @@ export default function CourseShelf() {
                 aria-controls={`shelf-panel-${course.slug}`}
                 aria-label={state ? `${course.name}, ${state}` : course.name}
                 onClick={() => setOpen(index)}
-                className={
-                  isOpen
-                    ? 'mono absolute left-10 top-10 z-10 text-[color:var(--on-ink)]'
-                    : 'flex h-full w-full items-end justify-center pb-8'
-                }
+                className={`absolute inset-0 z-10 ${isOpen ? 'pointer-events-none' : ''}`}
               >
-                {isOpen ? (
-                  state
-                ) : (
+                <span
+                  className="course-shelf-label absolute inset-0 flex items-end justify-center py-7"
+                  style={{
+                    opacity: isOpen ? 0 : 1,
+                    transition: 'opacity 340ms var(--ease-state)',
+                  }}
+                >
                   <span
-                    className="display whitespace-nowrap text-[1.4rem] text-[color:var(--on-ink)]"
-                    style={{ writingMode: 'vertical-rl', rotate: '180deg' }}
+                    className="display-sm whitespace-nowrap text-[25px] tracking-[-0.015em] text-[color:var(--on-ink)]"
+                    style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', rotate: '180deg' }}
                   >
                     {course.name}
                   </span>
-                )}
+                </span>
               </button>
 
               <div
                 id={`shelf-panel-${course.slug}`}
-                className={isOpen ? 'flex h-full flex-col justify-end p-10' : 'hidden'}
+                aria-hidden={!isOpen}
+                className={`course-shelf-panel absolute inset-0 flex flex-col justify-end px-[42px] py-10 ${
+                  isOpen ? 'visible' : 'pointer-events-none invisible'
+                }`}
+                style={{
+                  animation: isOpen
+                    ? 'fadeIn 520ms var(--ease-state) 200ms both'
+                    : 'none',
+                }}
               >
-                <div>
-                  <h3 className="display text-[clamp(1.8rem,3vw,2.6rem)]">{course.name}</h3>
-                  <p className="lede mt-4 max-w-[46ch]">{course.tagline}</p>
-                  <p className="mono mt-5 text-[color:var(--on-ink-mute)]">
-                    {course.modules.map((module) => module.name).join(' · ')}
+                {state && (
+                  <p className="mono mb-auto whitespace-nowrap text-[10.5px] text-[color:var(--on-ink)]">
+                    {state}
                   </p>
-                  {note && (
-                    <p className="mt-4 text-sm text-[color:var(--on-ink-mute)]">{note}</p>
-                  )}
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Link to={`/courses/${course.slug}`} className="btn-secondary">
-                      View curriculum
-                    </Link>
-                    <CtaLink
-                      cta={inSession ? 'reserve_seat' : 'course_waitlist'}
-                      chapter="shelf"
-                      course={course.name}
-                      className="btn-primary"
-                    >
-                      {inSession ? 'Reserve my seat' : 'Register interest'}
-                    </CtaLink>
-                  </div>
+                )}
+                <h3 className="display max-w-[20ch] text-[clamp(30px,3.6vw,54px)] leading-[1.02] tracking-[-0.035em]">
+                  {course.name}
+                </h3>
+                <p className="mt-4 max-w-[46ch] text-base leading-[1.55] text-[color:rgb(237_231_222_/_0.88)]">
+                  {course.tagline}
+                </p>
+                <p className="mono mt-[18px] max-w-[56ch] text-[11px] tracking-[0.06em] text-[color:rgb(237_231_222_/_0.8)] normal-case">
+                  {course.modules.map((module) => module.name).join(' · ')}
+                </p>
+                {note && (
+                  <p className="mt-4 text-sm text-[color:var(--on-ink-mute)]">{note}</p>
+                )}
+                <div className="mt-7 flex flex-wrap gap-[10px]">
+                  <Link to={`/courses/${course.slug}`} className="btn-secondary">
+                    View curriculum
+                  </Link>
+                  <CtaLink
+                    cta={inSession ? 'reserve_seat' : 'course_waitlist'}
+                    chapter="shelf"
+                    course={course.name}
+                    className="btn-primary"
+                  >
+                    {inSession ? 'Reserve my seat' : 'Register interest'}
+                  </CtaLink>
                 </div>
               </div>
             </div>

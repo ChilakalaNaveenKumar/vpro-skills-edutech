@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import CtaLink from './CtaLink'
+import { courseByName } from '../content/courses'
 import { nowInIst, useSchedule } from '../utils/schedule'
 import type { ScheduleRow } from '../utils/schedule'
 
@@ -25,6 +26,11 @@ function istTodayIso(): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
+function coursePath(courseName: string): string {
+  const slug = courseByName(courseName)?.slug
+  return slug ? `/courses/${slug}` : '/courses'
+}
+
 export default function NextBatchesCard() {
   const { rows, liveNow } = useSchedule()
   const today = istTodayIso()
@@ -35,64 +41,70 @@ export default function NextBatchesCard() {
 
   if (!rows) return null
 
-  // Nothing scheduled and nothing on air: render no card at all rather than an
+  // Nothing scheduled and nothing on air: render no panel at all rather than an
   // empty bordered box. The hero's copy stands on its own.
   if (upcoming.length === 0 && !liveNow) return null
 
   return (
-    <div className="bg-[color:var(--ink-2)] p-8 shadow-[inset_0_0_0_1px_var(--rule)] lg:p-10">
+    <div className="flex flex-col gap-[14px] bg-[color:var(--ink-2)] px-[30px] py-[26px] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)]">
       {upcoming.length > 0 && (
         <>
           <p className="eyebrow">Next batches</p>
-          <ul className="mt-6 space-y-8">
-            {upcoming.slice(0, 2).map((row) => (
-              <li key={row.batch.id} className="border-b border-[color:var(--rule)] pb-8">
-                <p className="display text-[1.35rem]">{row.batch.course_name}</p>
-                <p className="mono mt-2 text-[color:var(--on-ink-faint)]">
+
+          {upcoming.slice(0, 2).map((row) => (
+            <div
+              key={row.batch.id}
+              className="flex flex-wrap items-center justify-between gap-5 pb-[18px] shadow-[inset_0_-1px_0_0_var(--rule)]"
+            >
+              <div className="min-w-0">
+                <p className="display-sm mb-1 text-[clamp(19px,1.5vw,23px)] leading-[1.14] text-[color:var(--on-ink)]">
+                  {row.batch.course_name}
+                </p>
+                <p className="mono mb-[5px] text-[12px] tracking-[0.1em] text-[color:var(--tan)]">
                   Starts {longDate(row.batch.start_date)}
                 </p>
-                <p className="mt-2 text-sm text-[color:var(--on-ink-mute)]">
+                <p className="text-[13.5px] leading-[1.45] text-[color:var(--on-ink-faint)]">
                   {row.batch.batch_number} · {hourWindow(row)} IST · {row.batch.trainer_name}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <CtaLink
-                    cta="register_now"
-                    chapter="hero"
-                    course={row.batch.course_name}
-                    className="btn-primary"
-                  >
-                    Register now
-                  </CtaLink>
-                  <Link to="/batches" className="btn-secondary">
-                    All batches
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+              <div className="flex flex-none gap-2">
+                <CtaLink
+                  cta="register_now"
+                  chapter="hero"
+                  course={row.batch.course_name}
+                  className="btn-primary btn-compact"
+                >
+                  Register now
+                </CtaLink>
+                <Link to={coursePath(row.batch.course_name)} className="btn-secondary btn-compact">
+                  View course
+                </Link>
+              </div>
+            </div>
+          ))}
         </>
       )}
 
       {liveNow && (
-        <div className={upcoming.length > 0 ? 'mt-8' : ''}>
-          <p className="eyebrow">On air now</p>
-          <p className="display mt-3 text-[1.35rem]">{liveNow.batch.course_name}</p>
-          <p className="mt-2 text-sm text-[color:var(--on-ink-mute)]">
+        <div>
+          <p className="mono mb-2 text-[color:var(--on-ink-faint)]">On air now</p>
+          <p className="display-sm mb-[5px] text-[clamp(21px,1.8vw,25px)] text-[color:var(--on-ink)]">
+            {liveNow.batch.course_name}
+          </p>
+          <p className="text-[13.5px] leading-[1.45] text-[color:var(--on-ink-faint)]">
             {liveNow.batch.batch_number} · {hourWindow(liveNow)} IST · {liveNow.batch.trainer_name}
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link to="/courses" className="btn-primary">
-              View this course
-            </Link>
-            <CtaLink
-              cta="sit_in_on_a_class"
-              chapter="hero"
-              course={liveNow.batch.course_name}
-              className="btn-secondary"
-            >
-              Sit in on a class
-            </CtaLink>
-          </div>
+        </div>
+      )}
+
+      {liveNow && (
+        <div className="flex flex-wrap gap-[10px]">
+          <Link to={coursePath(liveNow.batch.course_name)} className="btn-primary">
+            View this course
+          </Link>
+          <Link to="/batches" className="btn-secondary">
+            Reserve my seat
+          </Link>
         </div>
       )}
     </div>

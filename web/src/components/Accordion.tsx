@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 export interface AccordionItem {
   id: string
@@ -12,21 +12,44 @@ interface Props {
   openIndex: number
   onToggle: (index: number) => void
   className?: string
+  openDurationMs?: number
+  opacityDurationMs?: number
 }
 
-export default function Accordion({ items, openIndex, onToggle, className = '' }: Props) {
+type AccordionStyle = CSSProperties & {
+  '--accordion-open-duration': string
+  '--accordion-opacity-duration': string
+}
+
+export default function Accordion({
+  items,
+  openIndex,
+  onToggle,
+  className = '',
+  openDurationMs = 480,
+  opacityDurationMs = 360,
+}: Props) {
+  const transitionStyle: AccordionStyle = {
+    '--accordion-open-duration': `${openDurationMs}ms`,
+    '--accordion-opacity-duration': `${opacityDurationMs}ms`,
+  }
+
   return (
-    <div className={className}>
+    <div className={className} style={transitionStyle}>
       {items.map((item, index) => {
         const open = index === openIndex
+        const panelId = `accordion-panel-${item.id.replace(/[^A-Za-z0-9_-]/g, '-')}`
         return (
-          <div key={item.id} className="border-t border-[color:var(--rule)]">
+          <div
+            key={item.id}
+            className="py-6 shadow-[inset_0_-1px_0_0_var(--rule)]"
+          >
             <button
               type="button"
               aria-expanded={open}
-              aria-controls={`accordion-panel-${item.id}`}
+              aria-controls={panelId}
               onClick={() => onToggle(index)}
-              className="flex w-full items-center justify-between gap-6 py-6 text-left"
+              className="flex w-full items-baseline justify-between gap-6 text-left"
             >
               {item.heading}
               <span
@@ -37,17 +60,23 @@ export default function Accordion({ items, openIndex, onToggle, className = '' }
               </span>
             </button>
             <div
-              id={`accordion-panel-${item.id}`}
+              id={panelId}
               aria-hidden={!open}
               inert={!open}
-              className="grid transition-[grid-template-rows,opacity,padding] duration-500 ease-[var(--ease-reveal)] motion-reduce:transition-none"
+              className="grid overflow-hidden [transition:grid-template-rows_var(--accordion-open-duration)_var(--ease-open)] motion-reduce:transition-none"
               style={{
-                gridTemplateRows: open ? '1fr' : '0fr',
-                opacity: open ? 1 : 0,
-                paddingBottom: open ? '14px' : '0px',
+                gridTemplateRows: open ? 'minmax(0, 1fr)' : 'minmax(0, 0fr)',
               }}
             >
-              <div className="overflow-hidden">{item.body}</div>
+              <div
+                className="min-h-0 overflow-hidden [transition:opacity_var(--accordion-opacity-duration)_var(--ease-state),padding-top_var(--accordion-open-duration)_var(--ease-open)] motion-reduce:transition-none"
+                style={{
+                  opacity: open ? 1 : 0,
+                  paddingTop: open ? '14px' : '0px',
+                }}
+              >
+                {item.body}
+              </div>
             </div>
           </div>
         )
