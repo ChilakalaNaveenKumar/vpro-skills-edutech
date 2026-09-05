@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import CtaLink from './CtaLink'
-import { courseByName } from '../content/courses'
-import { nowInIst, useSchedule } from '../utils/schedule'
+import SeatsNote from './SeatsNote'
+import { findByName, useCourses } from '../hooks/useCourses'
+import { hourRange } from '../utils/hours'
+import { istTodayIso, useSchedule } from '../utils/schedule'
 import type { ScheduleRow } from '../utils/schedule'
 
 function longDate(iso: string): string {
@@ -12,41 +14,45 @@ function longDate(iso: string): string {
 }
 
 function hourWindow(row: ScheduleRow): string {
-  return `${row.batch.start_time.slice(0, 5)} – ${row.batch.end_time.slice(0, 5)}`
+  const window = hourRange(row.batch.start_time, row.batch.end_time)
+  // Only says "Weekdays" when a batch actually carries the field - the comp's
+  // wording, without inventing which days an unset batch runs on.
+  return row.batch.days_of_week ? `${row.batch.days_of_week}, ${window}` : window
 }
 
-// The schedule classifies in IST, so this must too - otherwise a visitor
-// abroad sees a different set of batches from the one the schedule means.
-// `state === 'today'` covers both "starts today" and "a session runs later
-// today in a batch that began weeks ago", so the start date settles which.
-function istTodayIso(): string {
-  const { date } = nowInIst()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${date.getFullYear()}-${month}-${day}`
-}
-
-function coursePath(courseName: string): string {
-  const slug = courseByName(courseName)?.slug
+function coursePath(courses: ReturnType<typeof useCourses>, courseName: string): string {
+  const slug = findByName(courses, courseName)?.slug
   return slug ? `/courses/${slug}` : '/courses'
 }
 
 export default function NextBatchesCard() {
   const { rows, liveNow } = useSchedule()
+  const courses = useCourses()
   const today = istTodayIso()
   const upcoming = (rows ?? []).filter(
     (row) =>
       row.state === 'upcoming' || (row.state === 'today' && row.batch.start_date === today),
   )
 
+  // A batch that is teaching stays in the hero all day, not only during its
+  // 90-minute window. `liveNow` is true only while a session is actually in
+  // progress, so on its own it hid the running batch for ~22 hours a day.
+  const running =
+    liveNow ??
+    (rows ?? []).find(
+      (row) =>
+        row.state === 'running' || (row.state === 'today' && row.batch.start_date !== today),
+    ) ??
+    null
+
   if (!rows) return null
 
-  // Nothing scheduled and nothing on air: render no panel at all rather than an
+  // Nothing scheduled and nothing running: render no panel at all rather than an
   // empty bordered box. The hero's copy stands on its own.
-  if (upcoming.length === 0 && !liveNow) return null
+  if (upcoming.length === 0 && !running) return null
 
   return (
-    <div className="flex flex-col gap-[14px] bg-[color:var(--ink-2)] px-[30px] py-[26px] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)]">
+    <div className="flex flex-col gap-[14px] bg-[color:var(--ink-2)] px-[30px] py-[26px] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)] max-[900px]:gap-4 max-[900px]:px-[22px] max-[900px]:py-6">
       {upcoming.length > 0 && (
         <>
           <p className="eyebrow">Next batches</p>
@@ -64,10 +70,11 @@ export default function NextBatchesCard() {
                   Starts {longDate(row.batch.start_date)}
                 </p>
                 <p className="text-[13.5px] leading-[1.45] text-[color:var(--on-ink-faint)]">
-                  {row.batch.batch_number} · {hourWindow(row)} IST · {row.batch.trainer_name}
+                  {row.batch.batch_number}, {hourWindow(row)}, {row.batch.trainer_name}
                 </p>
+                <SeatsNote row={row} className="mt-[5px] block text-[13.5px]" />
               </div>
-              <div className="flex flex-none gap-2">
+              <div className="flex flex-none gap-2 max-[900px]:w-full [&>*]:max-[900px]:min-h-[46px] [&>*]:max-[900px]:flex-1">
                 <CtaLink
                   cta="register_now"
                   chapter="hero"
@@ -76,7 +83,7 @@ export default function NextBatchesCard() {
                 >
                   Register now
                 </CtaLink>
-                <Link to={coursePath(row.batch.course_name)} className="btn-secondary btn-compact">
+                <Link to={coursePath(courses, row.batch.course_name)} className="btn-secondary btn-compact">
                   View course
                 </Link>
               </div>
@@ -85,21 +92,23 @@ export default function NextBatchesCard() {
         </>
       )}
 
-      {liveNow && (
+      {running && (
         <div>
-          <p className="mono mb-2 text-[color:var(--on-ink-faint)]">On air now</p>
+          <p className="mono mb-2 text-[color:var(--on-ink-faint)]">
+            {running.state === 'live' ? 'On air now' : 'In session'}
+          </p>
           <p className="display-sm mb-[5px] text-[clamp(21px,1.8vw,25px)] text-[color:var(--on-ink)]">
-            {liveNow.batch.course_name}
+            {running.batch.course_name}
           </p>
           <p className="text-[13.5px] leading-[1.45] text-[color:var(--on-ink-faint)]">
-            {liveNow.batch.batch_number} · {hourWindow(liveNow)} IST · {liveNow.batch.trainer_name}
+            {running.batch.batch_number}, {hourWindow(running)}, {running.batch.trainer_name}
           </p>
         </div>
       )}
 
-      {liveNow && (
+      {running && (
         <div className="flex flex-wrap gap-[10px]">
-          <Link to={coursePath(liveNow.batch.course_name)} className="btn-primary">
+          <Link to={coursePath(courses, running.batch.course_name)} className="btn-primary">
             View this course
           </Link>
           <Link to="/batches" className="btn-secondary">

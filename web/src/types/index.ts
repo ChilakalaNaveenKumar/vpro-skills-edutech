@@ -18,6 +18,30 @@ export interface Course {
   name: string
   description: string | null
   status: EntityStatus
+  // The curriculum, moved out of web/src/content/courses.ts on 2026-09-05.
+  slug: string | null
+  tagline: string | null
+  summary: string | null
+  level: string | null
+  prerequisites: string | null
+  for_whom: string[]
+  outcomes: string[]
+  techs: string[]
+  hue: number | null
+  flagship: boolean
+  display_order: number
+  /** YouTube/Vimeo/self-hosted. Empty renders the marked placeholder. */
+  video_url: string | null
+  modules: {
+    id: number
+    name: string
+    order: number
+    summary: string | null
+    builds: string | null
+    visual: string | null
+    topics: string[]
+  }[]
+  projects: { name: string; description: string }[]
 }
 
 // Mirrors backend/app/batches/schemas.py's BatchPublic.
@@ -33,6 +57,11 @@ export interface Batch {
   trainer_name: string
   // Nullable - batches created before 2026-08-31 predate this field.
   trainer_email: string | null
+  /** Editorial, set per batch in the admin panel ("Few seats left"). Nothing
+      is counted - null means say nothing. */
+  seats_note: string | null
+  /** "Weekdays", "Sat & Sun". Null means the hour is shown without days. */
+  days_of_week: string | null
   status: EntityStatus
   progress_status: BatchProgressStatus
 }
@@ -156,13 +185,29 @@ export interface ResultDetail extends Result {
 // --- Admin CRUD payload/response types (Phase 8) ---
 
 // Mirrors backend/app/courses/schemas.py's CourseCreate/CourseUpdate.
-export interface CourseCreate {
+/** The curriculum fields, all optional on both create and update. */
+export interface CourseWritableFields {
+  slug?: string | null
+  tagline?: string | null
+  summary?: string | null
+  level?: string | null
+  prerequisites?: string | null
+  for_whom?: string[] | null
+  outcomes?: string[] | null
+  techs?: string[] | null
+  hue?: number | null
+  flagship?: boolean | null
+  display_order?: number | null
+  video_url?: string | null
+}
+
+export interface CourseCreate extends CourseWritableFields {
   name: string
   description?: string | null
   status?: EntityStatus
 }
 
-export interface CourseUpdate {
+export interface CourseUpdate extends CourseWritableFields {
   name?: string
   description?: string | null
   status?: EntityStatus

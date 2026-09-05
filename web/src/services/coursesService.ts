@@ -29,3 +29,9 @@ export async function updateCourse(courseId: number, payload: CourseUpdate): Pro
   const response = await apiClient.put<Course>(`/api/admin/courses/${courseId}`, payload)
   return response.data
 }
+
+// DELETE /api/admin/courses/{id} - refused with 409 while batches still point
+// at the course, since those carry enrolments and results.
+export async function deleteCourse(courseId: number): Promise<void> {
+  await apiClient.delete(`/api/admin/courses/${courseId}`)
+}

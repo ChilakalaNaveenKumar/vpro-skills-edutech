@@ -4,7 +4,7 @@ import WhatsAppMark from '../../components/WhatsAppMark'
 
 export default function Join() {
   return (
-    <section id="join" className="shell py-[150px]">
+    <section id="join" className="shell py-[120px]">
       <Reveal>
         <p className="eyebrow mb-11">Free demo class · no fee to attend</p>
       </Reveal>

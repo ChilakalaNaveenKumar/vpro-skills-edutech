@@ -42,10 +42,10 @@ export const MESSAGES: Record<CtaKey, string> = {
   hero_demo: 'Hi VPro Skills, I want to join the FREE AI Demo.',
   curriculum_interest: 'Hi VPro Skills, I am interested in the Generative AI Course.',
   demo_register: 'Hi VPro Skills, I want to register for the FREE AI Demo.',
-  reserve_seat: 'Hi VPro Skills, I want to join the FREE Generative AI Demo.',
+  reserve_seat: 'Hi VPro Skills, I want to reserve a seat in the next batch.',
   talk_to_trainer: 'Hi VPro Skills, I would like to speak with the trainer.',
   footer_whatsapp: 'Hi VPro Skills, I am interested in the AI Course.',
-  course_interest: 'Hi VPro Skills, I want to register for the FREE Generative AI Demo Session.',
+  course_interest: 'Hi VPro Skills, I would like to know more about your live batches.',
   live_class_times: 'Hi VPro Skills, I would like to know the live class timings.',
   course_waitlist: 'Hi VPro Skills, I want to be told when the next course opens.',
   register_now: 'Hi VPro Skills, I want to register for the next batch.',
@@ -61,9 +61,17 @@ export function whatsappRawUrl(message: string): string {
 // `segment` is who the visitor is ("working professional"). `course` is what
 // they are asking about. They were one argument, which meant a course name
 // arrived in a sentence reading "I am a Agentic AI."
-export function whatsappUrl(key: CtaKey, segment?: string, course?: string): string {
+export function whatsappUrl(
+  key: CtaKey,
+  segment?: string,
+  course?: string,
+  batch?: string,
+): string {
   const parts = [MESSAGES[key]]
   if (course) parts.push(`Course: ${course}.`)
+  // The batch line carries the number, the hour and the dates, so the reply does
+  // not have to start by asking which batch and when it runs.
+  if (batch) parts.push(`Batch: ${batch}.`)
   if (segment) parts.push(`I am a ${segment}.`)
   return whatsappRawUrl(parts.join(' '))
 }

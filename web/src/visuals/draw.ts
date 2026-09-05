@@ -22,7 +22,9 @@ export function seeded(seed: number): () => number {
 }
 
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const radius = Math.min(r, w / 2, h / 2)
+  // Never negative: a zero or inverted box would otherwise throw an
+  // IndexSizeError out of arcTo rather than simply drawing nothing.
+  const radius = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2))
   ctx.beginPath()
   ctx.moveTo(x + radius, y)
   ctx.arcTo(x + w, y, x + w, y + h, radius)

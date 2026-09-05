@@ -126,6 +126,15 @@ textarea:focus-visible {
   padding-inline: var(--gutter);
 }
 
+/* The floating contact stack lives in the page's right margin. Between 901px and
+   1699px the 1560px column leaves no margin, so the column gives up the width
+   rather than letting the buttons land on top of its own content. */
+@media (min-width: 901px) and (max-width: 1699px) {
+  [data-journey] .shell {
+    padding-right: 108px;
+  }
+}
+
 /* --- Type ----------------------------------------------------------------- */
 
 [data-journey] .display {
@@ -231,6 +240,52 @@ textarea:focus-visible {
 [data-journey] :focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
+}
+
+/* --- In-place course detail ------------------------------------------------
+   A course opens inside the page it was pressed on rather than replacing it:
+   one class on one container, nothing unmounts. The browse layer recedes, and
+   the detail waits for it to clear before it moves - that 300ms gap is what
+   stops the two crossing over each other and is most of why it reads as
+   smooth. Curves are this project's own, not borrowed. */
+
+[data-journey] .browse-ui,
+[data-journey] .detail-view {
+  transition:
+    opacity 520ms var(--ease-state),
+    transform 620ms var(--ease-open);
+}
+
+[data-journey] .mode-detail .browse-ui {
+  opacity: 0;
+  transform: translateY(28px);
+  pointer-events: none;
+}
+
+[data-journey] .detail-view {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+[data-journey] .mode-detail .detail-view {
+  opacity: 1;
+  transform: translateY(0);
+  /* Opacity leads, movement trails, and both wait for the browse layer. */
+  transition-delay: 300ms, 300ms;
+}
+
+/* While the open is in flight nothing is clickable - a second click mid-flight
+   would otherwise start a transition from a half-finished state. */
+[data-journey] .mode-detail.is-opening .detail-view {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .browse-ui,
+  [data-journey] .detail-view {
+    transition: none;
+    transform: none;
+  }
 }
 
 /* The header is fixed, so an anchored section would otherwise land underneath

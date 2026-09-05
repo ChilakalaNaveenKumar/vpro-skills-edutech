@@ -530,7 +530,7 @@ export default function AdminBatchesPage() {
                       <span className="text-xs text-gray-400">(deactivated)</span>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-gray-600">Batch {batch.batch_number}</p>
+                  <p className="mt-1 text-sm text-gray-600">{batch.batch_number}</p>
                   <p className="mt-1 text-sm text-gray-600">
                     {batch.start_date} to {batch.end_date}
                   </p>

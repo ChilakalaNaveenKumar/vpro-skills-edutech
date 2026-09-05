@@ -31,6 +31,16 @@ class Batch(Base, TimestampMixin):
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     trainer_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    # Editorial, per batch - the comp shows "Few seats left" on one and
+    # "Registration open" on the next. Nothing is counted; this is what the
+    # admin chooses to say about this batch.
+    seats_note: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    # Real capacity, when it is tracked. Null means it is not, and the note
+    # above is the only thing said about seats.
+    seats_total: Mapped[int | None] = mapped_column(nullable=True)
+    # e.g. "Weekdays", "Sat & Sun". The hour was being shown without saying
+    # which days it falls on, because there was no field for it.
+    days_of_week: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # Nullable (unlike trainer_name) purely for backward compatibility with
     # batches created before this field existed (2026-08-31) - the API
     # schema (BatchCreate) requires it for every *new* batch; only batches

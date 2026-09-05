@@ -21,19 +21,21 @@ function getGreeting(): string {
 // The header carries route navigation only. In-page section navigation is the
 // SectionRail's job on the home page, and duplicating it here was actively
 // harmful: the anchor list rendered on every marketing page, but the sections it
-// points at only exist on "/", so on a course page or About the whole nav was
+// points at only exist on "/", so on a course page the whole nav was
 // dead links. Paid traffic frequently lands directly on a course page, so that
 // was a dead end for exactly the visitors we pay for.
 // The comp's header. Three of these are sections of the home page rather than
 // routes; they carry the leading "/" so they still resolve from a course page
 // or /batches, where paid traffic often lands directly.
 const ROUTES = [
-  { to: '/courses', label: 'Courses' },
+  { to: '/#batches', label: 'Courses' },
   { to: '/batches', label: 'Batch schedule' },
   { to: '/#loop', label: 'How it runs' },
   { to: '/#trainer', label: 'Trainer' },
   { to: '/#faq', label: 'FAQ' },
-  { to: '/about', label: 'About' },
+  // Carried in the accent so it separates from the five navigational items -
+  // it is the one link in the row that asks the visitor to do something.
+  { to: '/#enquiry', label: 'Enquiry', accent: true },
 ]
 
 // Shared chrome for public-facing pages.
@@ -52,12 +54,11 @@ export default function PublicLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  // The marketing surface: home, courses, the batch schedule and about.
+  // The marketing surface: home, the course pages and the batch schedule.
   const journey =
     location.pathname === '/' ||
     location.pathname.startsWith('/courses') ||
-    location.pathname === '/batches' ||
-    location.pathname === '/about'
+    location.pathname === '/batches'
 
   // React Router does not scroll to a hash target, and three header links are
   // home-page sections. Runs after paint so the section exists when we look.
@@ -82,8 +83,11 @@ export default function PublicLayout() {
     return location.pathname === to || location.pathname.startsWith(`${to}/`)
   }
 
-  function navLinkClass(to: string) {
+  function navLinkClass(to: string, accent = false) {
     if (journey) {
+      if (accent) {
+        return `rounded px-2 py-1 font-medium text-[color:var(--signal)] transition-colors hover:text-[color:var(--on-ink)] ${FOCUS_RING}`
+      }
       // The active route has to be visible here too. Without it a visitor deep in
       // /courses/<slug> has no indication of where they are in the site.
       return `rounded px-2 py-1 transition-colors ${FOCUS_RING} ${
@@ -97,15 +101,24 @@ export default function PublicLayout() {
     }`
   }
 
-  function railLinkClass(to: string) {
+  function railLinkClass(to: string, accent = false) {
+    // The accent link is copper against a row of bone, so it reads as the one
+    // thing to act on rather than a sixth place to go. No new button style -
+    // the brand has exactly two, and neither belongs in the header rail.
+    if (accent) {
+      return `mono whitespace-nowrap tracking-[0.14em] font-medium text-[color:var(--signal)] transition-colors hover:text-[color:var(--on-ink)] ${FOCUS_RING}`
+    }
     return `mono whitespace-nowrap tracking-[0.14em] transition-colors ${FOCUS_RING} ${
       isCurrent(to) ? 'text-[color:var(--signal)]' : 'text-[color:var(--on-ink)] hover:text-[color:var(--signal)]'
     }`
   }
 
+  // Same label either way. The destination differs by role, but the public
+  // marketing header should not announce that an admin panel exists - it told
+  // every visitor where the back office was.
   const primaryLink =
     user?.role === 'ADMIN'
-      ? { to: '/admin', label: 'Admin Panel' }
+      ? { to: '/admin', label: 'Dashboard' }
       : { to: '/dashboard', label: 'Dashboard' }
 
   // Fixed rather than sticky on the marketing surface: the hero is a full
@@ -157,7 +170,7 @@ export default function PublicLayout() {
                   key={route.to}
                   to={route.to}
                   aria-current={isCurrent(route.to) ? 'page' : undefined}
-                  className={railLinkClass(route.to)}
+                  className={railLinkClass(route.to, route.accent)}
                 >
                   {route.label}
                 </Link>
@@ -172,9 +185,11 @@ export default function PublicLayout() {
                   <Link to={primaryLink.to} className={navLinkClass(primaryLink.to)}>
                     {primaryLink.label}
                   </Link>
-                  <Link to="/results" className={navLinkClass('/results')}>
-                    My Results
-                  </Link>
+                  {user.role !== 'ADMIN' && (
+                    <Link to="/results" className={navLinkClass('/results')}>
+                      My Results
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -210,9 +225,6 @@ export default function PublicLayout() {
                   Student login
                 </Link>
               )}
-              <Link to="/batches" className={`btn-primary btn-compact ${FOCUS_RING}`}>
-                Reserve my seat
-              </Link>
             </div>
           )}
 
@@ -249,19 +261,11 @@ export default function PublicLayout() {
                     to={route.to}
                     onClick={() => setIsMenuOpen(false)}
                     aria-current={isCurrent(route.to) ? 'page' : undefined}
-                    className={navLinkClass(route.to)}
+                    className={navLinkClass(route.to, route.accent)}
                   >
                     {route.label}
                   </Link>
                 ))}
-
-                <Link
-                  to="/batches"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`btn-primary mt-1 ${FOCUS_RING}`}
-                >
-                  Reserve my seat
-                </Link>
               </>
             )}
             {user ? (
@@ -276,9 +280,11 @@ export default function PublicLayout() {
                 >
                   {primaryLink.label}
                 </Link>
-                <Link to="/results" onClick={() => setIsMenuOpen(false)} className={navLinkClass('/results')}>
-                  My Results
-                </Link>
+                {user.role !== 'ADMIN' && (
+                  <Link to="/results" onClick={() => setIsMenuOpen(false)} className={navLinkClass('/results')}>
+                    My Results
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}

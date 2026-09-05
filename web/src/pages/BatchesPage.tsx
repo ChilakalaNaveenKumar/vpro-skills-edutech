@@ -1,14 +1,22 @@
-import { Link } from 'react-router-dom'
-import { COURSES } from '../content/courses'
-import { useSchedule } from '../utils/schedule'
+import { hourRange } from '../utils/hours'
+import { istTodayIso, isUpcoming, useSchedule } from '../utils/schedule'
+import SeatsNote from '../components/SeatsNote'
 import ScrollProgress from '../motion/ScrollProgress'
 import Reveal from '../motion/Reveal'
 import CtaLink from '../components/CtaLink'
-import EnquiryForm from '../components/EnquiryForm'
+import Enquiry from '../sections/home/Enquiry'
 import MobileActionBar from '../components/MobileActionBar'
+import FloatingContact from '../components/FloatingContact'
 import { BATCH_LOOP } from '../content/homeSections'
+import { useContentList } from '../hooks/useContent'
+import type { BlockItem } from '../services/contentService'
 
-const NEUTRAL_BATCH_OPTION = 'Not sure yet — please advise'
+const LOOP_FALLBACK: BlockItem[] = BATCH_LOOP.map((step, index) => ({
+  id: -(index + 1),
+  number: step.n,
+  title: step.title,
+  body: step.body,
+}))
 
 function longDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', {
@@ -20,24 +28,9 @@ function longDate(iso: string): string {
 
 export default function BatchesPage() {
   const { rows, failed } = useSchedule()
+  const today = istTodayIso()
+  const loopSteps = useContentList<BlockItem>('batch-loop', LOOP_FALLBACK)
 
-  // Until the fetch lands, we do not know what is scheduled - and saying
-  // "not yet scheduled" about a running batch would be a false statement in
-  // a message the visitor is about to send us.
-  const scheduled = new Set((rows ?? []).map((row) => row.batch.course_name))
-
-  const batchOptions = rows
-    ? [
-        ...rows.map(
-          (row) =>
-            `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
-        ),
-        ...COURSES.filter((course) => !scheduled.has(course.name)).map(
-          (course) => `${course.name} — not yet scheduled`,
-        ),
-        NEUTRAL_BATCH_OPTION,
-      ]
-    : [NEUTRAL_BATCH_OPTION]
 
   return (
     <>
@@ -87,12 +80,15 @@ export default function BatchesPage() {
                     <p className="mono mt-2 text-[color:var(--on-ink-faint)]">
                       {row.batch.batch_number}
                     </p>
+                    {isUpcoming(row, today) && (
+                      <SeatsNote row={row} className="mt-2 block text-[0.95rem]" />
+                    )}
                   </div>
                   <p className="text-[0.95rem] text-[color:var(--on-ink-mute)]">
                     {longDate(row.batch.start_date)} – {longDate(row.batch.end_date)}
                   </p>
                   <p className="text-[0.95rem] text-[color:var(--on-ink-mute)]">
-                    {row.batch.start_time.slice(0, 5)} – {row.batch.end_time.slice(0, 5)} IST ·{' '}
+                    {hourRange(row.batch.start_time, row.batch.end_time)},{' '}
                     {row.batch.trainer_name}
                   </p>
                   <CtaLink
@@ -117,9 +113,9 @@ export default function BatchesPage() {
         </Reveal>
 
         <ol className="mt-12 grid gap-px bg-[color:var(--rule)] sm:grid-cols-2 lg:grid-cols-4">
-          {BATCH_LOOP.map((step, index) => (
-            <Reveal key={step.n} delayIndex={index} className="bg-[color:var(--ink)] p-8">
-              <span className="display text-[1.7rem] text-[color:var(--signal)]">{step.n}</span>
+          {loopSteps.map((step, index) => (
+            <Reveal key={step.id} delayIndex={index} className="bg-[color:var(--ink)] p-8">
+              <span className="display text-[1.7rem] text-[color:var(--signal)]">{step.number}</span>
               <h3 className="display mt-4 text-[1.15rem]">{step.title}</h3>
               <p className="mt-3 text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
                 {step.body}
@@ -129,40 +125,10 @@ export default function BatchesPage() {
         </ol>
       </section>
 
-      <section id="enquiry" className="shell py-24 lg:py-32">
-        <div className="grid gap-12 lg:grid-cols-2 lg:gap-20">
-          <div>
-            <Reveal>
-              <p className="eyebrow">Enquiry form</p>
-            </Reveal>
-            <Reveal delayIndex={1}>
-              <h2 className="display mt-6 max-w-[16ch] text-[clamp(2rem,3.8vw,2.9rem)]">
-                Send us your details.
-              </h2>
-            </Reveal>
-            <Reveal delayIndex={2}>
-              <p className="mt-6 max-w-[40ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-                Fill this in and it opens WhatsApp with your details written out, so you are not
-                typing them twice. We reply during working hours, usually within the hour.
-              </p>
-            </Reveal>
-            <Reveal delayIndex={0}>
-              <Link to="/courses" className="btn-secondary mt-8">
-                Browse the courses
-              </Link>
-            </Reveal>
-          </div>
-
-          <Reveal delayIndex={1}>
-            <EnquiryForm
-              batchOptions={batchOptions}
-              neutralBatchOption={NEUTRAL_BATCH_OPTION}
-            />
-          </Reveal>
-        </div>
-      </section>
+      <Enquiry />
 
       <MobileActionBar />
+      <FloatingContact />
     </>
   )
 }

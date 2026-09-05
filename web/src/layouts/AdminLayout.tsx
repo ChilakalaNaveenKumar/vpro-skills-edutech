@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/admin/assessments', label: 'Assessments' },
   { to: '/admin/students', label: 'Students' },
   { to: '/admin/results', label: 'Results' },
+  { to: '/admin/content', label: 'Content' },
 ]
 
 export default function AdminLayout() {

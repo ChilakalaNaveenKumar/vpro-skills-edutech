@@ -30,6 +30,23 @@ export function minutesOfDay(time: string): number | null {
   return parts[0] * 60 + parts[1]
 }
 
+/** Today's date in IST as YYYY-MM-DD. The schedule classifies in IST, so
+    callers comparing against `batch.start_date` must too - otherwise a visitor
+    abroad sees a different set of batches from the one the schedule means. */
+export function istTodayIso(): string {
+  const { date } = nowInIst()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+/** A batch that has not started teaching yet. `state === 'today'` covers both
+    "starts today" and "a session runs later today in a batch that began weeks
+    ago", so the start date settles which. */
+export function isUpcoming(row: ScheduleRow, todayIso: string): boolean {
+  return row.state === 'upcoming' || (row.state === 'today' && row.batch.start_date === todayIso)
+}
+
 /** Now in IST, whatever the visitor's own timezone is. */
 export function nowInIst(): { date: Date; minuteOfDay: number } {
   const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))

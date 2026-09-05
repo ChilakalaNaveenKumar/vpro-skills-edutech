@@ -1,34 +1,36 @@
 import { useState } from 'react'
 import { BATCH_LOOP } from '../../content/homeSections'
+import { useContentList } from '../../hooks/useContent'
+import type { BlockItem } from '../../services/contentService'
+
+const FALLBACK: BlockItem[] = BATCH_LOOP.map((step, index) => ({
+  id: -(index + 1),
+  number: step.n,
+  title: step.title,
+  body: step.body,
+}))
 import Reveal from '../../motion/Reveal'
 
 export default function BatchLoop() {
   const [open, setOpen] = useState(0)
+  const steps = useContentList<BlockItem>('batch-loop', FALLBACK)
 
   return (
     <section id="loop" className="shell pt-[140px]">
-      <div className="mb-14 grid gap-5 min-[901px]:grid-cols-[minmax(0,1fr)_minmax(0,auto)] min-[901px]:items-end min-[901px]:gap-12">
-        <Reveal className="min-w-0">
-          <p className="eyebrow">How a batch runs</p>
-          <h2 className="display mt-[22px] max-w-[16ch] text-[clamp(34px,5.2vw,76px)] leading-[0.98] tracking-[-0.04em]">
-            Four steps, repeated per topic.
-          </h2>
-        </Reveal>
-        <Reveal delayIndex={1}>
-          <p className="min-w-0 max-w-[32ch] text-base leading-[1.6] text-[rgb(237_231_222/0.62)]">
-            A filling progress bar feels exactly like learning right up until somebody asks you a
-            question. So we ask. Open a step to see it.
-          </p>
-        </Reveal>
-      </div>
+      <Reveal className="mb-14 block min-w-0">
+        <p className="eyebrow">How a batch runs</p>
+        <h2 className="display mt-[22px] max-w-[16ch] text-[clamp(34px,5.2vw,76px)] leading-[0.98] tracking-[-0.04em]">
+          Four steps, repeated per topic.
+        </h2>
+      </Reveal>
 
       <div className="grid gap-0">
-        {BATCH_LOOP.map((step, index) => {
+        {steps.map((step, index) => {
           const isOpen = index === open
-          const panelId = `batch-loop-panel-${step.n}`
+          const panelId = `batch-loop-panel-${step.id}`
 
           return (
-            <Reveal key={step.n} className="w-full">
+            <Reveal key={step.id} className="w-full">
               <button
                 type="button"
                 aria-expanded={isOpen}
@@ -40,7 +42,7 @@ export default function BatchLoop() {
                   className="display text-[clamp(38px,4.4vw,64px)] font-light leading-[0.82] tracking-[-0.05em] [transition:color_400ms_var(--ease-state)] motion-reduce:transition-none"
                   style={{ color: isOpen ? '#c87046' : 'rgb(237 231 222 / 0.55)' }}
                 >
-                {step.n}
+                {step.number}
               </span>
                 <span
                   className="display text-[clamp(23px,2.1vw,32px)] leading-[1.1] tracking-[-0.025em] [transition:color_400ms_var(--ease-state)] motion-reduce:transition-none"
