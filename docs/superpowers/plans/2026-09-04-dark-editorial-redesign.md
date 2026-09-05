@@ -462,9 +462,8 @@ Every animated component on the site reads this. `Ticker` is the one exception: 
 
 ```ts
 /**
- * Read at effect time rather than cached at module load, so a visitor who
- * changes the OS setting gets the new behaviour on their next navigation
- * instead of on a hard reload.
+ * Kept as a function so callers read the current OS preference when they
+ * initialize, rather than a value cached at module load.
  */
 export function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
@@ -552,12 +551,51 @@ export default function Reveal({ as, delayIndex = 0, className = '', children }:
 ```ts
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
-/**
- * One passive, rAF-throttled scroll listener. Every scroll-driven effect on a
- * page shares it rather than registering its own, which is what keeps the
- * progress bar, the portrait parallax and the mobile bar on a single frame.
- */
-export function useScrollDriver(onScroll: (scrollY: number, maxScroll: number) => void): void {
+type Subscriber = (scrollY: number, maxScroll: number) => void
+
+// Module-level, deliberately: the progress bar, the portrait parallax and the
+// mobile action bar all read scroll position, and three separate listeners
+// would let them paint in three different frames. One listener, one frame,
+// one set of subscribers.
+const subscribers = new Set<Subscriber>()
+let frame = 0
+let listening = false
+
+function paint() {
+  frame = 0
+  const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
+  const scrollY = window.scrollY
+  subscribers.forEach((notify) => notify(scrollY, maxScroll))
+}
+
+function schedule() {
+  if (frame) return
+  frame = requestAnimationFrame(paint)
+}
+
+function subscribe(notify: Subscriber): () => void {
+  subscribers.add(notify)
+  if (!listening) {
+    window.addEventListener('scroll', schedule, { passive: true })
+    listening = true
+  }
+  // Paint once on subscribe so a component that mounts mid-page is correct
+  // before the visitor scrolls again.
+  schedule()
+
+  return () => {
+    subscribers.delete(notify)
+    if (subscribers.size > 0) return
+    window.removeEventListener('scroll', schedule)
+    listening = false
+    if (frame) {
+      cancelAnimationFrame(frame)
+      frame = 0
+    }
+  }
+}
+
+export function useScrollDriver(onScroll: Subscriber): void {
   const callback = useRef(onScroll)
 
   // Assigned in an effect, not during render: React 19 may discard a render,
@@ -566,27 +604,7 @@ export function useScrollDriver(onScroll: (scrollY: number, maxScroll: number) =
     callback.current = onScroll
   })
 
-  useEffect(() => {
-    let pending = false
-
-    const paint = () => {
-      const doc = document.documentElement
-      const maxScroll = Math.max(1, doc.scrollHeight - window.innerHeight)
-      callback.current(window.scrollY, maxScroll)
-      pending = false
-    }
-
-    const handle = () => {
-      if (pending) return
-      pending = true
-      requestAnimationFrame(paint)
-    }
-
-    window.addEventListener('scroll', handle, { passive: true })
-    paint()
-
-    return () => window.removeEventListener('scroll', handle)
-  }, [])
+  useEffect(() => subscribe((scrollY, maxScroll) => callback.current(scrollY, maxScroll)), [])
 }
 ```
 
@@ -659,7 +677,9 @@ export default function Accordion({ items, openIndex, onToggle, className = '' }
             </button>
             <div
               id={`accordion-panel-${item.id}`}
-              className="grid transition-[grid-template-rows,opacity,padding] duration-500 ease-[var(--ease-reveal)]"
+              aria-hidden={!open}
+              inert={!open}
+              className="grid transition-[grid-template-rows,opacity,padding] duration-500 ease-[var(--ease-reveal)] motion-reduce:transition-none"
               style={{
                 gridTemplateRows: open ? '1fr' : '0fr',
                 opacity: open ? 1 : 0,

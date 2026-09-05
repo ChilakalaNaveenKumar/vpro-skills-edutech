@@ -38,7 +38,9 @@ export default function Accordion({ items, openIndex, onToggle, className = '' }
             </button>
             <div
               id={`accordion-panel-${item.id}`}
-              className="grid transition-[grid-template-rows,opacity,padding] duration-500 ease-[var(--ease-reveal)]"
+              aria-hidden={!open}
+              inert={!open}
+              className="grid transition-[grid-template-rows,opacity,padding] duration-500 ease-[var(--ease-reveal)] motion-reduce:transition-none"
               style={{
                 gridTemplateRows: open ? '1fr' : '0fr',
                 opacity: open ? 1 : 0,

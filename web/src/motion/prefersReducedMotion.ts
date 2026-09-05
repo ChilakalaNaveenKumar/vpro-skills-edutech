@@ -1,7 +1,6 @@
 /**
- * Read at effect time rather than cached at module load, so a visitor who
- * changes the OS setting gets the new behaviour on their next navigation
- * instead of on a hard reload.
+ * Kept as a function so callers read the current OS preference when they
+ * initialize, rather than a value cached at module load.
  */
 export function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
