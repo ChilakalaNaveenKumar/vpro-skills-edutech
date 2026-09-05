@@ -9,9 +9,20 @@ export const CONTACT = {
   phoneDial: '+919010001847',
   phoneDisplay: '+91 90100 01847',
   location: 'Ameerpet, Hyderabad',
+  addressLines: ['VPro Skills EduTech', 'Ameerpet, Hyderabad', 'Telangana 500016, India'],
   timezone: 'Asia/Kolkata',
   hours: { openHour: 9, closeHour: 21 },
 } as const
+
+function hour12(hour: number): string {
+  return `${hour % 12 === 0 ? 12 : hour % 12}:00 ${hour < 12 ? 'AM' : 'PM'}`
+}
+
+// Derived rather than written out, so the footer cannot advertise hours the
+// open/closed indicator disagrees with.
+export const HOURS_DISPLAY = `${hour12(CONTACT.hours.openHour)} – ${hour12(
+  CONTACT.hours.closeHour,
+)} IST, daily`
 
 export type CtaKey =
   | 'hero_demo'

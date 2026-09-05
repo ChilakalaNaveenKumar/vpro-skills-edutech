@@ -10,7 +10,7 @@ export default function Ticker({ items }: Props) {
       aria-hidden="true"
       className="overflow-hidden border-y border-[color:var(--rule)] py-5"
     >
-      <div className="flex w-max animate-[ticker_48s_linear_infinite] gap-16 motion-reduce:animate-none">
+      <div className="flex w-max animate-[ticker_52s_linear_infinite] gap-16 motion-reduce:animate-none">
         {doubled.map((item, index) => (
           <span
             key={`${item}-${index}`}

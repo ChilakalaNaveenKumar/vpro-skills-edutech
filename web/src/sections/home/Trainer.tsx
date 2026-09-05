@@ -46,9 +46,9 @@ export default function Trainer() {
   })
 
   return (
-    <section id="trainer" className="shell py-24 lg:py-28">
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,380px)_1fr] lg:gap-20">
-        <Reveal className="overflow-hidden">
+    <section id="trainer" className="shell px-[44px] pt-[60px] max-[900px]:px-6">
+      <div className="grid grid-cols-[0.8fr_1.2fr] items-center gap-20 max-[900px]:grid-cols-1 max-[900px]:gap-10">
+        <Reveal className="overflow-hidden rounded-[2px]">
           <picture>
             <source srcSet={TRAINER.photo} type="image/webp" />
             <img
@@ -58,29 +58,35 @@ export default function Trainer() {
               width={760}
               height={1000}
               loading="lazy"
-              className="h-full w-full object-cover will-change-transform"
+              className="block aspect-[4/5] w-full object-cover object-[center_22%] shadow-[inset_0_0_0_1px_rgba(237,231,222,0.14)] will-change-transform"
             />
           </picture>
         </Reveal>
 
         <div>
           <Reveal>
-            <p className="eyebrow">{TRAINER.eyebrow}</p>
+            <p className="eyebrow mb-[34px]">{TRAINER.eyebrow}</p>
           </Reveal>
           <Reveal delayIndex={1}>
-            <blockquote className="display mt-6 text-[clamp(1.5rem,2.6vw,2.1rem)]">
+            <blockquote className="display mb-[26px] max-w-[44ch] text-[clamp(24px,2.5vw,33px)] leading-[1.34] tracking-[-0.02em] [text-wrap:wrap]">
               {TRAINER.quote}
             </blockquote>
           </Reveal>
           {TRAINER.body.map((paragraph, index) => (
             <Reveal key={paragraph} delayIndex={index + 2}>
-              <p className="mt-6 max-w-[56ch] text-[0.98rem] leading-relaxed text-[color:var(--on-ink-mute)]">
+              <p
+                className={`max-w-[54ch] text-[17px] leading-[1.66] text-[rgba(237,231,222,0.62)] ${
+                  index === TRAINER.body.length - 1 ? 'mb-[34px]' : 'mb-5'
+                }`}
+              >
                 {paragraph}
               </p>
             </Reveal>
           ))}
           <Reveal delayIndex={2}>
-            <p className="mono mt-8 text-[color:var(--on-ink-faint)]">{TRAINER.attribution}</p>
+            <p className="mono tracking-[0.14em] text-[rgba(237,231,222,0.5)]">
+              {TRAINER.attribution}
+            </p>
           </Reveal>
         </div>
       </div>

@@ -58,6 +58,14 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* These live in the components layer on purpose. Unlayered rules beat every
+   layered one regardless of specificity, so while this block sat outside the
+   cascade layers a `[data-journey] .display` default silently overrode any
+   Tailwind size or leading utility a call site put on the same element - the
+   utility was in the page, it just never won. Inside the layer, utilities take
+   precedence again and per-element overrides behave the way they read. */
+@layer components {
+
 /* ===========================================================================
    PUBLIC MARKETING SURFACE  (scoped to [data-journey])
    ---------------------------------------------------------------------------
@@ -90,6 +98,13 @@ textarea:focus-visible {
   --btn-secondary-rule: rgb(237 231 222 / 0.22);
 
   --gutter: clamp(1.25rem, 5vw, 2.75rem);
+
+  /* Three curves, each with a job. Collapsing them into one is what makes a
+     page feel generic: an opening panel and a hover tint should not share a
+     motion signature. --open is for geometry that expands, --state for colour
+     and opacity, --reveal for anything entering the page. */
+  --ease-open: cubic-bezier(0.22, 1, 0.28, 1);
+  --ease-state: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-reveal: cubic-bezier(0.2, 0.85, 0.2, 1);
 
   background: var(--ink);
@@ -116,12 +131,23 @@ textarea:focus-visible {
 [data-journey] .display {
   font-family: "Newsreader", Georgia, serif;
   font-weight: 400;
-  letter-spacing: -0.035em;
-  line-height: 1.04;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
   text-wrap: balance;
 }
 
-[data-journey] .display em {
+/* The display leading and tracking are cut for 76px headlines. Below roughly
+   28px they close up on themselves, so Newsreader used at body scale - panel
+   course names, card values - needs its own pair. */
+[data-journey] .display-sm {
+  font-family: "Newsreader", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+}
+
+[data-journey] .display em,
+[data-journey] .display-sm em {
   font-style: italic;
   color: var(--signal);
 }
@@ -129,12 +155,13 @@ textarea:focus-visible {
 [data-journey] .eyebrow,
 [data-journey] .mono {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 0.69rem;
+  font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 [data-journey] .eyebrow {
+  letter-spacing: 0.2em;
   color: var(--signal);
 }
 
@@ -144,9 +171,9 @@ textarea:focus-visible {
 
 [data-journey] .lede {
   font-family: "Newsreader", Georgia, serif;
-  font-size: clamp(1.05rem, 0.4vw + 0.98rem, 1.24rem);
-  line-height: 1.6;
-  color: var(--on-ink-mute);
+  font-size: clamp(19px, 1.7vw, 25px);
+  line-height: 1.42;
+  color: rgb(237 231 222 / 0.82);
   text-wrap: pretty;
 }
 
@@ -159,17 +186,29 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-height: 52px;
-  padding: 1.0625rem 1.75rem;
+  gap: 10px;
+  padding: 15px 26px;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 0.69rem;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--on-ink);
   border: 0;
   cursor: pointer;
-  transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 200ms var(--ease-state);
+}
+
+/* Two size variants, both from the comp: compact where a pair of buttons shares
+   a row with three lines of text, large where the button is the section. */
+[data-journey] .btn-compact {
+  padding: 11px 18px;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+[data-journey] .btn-lg {
+  padding: 19px 32px;
+  letter-spacing: 0.16em;
 }
 
 [data-journey] .btn-primary {
@@ -194,7 +233,39 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+}
+/* end @layer components */
+
 @keyframes ticker {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+/* The hero's line rise. 112% rather than 100% so descenders clear the mask. */
+@keyframes wordUp {
+  from { transform: translateY(112%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The hero plays on load rather than on scroll, so it has no IntersectionObserver
+   to opt out of. Timing rides on custom properties so a call site sets only its
+   own delay and the reduced-motion escape stays in one place. */
+[data-journey] .rise-in {
+  animation: wordUp var(--rise-duration, 1s) var(--ease-reveal) var(--rise-delay, 0s) both;
+}
+
+[data-journey] .fade-in {
+  animation: fadeIn var(--fade-duration, 1s) ease var(--fade-delay, 0s) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-journey] .rise-in,
+  [data-journey] .fade-in {
+    animation: none;
+  }
 }
