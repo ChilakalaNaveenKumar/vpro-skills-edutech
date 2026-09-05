@@ -21,6 +21,7 @@ import AdminStudentsPage from './pages/AdminStudentsPage'
 import AdminStudentEnrollmentsPage from './pages/AdminStudentEnrollmentsPage'
 import AdminResultsPage from './pages/AdminResultsPage'
 import AdminContentPage from './pages/AdminContentPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
   return (
@@ -62,6 +63,13 @@ function App() {
           <Route path="results" element={<AdminResultsPage />} />
           <Route path="content" element={<AdminContentPage />} />
         </Route>
+      </Route>
+
+      {/* Inside PublicLayout so an unmatched path still gets the header, the
+          footer and a way back, rather than the blank screen it rendered
+          before. */}
+      <Route element={<PublicLayout />}>
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   )

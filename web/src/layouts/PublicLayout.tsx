@@ -1,12 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
 import CtaLink from '../components/CtaLink'
+import DigiSetuMark from '../components/DigiSetuMark'
 import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 import { CONTACT, HOURS_DISPLAY } from '../content/contact'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
+
+const FOOTER_LINK = `text-[14px] leading-[1.5] text-[color:var(--on-ink)] transition-colors duration-[240ms] ease-[var(--ease-state)] hover:text-[color:var(--signal)] ${FOCUS_RING}`
+
+// The footer points at /courses rather than the home page's #batches anchor:
+// it is a real page, and a footer link that only works from one route is the
+// trap the header nav already had to be rescued from.
+const FOOTER_LINKS = [
+  { to: '/courses', label: 'All courses' },
+  { to: '/batches', label: 'Batch schedule' },
+  { to: '/#loop', label: 'How a batch runs' },
+  { to: '/#trainer', label: 'The trainer' },
+  { to: '/#faq', label: 'Questions' },
+]
+
+const LEGAL_LINKS = [
+  { to: '/privacy', label: 'Privacy Policy' },
+  { to: '/terms', label: 'Terms & Conditions' },
+  { to: '/data-deletion', label: 'Data Deletion' },
+]
+
+function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3.5">
+      <span className="mono text-[color:var(--on-ink-faint)]">{title}</span>
+      <div className="flex flex-col items-start gap-2.5">{children}</div>
+    </div>
+  )
+}
 
 // Time-of-day greeting instead of a bare "Hi, {name}" - reads warmer and
 // more deliberate in the header than a flat label (user feedback,
@@ -309,64 +338,86 @@ export default function PublicLayout() {
       </main>
 
       {journey ? (
-        <footer className="relative z-10 mx-auto w-full max-w-[1560px] px-[44px] pt-[34px] pb-[60px] shadow-[inset_0_1px_0_0_var(--rule)] max-md:px-[var(--gutter)]">
-          <div className="flex flex-wrap justify-between gap-7">
-            <div className="flex min-w-0 flex-col gap-[14px]">
-              <Link to="/" className={`self-start bg-[color:var(--on-ink)] px-3 py-2 ${FOCUS_RING}`}>
-                <Logo size="plate" />
-              </Link>
-              <p className="max-w-[26ch] text-[14px] leading-[1.6] text-[color:var(--on-ink-faint)]">
-                {CONTACT.addressLines.map((line, index) => (
-                  <span key={line}>
-                    {index > 0 && <br />}
-                    {line}
-                  </span>
+        <footer className="relative z-10 mt-[clamp(72px,9vw,132px)] shadow-[inset_0_1px_0_0_var(--rule)]">
+          <div className="mx-auto w-full max-w-[1560px] px-[44px] pt-[clamp(52px,5.5vw,80px)] max-md:px-[var(--gutter)]">
+            {/* The brand column carries more than the others - a logo plate, an
+                address and the partner mark - so it gets half again the width
+                rather than an equal quarter, which left it wrapping while the
+                three link columns sat half empty. */}
+            <div className="grid gap-x-10 gap-y-14 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))]">
+              <div className="flex flex-col items-start gap-5">
+                <Link to="/" className={`bg-[color:var(--on-ink)] px-3 py-2 ${FOCUS_RING}`}>
+                  <Logo size="plate" />
+                </Link>
+                <p className="max-w-[26ch] text-[14px] leading-[1.65] text-[color:var(--on-ink-faint)]">
+                  {CONTACT.addressLines.map((line, index) => (
+                    <span key={line}>
+                      {index > 0 && <br />}
+                      {line}
+                    </span>
+                  ))}
+                </p>
+                <div className="flex w-full max-w-[26ch] flex-col gap-3 pt-5 shadow-[inset_0_1px_0_0_var(--rule)]">
+                  <span className="mono text-[color:var(--on-ink-faint)]">In collaboration with</span>
+                  <a
+                    href="https://digi-setu.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`flex items-center gap-2.5 text-[color:var(--on-ink-faint)] transition-colors duration-[240ms] ease-[var(--ease-state)] ${FOCUS_RING} hover:text-[color:var(--on-ink)]`}
+                  >
+                    <DigiSetuMark height={16} />
+                    <span className="mono text-[13px]">DIGI SETU</span>
+                  </a>
+                </div>
+              </div>
+
+              <FooterColumn title="Explore">
+                {FOOTER_LINKS.map((link) => (
+                  <Link key={link.to} to={link.to} className={FOOTER_LINK}>
+                    {link.label}
+                  </Link>
                 ))}
-              </p>
+              </FooterColumn>
+
+              <FooterColumn title="Talk to us">
+                <CtaLink cta="footer_whatsapp" chapter="footer" className={FOOTER_LINK}>
+                  WhatsApp {CONTACT.phoneDisplay}
+                </CtaLink>
+                <a href={`tel:${CONTACT.phoneDial}`} className={FOOTER_LINK}>
+                  Call {CONTACT.phoneDisplay}
+                </a>
+                <Link to="/#enquiry" className={FOOTER_LINK}>
+                  Send an enquiry
+                </Link>
+              </FooterColumn>
+
+              <FooterColumn title="Hours">
+                <span className="text-[14px] leading-[1.65] text-[color:var(--on-ink-faint)]">
+                  {HOURS_DISPLAY}
+                </span>
+                <Link to="/login" className={FOOTER_LINK}>
+                  Student login
+                </Link>
+              </FooterColumn>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="mono text-[color:var(--on-ink-faint)]">Talk to us</span>
-              <CtaLink
-                cta="footer_whatsapp"
-                chapter="footer"
-                className={`text-[14px] text-[color:var(--on-ink)] ${FOCUS_RING} hover:text-[color:var(--signal)]`}
-              >
-                WhatsApp {CONTACT.phoneDisplay}
-              </CtaLink>
-              <a
-                href={`tel:${CONTACT.phoneDial}`}
-                className={`text-[14px] text-[color:var(--on-ink)] ${FOCUS_RING} hover:text-[color:var(--signal)]`}
-              >
-                Call {CONTACT.phoneDisplay}
-              </a>
+            {/* Padded well clear of the bottom on small screens: the mobile
+                action bar is fixed over this corner and was covering the legal
+                row outright. */}
+            <div className="mt-[clamp(48px,5vw,72px)] flex flex-wrap items-center justify-between gap-x-8 gap-y-3 pt-7 pb-[clamp(32px,4vw,56px)] text-[13px] text-[color:var(--on-ink-faint)] shadow-[inset_0_1px_0_0_var(--rule)] max-md:pb-[104px]">
+              <span>© {new Date().getFullYear()} VPro Skills EduTech</span>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                {LEGAL_LINKS.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`transition-colors duration-[240ms] ease-[var(--ease-state)] ${FOCUS_RING} hover:text-[color:var(--on-ink)]`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <span className="mono text-[color:var(--on-ink-faint)]">Hours</span>
-              <span className="text-[14px] text-[color:var(--on-ink-faint)]">{HOURS_DISPLAY}</span>
-              <Link
-                to="/login"
-                className={`pt-1.5 text-[14px] text-[color:var(--on-ink)] ${FOCUS_RING} hover:text-[color:var(--signal)]`}
-              >
-                Student login
-              </Link>
-            </div>
-          </div>
-
-          {/* Not in the comp. The app has these routes and an app-store listing
-              has to link them, so they get a quiet row rather than a column. */}
-          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-[color:var(--on-ink-faint)]">
-            <span>© {new Date().getFullYear()} VProSkills.com</span>
-            <Link to="/privacy" className={`${FOCUS_RING} hover:text-[color:var(--on-ink)]`}>
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className={`${FOCUS_RING} hover:text-[color:var(--on-ink)]`}>
-              Terms &amp; Conditions
-            </Link>
-            <Link to="/data-deletion" className={`${FOCUS_RING} hover:text-[color:var(--on-ink)]`}>
-              Data Deletion
-            </Link>
           </div>
         </footer>
       ) : (
