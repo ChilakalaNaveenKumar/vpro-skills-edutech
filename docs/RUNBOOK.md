@@ -49,7 +49,23 @@ columns - and have been run against a populated copy of the production schema
 with no row lost. The part that needs care is that they leave every content
 table **empty**, and the tables have to be filled once, by hand.
 
-Take a backup first anyway (`./backup.sh`), then deploy normally - the
+Rehearse it first, against a copy of the real database - especially with a
+batch in progress:
+
+```
+./backup.sh                                        # on the production box
+./rehearse-release.sh backups/<that dump>.sql      # here, on a throwaway copy
+```
+
+That restores the dump into a scratch container, runs the whole
+migrate-and-seed sequence against it, and prints what changed - row counts,
+every course and topic, and every recorded student attempt. Nothing it does
+can reach production. Read the diff for two things: no assessment attempt may
+change, and no topic a running batch depends on should turn `INACTIVE`. A
+topic goes inactive when it is missing from `scripts/curriculum.json`, so the
+fix is to add it to the JSON, never to edit the database by hand.
+
+Then take a backup anyway (`./backup.sh`) and deploy normally - the
 entrypoint applies the migrations. Then load the content, once:
 
 ```
