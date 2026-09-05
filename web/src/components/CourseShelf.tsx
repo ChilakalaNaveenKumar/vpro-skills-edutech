@@ -11,11 +11,11 @@ const openBg = (hue: number) => `oklch(0.44 0.086 ${hue})`
 const closedBg = (hue: number) => `oklch(0.288 0.045 ${hue})`
 
 export default function CourseShelf() {
-  const [selected, setSelected] = useState(0)
-  const [hovered, setHovered] = useState<number | null>(null)
-  const [focused, setFocused] = useState<number | null>(null)
+  // One source of truth. The previous version raced three pieces of state
+  // through `focused ?? hovered ?? selected`, and a tabbed-to spine could stay
+  // shut while another stayed open - the shelf was unusable by keyboard.
+  const [open, setOpen] = useState(0)
   const { rows } = useSchedule()
-  const open = focused ?? hovered ?? selected
 
   return (
     <>
@@ -38,20 +38,14 @@ export default function CourseShelf() {
                 background: isOpen ? openBg(course.hue) : closedBg(course.hue),
                 boxShadow: `inset 0 0 0 1px rgb(237 231 222 / ${isOpen ? 0.28 : 0.12})`,
               }}
-              onMouseEnter={() => setHovered(index)}
-              onMouseLeave={() => setHovered(null)}
-              onFocusCapture={() => setFocused(index)}
-              onBlurCapture={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                  setFocused(null)
-                }
-              }}
+              onMouseEnter={() => setOpen(index)}
+              onFocusCapture={() => setOpen(index)}
             >
               <button
                 type="button"
                 aria-expanded={isOpen}
                 aria-label={course.name}
-                onClick={() => setSelected(index)}
+                onClick={() => setOpen(index)}
                 className={
                   isOpen
                     ? 'mono absolute left-10 top-10 z-10 text-[color:var(--on-ink)]'
