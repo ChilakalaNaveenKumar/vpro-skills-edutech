@@ -50,6 +50,9 @@ pytest-cache-files-*/
 crash.log
 crash.*.log
 
+# Local SQLite file used only when running the backend without Docker/Postgres.
+*.db
+
 # Scratch space for plan execution: task briefs, implementer reports and
 # review diffs. Regenerable from the plan and git history, so it is never
 # committed - but note the progress ledger lives here too, which is why
