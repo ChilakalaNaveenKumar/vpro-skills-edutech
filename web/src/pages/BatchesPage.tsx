@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { COURSES } from '../content/courses'
 import { useSchedule } from '../utils/schedule'
-import { courseStateFor } from '../utils/courseState'
 import ScrollProgress from '../motion/ScrollProgress'
 import Reveal from '../motion/Reveal'
 import CtaLink from '../components/CtaLink'
@@ -20,11 +19,16 @@ function longDate(iso: string): string {
 export default function BatchesPage() {
   const { rows, failed } = useSchedule()
 
+  // Which courses have no batch at all - not which are currently running.
+  // `courseStateFor` answers the latter, so a course with a batch that has yet
+  // to start was listed both with its batch and as "not yet scheduled".
+  const scheduled = new Set((rows ?? []).map((row) => row.batch.course_name))
+
   const batchOptions = [
     ...(rows ?? []).map(
       (row) => `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
     ),
-    ...COURSES.filter((course) => courseStateFor(course.name, rows) === 'Gathering interest').map(
+    ...COURSES.filter((course) => !scheduled.has(course.name)).map(
       (course) => `${course.name} — not yet scheduled`,
     ),
     'Not sure yet — please advise',
