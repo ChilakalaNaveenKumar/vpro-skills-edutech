@@ -20,6 +20,10 @@ export default function NextBatchesCard() {
 
   if (!rows) return null
 
+  // Nothing scheduled and nothing on air: render no card at all rather than an
+  // empty bordered box. The hero's copy stands on its own.
+  if (upcoming.length === 0 && !liveNow) return null
+
   return (
     <div className="bg-[color:var(--ink-2)] p-8 shadow-[inset_0_0_0_1px_var(--rule)] lg:p-10">
       {upcoming.length > 0 && (
@@ -36,7 +40,12 @@ export default function NextBatchesCard() {
                   {row.batch.batch_number} · {hourWindow(row)} IST · {row.batch.trainer_name}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <CtaLink cta="register_now" chapter="hero" className="btn-primary">
+                  <CtaLink
+                    cta="register_now"
+                    chapter="hero"
+                    course={row.batch.course_name}
+                    className="btn-primary"
+                  >
                     Register now
                   </CtaLink>
                   <Link to="/batches" className="btn-secondary">
@@ -60,7 +69,12 @@ export default function NextBatchesCard() {
             <Link to="/courses" className="btn-primary">
               View this course
             </Link>
-            <CtaLink cta="sit_in_on_a_class" chapter="hero" className="btn-secondary">
+            <CtaLink
+              cta="sit_in_on_a_class"
+              chapter="hero"
+              course={liveNow.batch.course_name}
+              className="btn-secondary"
+            >
               Sit in on a class
             </CtaLink>
           </div>
