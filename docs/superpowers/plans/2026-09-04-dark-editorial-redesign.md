@@ -25,6 +25,7 @@ Every task's requirements implicitly include this section. Values are copied ver
 - **Every CTA goes through `CtaLink`** and the `MESSAGES` map in `web/src/content/contact.ts`. No ad-hoc `wa.me` URLs at call sites.
 - **Nothing in `/dashboard`, `/results`, `/topics/*` or `/admin/*` may change.**
 - The comp lives at `~/Downloads/VPro Skills Website Redesign/` (`VPro Skills Home.dc.html`, `Course.dc.html`, `Batches.dc.html`). It is the visual source of truth and can be served with `python3 -m http.server 8899` from that directory.
+- **Type-checking must use `npx tsc -b --noEmit`.** `web/tsconfig.json` is a solution-style config with `"files": []`, so a bare `npx tsc --noEmit` compiles nothing and exits 0 regardless of what is broken. `npm run build` (`tsc -b && vite build`) is the fuller check.
 
 ---
 
@@ -422,7 +423,7 @@ and the route inside the `<Route element={<PublicLayout />}>` block, immediately
 
 - [ ] **Step 6: Verify the app still compiles**
 
-Run: `cd web && npx tsc --noEmit`
+Run: `cd web && npx tsc -b --noEmit`
 Expected: errors *only* from files that reference now-deleted CSS classes — those are components Task 11 removes. TypeScript does not check CSS, so this should in fact be clean. If any error mentions a missing module, stop and fix it before continuing.
 
 Run: `cd web && npm run dev`, then open `http://localhost:5173/batches`.
@@ -698,7 +699,7 @@ export default function Accordion({ items, openIndex, onToggle, className = '' }
 
 - [ ] **Step 6: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src/motion src/components/Accordion.tsx`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src/motion src/components/Accordion.tsx`
 Expected: both clean.
 
 - [ ] **Step 7: Commit**
@@ -824,7 +825,7 @@ export default function HeroScope({ className = '' }: { className?: string }) {
 
 - [ ] **Step 2: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src/motion/HeroScope.tsx`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src/motion/HeroScope.tsx`
 Expected: both clean.
 
 - [ ] **Step 3: Commit**
@@ -1143,7 +1144,7 @@ export default function HomePage() {
 
 - [ ] **Step 7: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean, apart from any error in a file Task 11 deletes. If `HomePage.tsx` now has unused imports flagged, remove them.
 
 Run the backend (`cd backend && source .venv/bin/activate && uvicorn app.main:app --reload`) and `cd web && npm run dev`, then open `http://localhost:5173/`.
@@ -1335,7 +1336,7 @@ In `web/src/pages/HomePage.tsx`, import `Batches` and render it directly after `
 
 - [ ] **Step 4: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean.
 
 In the browser at `http://localhost:5173/`: clicking each spine opens it and closes the previous one. Tab through — every spine takes focus with a visible copper outline and Enter opens it. Narrow the window below 768px: the shelf becomes a readable stack.
@@ -1858,7 +1859,7 @@ export default function HomePage() {
 
 - [ ] **Step 10: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean.
 
 In the browser: scroll the whole page. Every section fades up once. The progress bar tracks. The portrait drifts. Past the hero on a narrow window, the mobile bar slides up. Both accordions open and close; the FAQ can be fully closed, the loop cannot. Enable "Reduce motion" in macOS System Settings and reload: the canvas is a single static frame and nothing animates in.
@@ -2058,7 +2059,7 @@ export default function CourseDetailPage() {
 
 - [ ] **Step 2: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean. `CourseContent` provides `level`, `prerequisites`, `summary`, `modules` and `projects` exactly as used above — verified against `web/src/content/courses.ts:26-42`. Its `forWhom`, `outcomes` and `techs` fields are deliberately unused on this page; `forWhom` returns in the notes round.
 
 In the browser, visit `/courses/agentic-ai` (should read "In session" if a live batch exists) and `/courses/quantum-computing` (should read "Gathering interest", with no state note and a "Register interest" CTA). Confirm the curriculum heading matches each course's real module count.
@@ -2432,7 +2433,7 @@ export default function BatchesPage() {
 
 - [ ] **Step 7: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src && npx vitest run`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src && npx vitest run`
 Expected: all clean, 15 tests passing.
 
 In the browser at `/batches`: the schedule lists real batches. Fill the form and submit — a WhatsApp tab opens with all four lines filled in. Submit with an empty name — the browser blocks it and focuses the field. Stop the backend and reload: the "not loading right now" message appears instead of an empty page.
@@ -2508,7 +2509,7 @@ Same treatment, including the `SplitWords` removal. `Prose` keeps its role; give
 
 - [ ] **Step 5: Verify**
 
-Run: `cd web && npx tsc --noEmit && npx oxlint src`
+Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean.
 
 Walk `/` → `/courses` → `/courses/agentic-ai` → `/batches` → `/about` in the browser. No page flashes light. The header is identical on all five. Then visit `/login` and `/dashboard`: both still light, unchanged.
@@ -2537,7 +2538,7 @@ rm components/ScrollSequence.tsx components/ScrubStage.tsx components/CourseVScr
    components/SectionRail.tsx components/LiveTicker.tsx
 rm motion/StringTuneRuntime.tsx motion/LiveType.tsx motion/SplitWords.tsx \
    motion/Spotlight.tsx motion/Magnetic.tsx
-rm sections/Hero.tsx sections/CoursesAndSchedule.tsx sections/HowItWorks.tsx \
+rm sections/CoursesAndSchedule.tsx sections/HowItWorks.tsx \
    sections/Trainer.tsx sections/ForWhom.tsx sections/Join.tsx sections/Section.tsx
 rm hooks/useActiveSection.ts
 rm content/sections.ts
@@ -2583,7 +2584,7 @@ cd web && npm uninstall three @types/three @fiddle-digital/string-tune
 
 - [ ] **Step 4: Find every dangling import**
 
-Run: `cd web && npx tsc --noEmit`
+Run: `cd web && npx tsc -b --noEmit`
 Expected: errors naming any file still importing something deleted. Fix each by removing the import and the JSX that used it. Re-run until clean.
 
 Then: `cd web && npx oxlint src`
@@ -2598,7 +2599,7 @@ Expected: a match. This copy returns in the notes round and must not be deleted 
 
 ```bash
 cd web
-npx tsc --noEmit          # clean
+npx tsc -b --noEmit       # clean
 npx oxlint                # clean
 npx vitest run            # 15 passing
 npm run build             # succeeds
