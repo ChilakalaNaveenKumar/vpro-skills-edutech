@@ -15,8 +15,6 @@ export default function CourseCard({
   /** Position in the catalogue, printed on the panel. */
   index: number
   state?: CourseState | null
-  /** Legacy callers may pass schedule presence, but only a derived state is rendered. */
-  scheduled?: boolean
 }) {
   return (
     <Link
