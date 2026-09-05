@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Logo from '../components/Logo'
-import { CONTACT, whatsappUrl } from '../content/contact'
-import LiveTicker from '../components/LiveTicker'
-import { NAV_SECTIONS } from '../content/sections'
+import CtaLink from '../components/CtaLink'
+import { CONTACT } from '../content/contact'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
 
@@ -26,27 +25,15 @@ function getGreeting(): string {
 // was a dead end for exactly the visitors we pay for.
 const ROUTES = [
   { to: '/courses', label: 'Courses' },
+  { to: '/batches', label: 'Batch schedule' },
   { to: '/about', label: 'About' },
 ]
 
-/** The demo section lives on the home page, so reach it as an anchor from
- *  there and as a cross-page link from anywhere else. */
-const DEMO_SECTION = NAV_SECTIONS[NAV_SECTIONS.length - 1].id
-
-/** Section jumps offered in the mobile menu on the home page: the demo is
- *  already the menu's primary button, and a label matching a route link would
- *  appear twice. */
-const ROUTE_LABELS = new Set(ROUTES.map((route) => route.label.toLowerCase()))
-const HOME_JUMPS = NAV_SECTIONS.filter(
-  (section) => section.id !== DEMO_SECTION && !ROUTE_LABELS.has(section.label.toLowerCase()),
-)
-
 // Shared chrome for public-facing pages.
 //
-// The journey route ("/") runs the paper-technical system: warm paper ground, a
-// faint hairline grid, and orange used only as a signal. Every other route keeps
-// the plain light shell the app pages already use, so this redesign cannot
-// change how the portal or admin screens look.
+// The exact marketing allowlist receives the dark editorial shell. Everything
+// else keeps the light app shell, so portal and admin screens cannot inherit
+// these scoped theme tokens.
 //
 // Two rounds of post-launch nav feedback, both real UX issues, not just taste:
 // 1) The nav used to show the signed-in user's bare full_name as the dashboard
@@ -71,8 +58,6 @@ export default function PublicLayout() {
     navigate('/')
   }
 
-  const isHome = location.pathname === '/'
-
   function isCurrent(to: string) {
     return location.pathname === to || location.pathname.startsWith(`${to}/`)
   }
@@ -92,12 +77,9 @@ export default function PublicLayout() {
     }`
   }
 
-  /** Uppercase route link used across the marketing pages. */
   function railLinkClass(to: string) {
-    return `rounded px-1 py-1 text-[0.68rem] font-medium uppercase tracking-[0.14em] transition-colors ${FOCUS_RING} ${
-      isCurrent(to)
-        ? 'text-[color:var(--signal)]'
-        : 'text-[color:var(--on-ink-faint)] hover:text-[color:var(--on-ink)]'
+    return `mono rounded px-1 py-1 transition-colors ${FOCUS_RING} ${
+      isCurrent(to) ? 'text-[color:var(--signal)]' : 'text-[color:var(--on-ink-faint)] hover:text-[color:var(--on-ink)]'
     }`
   }
 
@@ -107,7 +89,7 @@ export default function PublicLayout() {
       : { to: '/dashboard', label: 'Dashboard' }
 
   const headerClass = journey
-    ? 'sticky top-0 z-40 border-b border-[color:var(--rule)] bg-[color-mix(in_oklch,var(--ink),transparent_18%)] px-4 py-3.5 backdrop-blur-md'
+    ? 'sticky top-0 z-40 border-b border-[color:var(--rule)] bg-[color-mix(in_srgb,var(--ink),transparent_12%)] px-[var(--gutter)] py-4 backdrop-blur-md'
     : 'sticky top-0 z-40 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur'
 
   return (
@@ -115,8 +97,6 @@ export default function PublicLayout() {
       data-journey={journey ? '' : undefined}
       className={`flex min-h-screen flex-col ${journey ? '' : 'bg-white'}`}
     >
-
-      {journey && <LiveTicker />}
 
       <a href="#main-content" className="skip-link rounded bg-brand-600 px-3 py-2 text-sm text-white">
         Skip to main content
@@ -177,12 +157,12 @@ export default function PublicLayout() {
             )}
 
             {journey && (
-              <a
-                href={isHome ? `#${DEMO_SECTION}` : `/#${DEMO_SECTION}`}
-                className={`rounded-full bg-[color:var(--signal)] px-5 py-2 text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] transition-[filter] duration-200 hover:brightness-110 ${FOCUS_RING}`}
+              <Link
+                to="/batches"
+                className={`btn-primary ${FOCUS_RING}`}
               >
-                Book a free demo
-              </a>
+                Reserve my seat
+              </Link>
             )}
           </nav>
 
@@ -225,27 +205,13 @@ export default function PublicLayout() {
                   </Link>
                 ))}
 
-                {/* Section jumps are only real on the home page, and a jump whose
-                    label repeats a route link just reads as a duplicate. */}
-                {isHome &&
-                  HOME_JUMPS.map((section) => (
-                    <a
-                      key={section.id}
-                      href={`#${section.id}`}
-                      onClick={() => setIsMenuOpen(false)}
-                      className={`rounded px-2 py-2 text-[color:var(--on-ink-faint)] ${FOCUS_RING}`}
-                    >
-                      {section.label}
-                    </a>
-                  ))}
-
-                <a
-                  href={isHome ? `#${DEMO_SECTION}` : `/#${DEMO_SECTION}`}
+                <Link
+                  to="/batches"
                   onClick={() => setIsMenuOpen(false)}
-                  className={`mt-1 rounded-full bg-[color:var(--signal)] px-4 py-2.5 text-center text-[0.72rem] font-bold uppercase tracking-[0.1em] text-[color:var(--ink)] ${FOCUS_RING}`}
+                  className={`btn-primary mt-1 ${FOCUS_RING}`}
                 >
-                  Book a free demo
-                </a>
+                  Reserve my seat
+                </Link>
               </>
             )}
             {user ? (
@@ -295,26 +261,30 @@ export default function PublicLayout() {
       >
         <div className="mx-auto flex max-w-6xl flex-col gap-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            <div>
+            <div className={journey ? 'text-[color:var(--on-ink)]' : ''}>
               <p className={journey ? 'display text-lg text-[color:var(--on-ink)]' : 'font-display text-base text-white'}>
                 VPro Skills
               </p>
               <p className="mt-1">{CONTACT.location}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <a
-                href={whatsappUrl('footer_whatsapp')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`rounded ${FOCUS_RING} hover:text-[color:var(--signal)]`}
+              <CtaLink
+                cta="footer_whatsapp"
+                chapter="footer"
+                className={`flex flex-col gap-1 rounded ${FOCUS_RING} hover:text-[color:var(--signal)]`}
               >
-                WhatsApp {CONTACT.phoneDisplay}
-              </a>
-              <a href={`tel:${CONTACT.phoneDial}`} className={`rounded ${FOCUS_RING} hover:text-[color:var(--signal)]`}>
-                Call {CONTACT.phoneDisplay}
+                <span className={journey ? 'mono text-[color:var(--on-ink-faint)]' : ''}>WhatsApp</span>
+                <span className={journey ? 'text-[color:var(--on-ink)]' : ''}>{CONTACT.phoneDisplay}</span>
+              </CtaLink>
+              <a
+                href={`tel:${CONTACT.phoneDial}`}
+                className={`flex flex-col gap-1 rounded ${FOCUS_RING} hover:text-[color:var(--signal)]`}
+              >
+                <span className={journey ? 'mono text-[color:var(--on-ink-faint)]' : ''}>Call</span>
+                <span className={journey ? 'text-[color:var(--on-ink)]' : ''}>{CONTACT.phoneDisplay}</span>
               </a>
             </div>
-            <nav className="flex flex-col gap-2">
+            <nav className={`flex flex-col gap-2 ${journey ? 'text-[color:var(--on-ink)]' : ''}`}>
               <Link to="/privacy" className={`rounded ${FOCUS_RING} hover:text-[color:var(--signal)]`}>
                 Privacy Policy
               </Link>
