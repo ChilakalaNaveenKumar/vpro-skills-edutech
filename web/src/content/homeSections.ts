@@ -1,0 +1,87 @@
+// Copy for the home page's middle sections, taken verbatim from the approved
+// comp. Kept as data so a section component carries layout only.
+
+export const TRAINER = {
+  eyebrow: 'From the trainer',
+  quote:
+    'I teach live because the useful half of this work is what happens when it breaks, and a recording cannot look at your screen.',
+  body: [
+    'Seventeen years building software, cloud systems and enterprise AI. I take the sessions myself — not an assistant, and not last year’s recording.',
+    'You get the recordings as well, for the session you had to miss. The recording is the backup. It is not the course.',
+  ],
+  attribution: 'Sambasiva Rao — trainer',
+  photo: '/trainer-sambasiva-rao.webp',
+  photoFallback: '/trainer-sambasiva-rao.jpeg',
+} as const
+
+export const TENETS = [
+  {
+    n: '01',
+    k: 'The hour does not move',
+    v: 'A batch has one fixed time. That constraint is what makes everything else work — and the reason we tell people who cannot hold it not to enrol.',
+  },
+  {
+    n: '02',
+    k: 'You ask while it is happening',
+    v: 'When your model trains and predicts nothing, somebody looks at your screen there and then. Not in a comment box the next morning.',
+  },
+  {
+    n: '03',
+    k: 'The recording is only a backup',
+    v: 'You get it, for the session you had to miss. It is not the course, and we do not sell it as one.',
+  },
+] as const
+
+export const BATCH_LOOP = [
+  {
+    n: '01',
+    title: 'The topic, live',
+    body: 'A fixed hour with the trainer in the room. Topics arrive in order, so the thing you need next is the thing being taught.',
+  },
+  {
+    n: '02',
+    title: 'One attempt',
+    body: 'The topic ends in an assessment you get one attempt at. Nothing to retake until the number looks better.',
+  },
+  {
+    n: '03',
+    title: 'The answer, beside yours',
+    body: 'Your result is there the moment you submit, with the answer you chose sitting next to the one that was correct.',
+  },
+  {
+    n: '04',
+    title: 'On the record',
+    body: 'Every attempt stays in your history, so by the end you can see what you knew and where you were wrong.',
+  },
+] as const
+
+export const FAQS = [
+  {
+    q: 'What happens if I miss a session?',
+    a: 'You get the recording for that session, and you can ask about it in the next class. The recording is a backup for a session you missed — it is not a substitute for attending.',
+  },
+  {
+    q: 'Do I need programming experience?',
+    a: 'Not for Agentic AI, Python Full Stack, Java Full Stack or .NET Full Stack — all four start from first principles. Forward Deployment Engineer and Quantum Computing assume you can already write basic code.',
+  },
+  {
+    q: 'What does it cost, and can I pay in instalments?',
+    a: 'We share the fee and the payment options on WhatsApp or on the call, after you have seen the demo class. Nothing is taken before then.',
+  },
+  {
+    q: 'Is this online or classroom?',
+    a: 'Both work. Sessions run live at a fixed hour and you can attend from Ameerpet or join online — the same class either way.',
+  },
+  {
+    q: 'Do you guarantee placement?',
+    a: 'No. We provide placement support — interview preparation, project review, and help presenting your work. Anyone guaranteeing a job is selling you something else.',
+  },
+  {
+    q: 'What if no batch hour suits me?',
+    a: 'Tell us the hours you can hold. Batches open when enough people can move together, so your constraint is genuinely useful information to us.',
+  },
+  {
+    q: 'Do I get a certificate?',
+    a: 'Yes, on completion of the course and its assessments.',
+  },
+] as const
