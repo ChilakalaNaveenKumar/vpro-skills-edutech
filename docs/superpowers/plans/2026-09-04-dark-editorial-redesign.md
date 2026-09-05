@@ -1987,25 +1987,34 @@ export default function CourseDetailPage() {
 
   if (!course) return <Navigate to="/courses" replace />
 
-  const state = courseStateFor(course.name, rows)
+  // A missing schedule is unknown, not evidence that the course is gathering interest.
+  const state = rows ? courseStateFor(course.name, rows) : null
   const note = courseStateNote(course.name, rows)
   const inSession = state === 'In session'
+
+  // The batch data carries the real trainer. A hardcoded name here would keep
+  // claiming a trainer after the person teaching a course changed.
+  const trainer = rows?.find((row) => row.batch.course_name === course.name)?.batch.trainer_name
 
   const facts = [
     { k: 'Level', v: course.level },
     { k: 'Prerequisites', v: course.prerequisites },
-    { k: 'Format', v: inSession ? 'Live, at a fixed hour' : 'Live, hour fixed when the batch opens' },
-    { k: 'Trainer', v: 'Sambasiva Rao' },
-  ]
+    ...(state
+      ? [{ k: 'Format', v: inSession ? 'Live, at a fixed hour' : 'Live, hour fixed when the batch opens' }]
+      : []),
+    ...(trainer ? [{ k: 'Trainer', v: trainer }] : []),
+  ].filter((fact) => fact.v.trim().length > 0)
 
   return (
     <>
       <ScrollProgress />
 
       <section className="shell py-24 lg:py-32">
-        <Reveal>
-          <p className="eyebrow">{state}</p>
-        </Reveal>
+        {state && (
+          <Reveal>
+            <p className="eyebrow">{state}</p>
+          </Reveal>
+        )}
         <Reveal delayIndex={1}>
           <h1 className="display mt-6 text-[clamp(2.6rem,6vw,4.4rem)]">{course.name}</h1>
         </Reveal>
@@ -2089,32 +2098,36 @@ export default function CourseDetailPage() {
         </div>
       </section>
 
-      <section id="projects" className="shell py-24 lg:py-28">
-        <Reveal>
-          <p className="eyebrow">What you leave with</p>
-          <h2 className="display mt-6 text-[clamp(2.1rem,4vw,3.1rem)]">
-            Things that exist afterwards.
-          </h2>
-        </Reveal>
+      {course.projects.length > 0 && (
+        <section id="projects" className="shell py-24 lg:py-28">
+          <Reveal>
+            <p className="eyebrow">What you leave with</p>
+            <h2 className="display mt-6 text-[clamp(2.1rem,4vw,3.1rem)]">
+              Things that exist afterwards.
+            </h2>
+          </Reveal>
 
-        <div className="mt-14 grid gap-px bg-[color:var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
-          {course.projects.map((project, index) => (
-            <Reveal key={project.name} delayIndex={index} className="bg-[color:var(--ink)] p-8">
-              <h3 className="display text-[1.15rem]">{project.name}</h3>
-              <p className="mt-3 text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-                {project.description}
-              </p>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+          <div className="mt-14 grid gap-px bg-[color:var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
+            {course.projects.map((project, index) => (
+              <Reveal key={project.name} delayIndex={index} className="bg-[color:var(--ink)] p-8">
+                <h3 className="display text-[1.15rem]">{project.name}</h3>
+                <p className="mt-3 text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
+                  {project.description}
+                </p>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section id="enrol" className="shell py-32">
-        <Reveal>
-          <h2 className="display max-w-[18ch] text-[clamp(2.2rem,4.6vw,3.6rem)]">
-            {inSession ? 'This batch is running now.' : 'Tell us you want this one.'}
-          </h2>
-        </Reveal>
+        {state && (
+          <Reveal>
+            <h2 className="display max-w-[18ch] text-[clamp(2.2rem,4.6vw,3.6rem)]">
+              {inSession ? 'This batch is running now.' : 'Tell us you want this one.'}
+            </h2>
+          </Reveal>
+        )}
         <Reveal delayIndex={1}>
           <div className="mt-10 flex flex-wrap gap-4">
             <CtaLink
@@ -2125,7 +2138,12 @@ export default function CourseDetailPage() {
             >
               {inSession ? 'Reserve my seat' : 'Register interest'}
             </CtaLink>
-            <CtaLink cta="hero_demo" chapter="course_enrol" className="btn-secondary">
+            <CtaLink
+              cta="hero_demo"
+              chapter="course_enrol"
+              course={course.name}
+              className="btn-secondary"
+            >
               Book a free demo
             </CtaLink>
           </div>
