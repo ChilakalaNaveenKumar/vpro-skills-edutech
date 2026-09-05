@@ -10,8 +10,8 @@ export default function Batches() {
         </Reveal>
         <Reveal delayIndex={1}>
           <p className="max-w-[38ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-            Agentic AI is the batch running now. The rest open when there are enough people to
-            move together — register and you hear the moment an hour is fixed.
+            A course opens as a live batch when there are enough people to move together —
+            register and you hear the moment an hour is fixed.
           </p>
         </Reveal>
       </div>

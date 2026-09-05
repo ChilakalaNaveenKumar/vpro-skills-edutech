@@ -1216,6 +1216,9 @@ const openBg = (hue: number) => `oklch(0.44 0.086 ${hue})`
 const closedBg = (hue: number) => `oklch(0.288 0.045 ${hue})`
 
 export default function CourseShelf() {
+  // One source of truth. The previous version raced three pieces of state
+  // through `focused ?? hovered ?? selected`, and a tabbed-to spine could stay
+  // shut while another stayed open - the shelf was unusable by keyboard.
   const [open, setOpen] = useState(0)
   const { rows } = useSchedule()
 
@@ -1240,26 +1243,34 @@ export default function CourseShelf() {
                 background: isOpen ? openBg(course.hue) : closedBg(course.hue),
                 boxShadow: `inset 0 0 0 1px rgb(237 231 222 / ${isOpen ? 0.28 : 0.12})`,
               }}
+              onMouseEnter={() => setOpen(index)}
+              onFocusCapture={() => setOpen(index)}
             >
-              {!isOpen && (
-                <button
-                  type="button"
-                  aria-expanded={false}
-                  onClick={() => setOpen(index)}
-                  className="flex h-full w-full items-end justify-center pb-8"
-                >
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-label={course.name}
+                onClick={() => setOpen(index)}
+                className={
+                  isOpen
+                    ? 'mono absolute left-10 top-10 z-10 text-[color:var(--on-ink)]'
+                    : 'flex h-full w-full items-end justify-center pb-8'
+                }
+              >
+                {isOpen ? (
+                  state
+                ) : (
                   <span
                     className="display whitespace-nowrap text-[1.4rem] text-[color:var(--on-ink)]"
                     style={{ writingMode: 'vertical-rl', rotate: '180deg' }}
                   >
                     {course.name}
                   </span>
-                </button>
-              )}
+                )}
+              </button>
 
               {isOpen && (
-                <div className="flex h-full flex-col justify-between p-10">
-                  <p className="mono text-[color:var(--on-ink)]">{state}</p>
+                <div className="flex h-full flex-col justify-end p-10">
                   <div>
                     <h3 className="display text-[clamp(1.8rem,3vw,2.6rem)]">{course.name}</h3>
                     <p className="lede mt-4 max-w-[46ch]">{course.tagline}</p>
@@ -1344,8 +1355,8 @@ export default function Batches() {
         </Reveal>
         <Reveal delayIndex={1}>
           <p className="max-w-[38ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-            Agentic AI is the batch running now. The rest open when there are enough people to
-            move together — register and you hear the moment an hour is fixed.
+            A course opens as a live batch when there are enough people to move together —
+            register and you hear the moment an hour is fixed.
           </p>
         </Reveal>
       </div>
