@@ -138,6 +138,10 @@ textarea:focus-visible {
   color: var(--signal);
 }
 
+[data-journey] .tnum {
+  font-variant-numeric: tabular-nums;
+}
+
 [data-journey] .lede {
   font-family: "Newsreader", Georgia, serif;
   font-size: clamp(1.05rem, 0.4vw + 0.98rem, 1.24rem);
