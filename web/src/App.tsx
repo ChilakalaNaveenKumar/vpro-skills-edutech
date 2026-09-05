@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
 import CoursesPage from './pages/CoursesPage'
 import CourseDetailPage from './pages/CourseDetailPage'
+import BatchesPage from './pages/BatchesPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import TopicsPage from './pages/TopicsPage'
@@ -30,6 +31,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<CourseDetailPage />} />
+        <Route path="/batches" element={<BatchesPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
