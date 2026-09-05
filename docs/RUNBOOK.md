@@ -40,6 +40,43 @@ a column or table - that data is gone, downgrade or not. Only downgrade a
 migration you know was purely additive (a new nullable column, a new
 table), and take a backup first regardless (see below).
 
+## First deploy of the database-backed content (one time)
+
+Revisions `g6a7b8c9d0e1` to `j9d0e1f2g3h4` move the site copy and the
+curriculum out of the frontend's static files and into the database, and add
+`leads`. The migrations themselves are additive - new tables, new nullable
+columns - and have been run against a populated copy of the production schema
+with no row lost. The part that needs care is that they leave every content
+table **empty**, and the tables have to be filled once, by hand.
+
+Take a backup first anyway (`./backup.sh`), then deploy normally - the
+entrypoint applies the migrations. Then load the content, once:
+
+```
+docker compose -f docker-compose.prod.yml exec backend python -m scripts.seed_site_content
+docker compose -f docker-compose.prod.yml exec backend python -m scripts.seed_curriculum
+```
+
+Both scripts replace their tables wholesale, so a second run would throw away
+whatever the admin has written since the first. They refuse to run against
+tables that already hold content for that reason, and exit non-zero; pass
+`--force` only when you genuinely mean to discard the live copy and reload
+from the JSON files. **Never** add either script to `docker-entrypoint.sh` -
+it runs on every container start, and that would reset the site's content on
+every restart.
+
+Until they are run the public pages are not broken: each section falls back
+to the copy compiled into the frontend, and an empty collection from the API
+is treated as "nothing authored yet" rather than "show nothing".
+
+One thing here is effectively one-way. `i8c9d0e1f2g3` makes `batches.start_time`
+and `end_time` nullable so a batch can open before its hour is fixed. As soon
+as one batch is saved without a time, `alembic downgrade` can no longer restore
+the `NOT NULL` constraint and will abort. That abort is safe - Postgres runs
+the migration in a transaction, so a failed downgrade leaves the database
+exactly where it was, verified - but the way back is a restore from backup,
+not a downgrade.
+
 ## Creating the first admin account
 
 There is no self-registration endpoint (see `docs/ARCHITECTURE.md`'s
@@ -69,6 +106,40 @@ verifies each token's signature against the current secret on every
 request, so every logged-in user (student and admin) is signed out at
 once and must log in again. There's no partial/staged rotation today.
 Plan for this during a maintenance window, not silently mid-day.
+
+## Adding a new secret
+
+Real secret values live in exactly one place - SSM Parameter Store - and reach
+the container through `docker/fetch-secrets.sh`, authenticated by the app
+instance's IAM role. No secret is ever committed, and no static AWS key exists
+to steal. Adding one (an API key from a third party, say) touches four files
+and one command:
+
+1. Write the value to SSM, under the same path prefix the others use:
+
+   ```
+   aws ssm put-parameter --type SecureString --overwrite \
+       --name /vpro-skills/production/google_api_key --value "<the key>"
+   ```
+
+   Do this with the CLI rather than adding it to `infra/aws/ssm.tf` when the
+   value is one you were handed rather than one Terraform generates. Anything
+   Terraform manages is stored in plaintext in its state file; keeping a
+   handed-to-you key out of state is one less copy of it. `iam.tf` grants the
+   instance the whole `/vpro-skills/production/*` prefix, so a new parameter
+   there needs no IAM change.
+
+2. Map it in `docker/fetch-secrets.sh`'s `name_map`, so the fetch writes it
+   into `backend/.env` under the env var name the app reads.
+3. Declare it on `Settings` in `backend/app/core/config.py`. Give it no
+   default if the app cannot start without it - that turns a missing secret
+   into a loud startup failure rather than a runtime surprise.
+4. Document it in `backend/.env.example`, with a placeholder, never the value.
+
+For local development there is no SSM: hand-edit `backend/.env`, which is
+gitignored. The repo root also has a `.env` holding `GOOGLE_API_KEY`, left
+from experimenting with Gemini - nothing reads it yet. Give it the treatment
+above when the Gemini work lands, or delete it.
 
 ## Database backups
 
