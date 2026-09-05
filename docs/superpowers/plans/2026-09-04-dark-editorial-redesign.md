@@ -1016,9 +1016,19 @@ function hourWindow(row: ScheduleRow): string {
   return `${row.batch.start_time.slice(0, 5)} – ${row.batch.end_time.slice(0, 5)}`
 }
 
+// `state === 'today'` means a session runs later today, which is also true of
+// a batch that began weeks ago. "Next batches" must mean batches a student can
+// still join from the beginning, so this asks the start date directly.
+function hasNotStarted(isoDate: string): boolean {
+  const start = new Date(`${isoDate}T00:00:00`)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return start.getTime() >= today.getTime()
+}
+
 export default function NextBatchesCard() {
   const { rows, liveNow } = useSchedule()
-  const upcoming = (rows ?? []).filter((row) => row.state === 'today' || row.state === 'upcoming')
+  const upcoming = (rows ?? []).filter((row) => hasNotStarted(row.batch.start_date))
 
   if (!rows) return null
 
