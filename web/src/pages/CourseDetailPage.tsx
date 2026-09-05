@@ -1,208 +1,172 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { courseBySlug } from '../content/courses'
-import { listBatches } from '../services/batchesService'
-import type { Batch } from '../types'
-import ModuleExplorer from '../components/ModuleExplorer'
+import { useParams, Navigate, Link } from 'react-router-dom'
+import { COURSES } from '../content/courses'
+import { courseStateFor, courseStateNote } from '../utils/courseState'
+import { useSchedule } from '../utils/schedule'
+import ScrollProgress from '../motion/ScrollProgress'
+import Reveal from '../motion/Reveal'
 import CtaLink from '../components/CtaLink'
-import SplitWords from '../motion/SplitWords'
 
-// One course, in full: what it is, who it is for, the whole curriculum as
-// something you can look at, the projects, the outcome, and its real batches.
+const COUNT_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
+
+function moduleHeading(count: number): string {
+  const word = COUNT_WORDS[count] ?? String(count)
+  return `${word} modules, in order.`
+}
+
 export default function CourseDetailPage() {
-  const { slug = '' } = useParams()
-  const course = courseBySlug(slug)
-  const [batches, setBatches] = useState<Batch[]>([])
+  const { slug } = useParams()
+  const { rows } = useSchedule()
+  const course = COURSES.find((entry) => entry.slug === slug)
 
-  useEffect(() => {
-    let mounted = true
-    listBatches()
-      .then((data) => {
-        if (mounted) setBatches(data)
-      })
-      .catch(() => undefined)
-    return () => {
-      mounted = false
-    }
-  }, [])
+  if (!course) return <Navigate to="/courses" replace />
 
-  if (!course) {
-    return (
-      <div className="shell py-32">
-        <h1 className="display text-[clamp(1.6rem,4vw,2.4rem)] text-[color:var(--on-ink)]">
-          That course does not exist
-        </h1>
-        <Link
-          to="/courses"
-          className="mt-6 inline-block text-[0.92rem] text-[color:var(--signal-text)] underline underline-offset-4"
-        >
-          See all courses
-        </Link>
-      </div>
-    )
-  }
+  // A missing schedule is unknown, not evidence that the course is gathering interest.
+  const state = rows ? courseStateFor(course.name, rows) : null
+  const note = courseStateNote(course.name, rows)
+  const inSession = state === 'In session'
 
-  const courseBatches = batches.filter(
-    (batch) =>
-      batch.status === 'ACTIVE' &&
-      batch.course_name.trim().toLowerCase() === course.name.toLowerCase(),
-  )
+  const facts = [
+    { k: 'Level', v: course.level },
+    { k: 'Prerequisites', v: course.prerequisites },
+    { k: 'Format', v: inSession ? 'Live, at a fixed hour' : 'Live, hour fixed when the batch opens' },
+    { k: 'Trainer', v: 'Sambasiva Rao' },
+  ]
 
   return (
-    <div className="py-28 lg:py-32">
-      <div className="shell">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[0.72rem]">
-          <Link to="/courses" className="text-[color:var(--on-ink-faint)] hover:text-[color:var(--on-ink)]">
-            Courses
-          </Link>
-          <span className="text-[color:var(--rule)]" aria-hidden="true">/</span>
-          <span className="text-[color:var(--on-ink-mute)]">{course.name}</span>
-        </nav>
+    <>
+      <ScrollProgress />
 
-        <h1
-          aria-label={course.name}
-          className="display mt-7 text-[clamp(2.1rem,5.4vw,3.6rem)] text-[color:var(--on-ink)]"
-        >
-          <SplitWords text={course.name} />
-        </h1>
-
-        <p className="rise mt-4 text-[clamp(1rem,2vw,1.3rem)] text-[color:var(--signal-text)]">
-          {course.tagline}
-        </p>
-
-        <p className="lede rise mt-7 max-w-3xl">{course.summary}</p>
-
-        <dl className="rise-stagger mt-12 grid gap-x-10 gap-y-6 border-t border-[color:var(--rule)] pt-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <dt className="eyebrow">Level</dt>
-            <dd className="mt-2 text-[0.92rem] text-[color:var(--on-ink)]">{course.level}</dd>
-          </div>
-          <div>
-            <dt className="eyebrow">Prerequisites</dt>
-            <dd className="mt-2 text-[0.92rem] text-[color:var(--on-ink)]">{course.prerequisites}</dd>
-          </div>
-          <div>
-            <dt className="eyebrow">Structure</dt>
-            <dd className="tnum mt-2 text-[0.92rem] text-[color:var(--on-ink)]">
-              {course.modules.length} modules &middot; {course.projects.length} projects
-            </dd>
-          </div>
-          <div>
-            <dt className="eyebrow">Format</dt>
-            <dd className="mt-2 text-[0.92rem] text-[color:var(--on-ink)]">
-              Live batch, fixed time, named trainer
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      {/* The curriculum, as something you look at rather than read. */}
-      <ModuleExplorer modules={course.modules} />
-
-      <div className="shell mt-24 grid gap-14 lg:grid-cols-2 lg:gap-20">
-        <div>
-          <h2 className="display text-[clamp(1.4rem,3vw,2rem)] text-[color:var(--on-ink)]">
-            What you build
-          </h2>
-          <ul className="mt-8 space-y-px">
-            {course.projects.map((project) => (
-              <li key={project.name} className="border-t border-[color:var(--rule)] py-4 last:border-b">
-                <h3 className="text-[0.95rem] font-medium text-[color:var(--on-ink)]">{project.name}</h3>
-                <p className="mt-1 text-[0.84rem] leading-relaxed text-[color:var(--on-ink-mute)]">
-                  {project.description}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h2 className="display text-[clamp(1.4rem,3vw,2rem)] text-[color:var(--on-ink)]">
-            What you leave with
-          </h2>
-          <ul className="mt-8 space-y-px">
-            {course.outcomes.map((outcome) => (
-              <li
-                key={outcome}
-                className="flex items-baseline gap-3.5 border-t border-[color:var(--rule)] py-4 text-[0.94rem] leading-relaxed text-[color:var(--on-ink)] last:border-b"
-              >
-                <span className="text-[color:var(--signal)]" aria-hidden="true">&rarr;</span>
-                {outcome}
-              </li>
-            ))}
-          </ul>
-
-          <h2 className="display mt-14 text-[clamp(1.4rem,3vw,2rem)] text-[color:var(--on-ink)]">
-            Who it is for
-          </h2>
-          <ul className="mt-6 flex flex-wrap gap-2">
-            {course.forWhom.map((who) => (
-              <li
-                key={who}
-                className="rounded-full border border-[color:var(--rule)] px-3.5 py-1.5 text-[0.78rem] text-[color:var(--on-ink-mute)]"
-              >
-                {who}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="shell mt-24">
-        <h2 className="display text-[clamp(1.4rem,3vw,2rem)] text-[color:var(--on-ink)]">
-          Batches for this course
-        </h2>
-        {courseBatches.length === 0 ? (
-          <p className="mt-6 max-w-2xl text-[0.94rem] text-[color:var(--on-ink-mute)]">
-            No batch is scheduled for this course yet. Message us and we will tell you when the next
-            one opens, and what the timing is likely to be.
-          </p>
-        ) : (
-          <ul className="mt-8 space-y-px">
-            {courseBatches.map((batch) => (
-              <li key={batch.id} className="border-t border-[color:var(--rule)] py-5 last:border-b">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
-                  <div>
-                    <p className="text-[0.95rem] font-medium text-[color:var(--on-ink)]">
-                      Batch {batch.batch_number}
-                    </p>
-                    <p className="mt-1 text-[0.8rem] text-[color:var(--on-ink-faint)]">
-                      Trainer {batch.trainer_name}
-                      {batch.progress_status === 'IN_PROGRESS' ? ' - in progress' : ''}
-                    </p>
-                  </div>
-                  <p className="tnum text-[0.84rem] text-[color:var(--on-ink-mute)]">
-                    {batch.start_date} to {batch.end_date} &middot; {batch.start_time.slice(0, 5)}
-                    &ndash;{batch.end_time.slice(0, 5)} IST
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+      <section className="shell py-24 lg:py-32">
+        {state && (
+          <Reveal>
+            <p className="eyebrow">{state}</p>
+          </Reveal>
+        )}
+        <Reveal delayIndex={1}>
+          <h1 className="display mt-6 text-[clamp(2.6rem,6vw,4.4rem)]">{course.name}</h1>
+        </Reveal>
+        <Reveal delayIndex={2}>
+          <p className="lede mt-6 max-w-[52ch]">{course.summary}</p>
+        </Reveal>
+        {note && (
+          <Reveal delayIndex={0}>
+            <p className="mono mt-6 text-[color:var(--on-ink-faint)]">{note}</p>
+          </Reveal>
         )}
 
-        <div className="mt-14 flex flex-col gap-4 border-t border-[color:var(--rule)] pt-10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[0.94rem] text-[color:var(--on-ink-mute)]">
-            Sit in on a live session before you decide.
-          </p>
-          <div className="flex flex-wrap gap-3">
+        <Reveal delayIndex={1}>
+          <dl className="mt-12 grid gap-x-10 gap-y-8 border-t border-[color:var(--rule)] pt-8 sm:grid-cols-2 lg:grid-cols-4">
+            {facts.map((fact) => (
+              <div key={fact.k}>
+                <dt className="mono text-[color:var(--on-ink-faint)]">{fact.k}</dt>
+                <dd className="mt-2 text-[0.98rem] text-[color:var(--on-ink)]">{fact.v}</dd>
+              </div>
+            ))}
+          </dl>
+        </Reveal>
+
+        <Reveal delayIndex={2}>
+          <div className="mt-10 flex flex-wrap gap-4">
             <CtaLink
-              cta="demo_register"
-              chapter={`course_${course.slug}`}
-              className="inline-flex items-center justify-center rounded-full bg-[color:var(--paper)] px-7 py-3.5 text-sm font-semibold text-[color:var(--ink)] hover:bg-white"
+              cta={inSession ? 'reserve_seat' : 'course_waitlist'}
+              chapter="course_hero"
+              course={course.name}
+              className="btn-primary"
             >
+              {inSession ? 'Reserve my seat' : 'Register interest'}
+            </CtaLink>
+            <Link to="/batches" className="btn-secondary">
+              See the schedule
+            </Link>
+          </div>
+        </Reveal>
+      </section>
+
+      <section id="curriculum" className="shell py-24 lg:py-28">
+        <Reveal>
+          <p className="eyebrow">Curriculum</p>
+          <h2 className="display mt-6 text-[clamp(2.1rem,4vw,3.1rem)]">
+            {moduleHeading(course.modules.length)}
+          </h2>
+        </Reveal>
+
+        <div className="mt-14">
+          {course.modules.map((module, index) => (
+            <Reveal key={module.order} delayIndex={index} className="block">
+              <article className="grid gap-6 border-t border-[color:var(--rule)] py-9 lg:grid-cols-[auto_1fr_1fr] lg:gap-12">
+                <span className="display text-[1.7rem] text-[color:var(--signal)]">
+                  {String(module.order).padStart(2, '0')}
+                </span>
+                <div>
+                  <h3 className="display text-[1.25rem]">{module.name}</h3>
+                  <p className="mt-3 max-w-[46ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
+                    {module.summary}
+                  </p>
+                </div>
+                <div>
+                  {/* `builds` is optional on CourseModule - a few modules have
+                      no single artefact, and an empty "You build" reads worse
+                      than no heading at all. */}
+                  {module.builds && (
+                    <>
+                      <p className="mono text-[color:var(--on-ink-faint)]">You build</p>
+                      <p className="mt-2 text-[0.95rem] text-[color:var(--on-ink)]">
+                        {module.builds}
+                      </p>
+                    </>
+                  )}
+                  <p className={`mono text-[color:var(--on-ink-faint)] ${module.builds ? 'mt-5' : ''}`}>
+                    {module.topics.join(' · ')}
+                  </p>
+                </div>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section id="projects" className="shell py-24 lg:py-28">
+        <Reveal>
+          <p className="eyebrow">What you leave with</p>
+          <h2 className="display mt-6 text-[clamp(2.1rem,4vw,3.1rem)]">
+            Things that exist afterwards.
+          </h2>
+        </Reveal>
+
+        <div className="mt-14 grid gap-px bg-[color:var(--rule)] sm:grid-cols-2 lg:grid-cols-3">
+          {course.projects.map((project, index) => (
+            <Reveal key={project.name} delayIndex={index} className="bg-[color:var(--ink)] p-8">
+              <h3 className="display text-[1.15rem]">{project.name}</h3>
+              <p className="mt-3 text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
+                {project.description}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section id="enrol" className="shell py-32">
+        <Reveal>
+          <h2 className="display max-w-[18ch] text-[clamp(2.2rem,4.6vw,3.6rem)]">
+            {inSession ? 'This batch is running now.' : 'Tell us you want this one.'}
+          </h2>
+        </Reveal>
+        <Reveal delayIndex={1}>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <CtaLink
+              cta={inSession ? 'reserve_seat' : 'course_waitlist'}
+              chapter="course_enrol"
+              course={course.name}
+              className="btn-primary"
+            >
+              {inSession ? 'Reserve my seat' : 'Register interest'}
+            </CtaLink>
+            <CtaLink cta="hero_demo" chapter="course_enrol" className="btn-secondary">
               Book a free demo
             </CtaLink>
-            <CtaLink
-              cta="talk_to_trainer"
-              chapter={`course_${course.slug}`}
-              className="inline-flex items-center justify-center rounded-full border border-[color:var(--signal)] px-7 py-3.5 text-sm font-semibold text-[color:var(--signal)] transition-colors hover:bg-[color:var(--signal)] hover:text-[color:var(--ink)]"
-            >
-              Talk to the trainer
-            </CtaLink>
           </div>
-        </div>
-      </div>
-    </div>
+        </Reveal>
+      </section>
+    </>
   )
 }
