@@ -1513,7 +1513,7 @@ export const FAQS = [
 The portrait parallax uses the shared scroll driver.
 
 ```tsx
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { TRAINER } from '../../content/homeSections'
 import Reveal from '../../motion/Reveal'
 import { useScrollDriver } from '../../motion/useScrollDriver'
@@ -1521,13 +1521,42 @@ import { prefersReducedMotion } from '../../motion/prefersReducedMotion'
 
 export default function Trainer() {
   const ref = useRef<HTMLImageElement | null>(null)
+  const metricsRef = useRef({ top: 0, height: 0 })
 
-  useScrollDriver(() => {
+  useEffect(() => {
+    const measure = () => {
+      const node = ref.current
+      if (!node) return
+      const rect = node.getBoundingClientRect()
+      metricsRef.current = {
+        top: rect.top + window.scrollY,
+        height: rect.height,
+      }
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
+    observer?.observe(document.body)
+
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
+  }, [])
+
+  useScrollDriver((scrollY) => {
     const node = ref.current
-    if (!node || prefersReducedMotion()) return
-    const rect = node.getBoundingClientRect()
-    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return
-    const centre = (rect.top + rect.height / 2 - window.innerHeight / 2) / window.innerHeight
+    if (!node) return
+    if (prefersReducedMotion()) {
+      node.style.transform = ''
+      return
+    }
+    const { top, height } = metricsRef.current
+    const viewportTop = top - scrollY
+    if (viewportTop + height <= 0 || viewportTop >= window.innerHeight) return
+    const centre = (viewportTop + height / 2 - window.innerHeight / 2) / window.innerHeight
     node.style.transform = `translateY(${(centre * -26).toFixed(2)}px) scale(1.06)`
   })
 
@@ -1763,8 +1792,8 @@ export default function Faq() {
         className="mt-14"
         openIndex={open}
         onToggle={(index) => setOpen(index === open ? -1 : index)}
-        items={FAQS.map((faq) => ({
-          id: faq.q,
+        items={FAQS.map((faq, index) => ({
+          id: `faq-${index}`,
           heading: <span className="display text-[1.15rem]">{faq.q}</span>,
           body: (
             <p className="max-w-[68ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
@@ -1822,31 +1851,36 @@ export default function Join() {
 It duplicates the hero's own buttons, so it stays hidden until the hero is gone.
 
 ```tsx
-import { useRef, useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import CtaLink from './CtaLink'
-import { useScrollDriver } from '../motion/useScrollDriver'
 import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 
 export default function MobileActionBar() {
-  const ref = useRef<HTMLDivElement | null>(null)
-  const [reduced, setReduced] = useState(false)
+  const [reduced] = useState(prefersReducedMotion)
+  const [shown, setShown] = useState(false)
 
-  useEffect(() => setReduced(prefersReducedMotion()), [])
-
-  useScrollDriver((scrollY) => {
-    const node = ref.current
-    if (!node) return
+  useEffect(() => {
     const hero = document.getElementById('top')
-    const threshold = (hero?.offsetHeight ?? window.innerHeight) - 120
-    node.style.transform = scrollY > threshold ? 'translateY(0)' : 'translateY(100%)'
-  })
+    if (!hero || typeof IntersectionObserver === 'undefined') return
+
+    // Whether the hero is still on screen is a threshold question, so let the
+    // browser answer it. The previous version queried the DOM and read
+    // offsetHeight on every scroll frame to work out the same thing.
+    const observer = new IntersectionObserver(
+      ([entry]) => setShown(!entry.isIntersecting),
+      { rootMargin: '0px' },
+    )
+    observer.observe(hero)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div
-      ref={ref}
+      inert={!shown}
+      aria-hidden={!shown}
       className="fixed inset-x-0 bottom-0 z-[80] grid grid-cols-2 lg:hidden"
       style={{
-        transform: 'translateY(100%)',
+        transform: shown ? 'translateY(0)' : 'translateY(100%)',
         // The bar still appears and hides under reduced motion - it is a
         // control, not decoration. Only the slide is dropped.
         transition: reduced ? undefined : 'transform 420ms cubic-bezier(0.22,1,0.28,1)',
