@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { TRAINER } from '../../content/homeSections'
 import Reveal from '../../motion/Reveal'
 import { useScrollDriver } from '../../motion/useScrollDriver'
@@ -6,13 +6,42 @@ import { prefersReducedMotion } from '../../motion/prefersReducedMotion'
 
 export default function Trainer() {
   const ref = useRef<HTMLImageElement | null>(null)
+  const metricsRef = useRef({ top: 0, height: 0 })
 
-  useScrollDriver(() => {
+  useEffect(() => {
+    const measure = () => {
+      const node = ref.current
+      if (!node) return
+      const rect = node.getBoundingClientRect()
+      metricsRef.current = {
+        top: rect.top + window.scrollY,
+        height: rect.height,
+      }
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
+    observer?.observe(document.body)
+
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
+  }, [])
+
+  useScrollDriver((scrollY) => {
     const node = ref.current
-    if (!node || prefersReducedMotion()) return
-    const rect = node.getBoundingClientRect()
-    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return
-    const centre = (rect.top + rect.height / 2 - window.innerHeight / 2) / window.innerHeight
+    if (!node) return
+    if (prefersReducedMotion()) {
+      node.style.transform = ''
+      return
+    }
+    const { top, height } = metricsRef.current
+    const viewportTop = top - scrollY
+    if (viewportTop + height <= 0 || viewportTop >= window.innerHeight) return
+    const centre = (viewportTop + height / 2 - window.innerHeight / 2) / window.innerHeight
     node.style.transform = `translateY(${(centre * -26).toFixed(2)}px) scale(1.06)`
   })
 

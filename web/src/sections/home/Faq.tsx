@@ -33,8 +33,8 @@ export default function Faq() {
         className="mt-14"
         openIndex={open}
         onToggle={(index) => setOpen(index === open ? -1 : index)}
-        items={FAQS.map((faq) => ({
-          id: faq.q,
+        items={FAQS.map((faq, index) => ({
+          id: `faq-${index}`,
           heading: <span className="display text-[1.15rem]">{faq.q}</span>,
           body: (
             <p className="max-w-[68ch] text-[0.95rem] leading-relaxed text-[color:var(--on-ink-mute)]">
