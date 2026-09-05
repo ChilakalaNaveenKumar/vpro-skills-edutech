@@ -8,6 +8,8 @@ import EnquiryForm from '../components/EnquiryForm'
 import MobileActionBar from '../components/MobileActionBar'
 import { BATCH_LOOP } from '../content/homeSections'
 
+const NEUTRAL_BATCH_OPTION = 'Not sure yet — please advise'
+
 function longDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -19,20 +21,23 @@ function longDate(iso: string): string {
 export default function BatchesPage() {
   const { rows, failed } = useSchedule()
 
-  // Which courses have no batch at all - not which are currently running.
-  // `courseStateFor` answers the latter, so a course with a batch that has yet
-  // to start was listed both with its batch and as "not yet scheduled".
+  // Until the fetch lands, we do not know what is scheduled - and saying
+  // "not yet scheduled" about a running batch would be a false statement in
+  // a message the visitor is about to send us.
   const scheduled = new Set((rows ?? []).map((row) => row.batch.course_name))
 
-  const batchOptions = [
-    ...(rows ?? []).map(
-      (row) => `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
-    ),
-    ...COURSES.filter((course) => !scheduled.has(course.name)).map(
-      (course) => `${course.name} — not yet scheduled`,
-    ),
-    'Not sure yet — please advise',
-  ]
+  const batchOptions = rows
+    ? [
+        ...rows.map(
+          (row) =>
+            `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
+        ),
+        ...COURSES.filter((course) => !scheduled.has(course.name)).map(
+          (course) => `${course.name} — not yet scheduled`,
+        ),
+        NEUTRAL_BATCH_OPTION,
+      ]
+    : [NEUTRAL_BATCH_OPTION]
 
   return (
     <>
@@ -149,7 +154,10 @@ export default function BatchesPage() {
           </div>
 
           <Reveal delayIndex={1}>
-            <EnquiryForm batchOptions={batchOptions} />
+            <EnquiryForm
+              batchOptions={batchOptions}
+              neutralBatchOption={NEUTRAL_BATCH_OPTION}
+            />
           </Reveal>
         </div>
       </section>

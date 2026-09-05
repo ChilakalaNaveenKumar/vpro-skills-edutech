@@ -2179,7 +2179,7 @@ git commit -m "The course page: curriculum, projects, and a heading that counts"
 - Modify: `web/src/pages/BatchesPage.tsx` (replace the Task 2 placeholder)
 
 **Interfaces:**
-- Produces: `composeEnquiry(fields: EnquiryFields): string` where `EnquiryFields = { name: string; phone: string; batch: string; background?: string }`; `<EnquiryForm batchOptions: string[] />`.
+- Produces: `composeEnquiry(fields: EnquiryFields): string` where `EnquiryFields = { name: string; phone: string; batch: string; background?: string }`; `<EnquiryForm batchOptions: string[] neutralBatchOption: string />`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2188,7 +2188,7 @@ Create `web/src/utils/enquiry.test.ts`:
 ```ts
 import { describe, expect, it } from 'vitest'
 import { composeEnquiry } from './enquiry'
-import { MESSAGES } from '../content/contact'
+import { MESSAGES, whatsappRawUrl } from '../content/contact'
 
 describe('composeEnquiry', () => {
   it('opens with the shared batch_enquiry line, then one field per line', () => {
@@ -2226,6 +2226,18 @@ describe('composeEnquiry', () => {
 
   it('substitutes an em dash for a field left empty', () => {
     expect(composeEnquiry({ name: '', phone: '9876543210', batch: 'B' })).toContain('Name: —')
+  })
+
+  it('round-trips special characters through the WhatsApp URL', () => {
+    const message = composeEnquiry({
+      name: 'Asha & Ravi #1',
+      phone: '+91 98765',
+      batch: 'Agentic AI + Python',
+      background: 'Switching careers\nReady to learn 🚀',
+    })
+    const url = new URL(whatsappRawUrl(message))
+
+    expect(url.searchParams.get('text')).toBe(message)
   })
 })
 ```
@@ -2273,7 +2285,7 @@ export function composeEnquiry(fields: EnquiryFields): string {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `cd web && npx vitest run`
-Expected: PASS, 15 tests across both files.
+Expected: PASS, 16 tests across both files.
 
 - [ ] **Step 5: Create `web/src/components/EnquiryForm.tsx`**
 
@@ -2288,21 +2300,31 @@ const FIELD =
   'w-full min-h-[48px] bg-[color:var(--ink)] px-4 py-3.5 text-base text-[color:var(--on-ink)] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.24)]'
 const LABEL = 'mono text-[color:var(--on-ink-faint)]'
 
-export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }) {
+export default function EnquiryForm({
+  batchOptions,
+  neutralBatchOption,
+}: {
+  batchOptions: string[]
+  neutralBatchOption: string
+}) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [batch, setBatch] = useState(batchOptions[0] ?? '')
+  const [batch, setBatch] = useState(neutralBatchOption)
   const [background, setBackground] = useState('')
+  const selectedBatch = batchOptions.includes(batch) ? batch : neutralBatchOption
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const url = whatsappRawUrl(composeEnquiry({ name, phone, batch, background }))
+    const url = whatsappRawUrl(
+      composeEnquiry({ name, phone, batch: selectedBatch, background }),
+    )
     window.open(url, '_blank', 'noopener')
   }
 
   return (
     <form
       onSubmit={handleSubmit}
+      aria-describedby="enquiry-note"
       className="grid gap-5 bg-[color:var(--ink-2)] p-8 shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)] lg:p-10"
     >
       <label className="grid gap-2">
@@ -2332,7 +2354,7 @@ export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }
       <label className="grid gap-2">
         <span className={LABEL}>Which batch</span>
         <select
-          value={batch}
+          value={selectedBatch}
           onChange={(event) => setBatch(event.target.value)}
           className={FIELD}
         >
@@ -2359,7 +2381,7 @@ export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }
         Send my enquiry
       </button>
 
-      <p className="text-sm text-[color:var(--on-ink-faint)]">
+      <p id="enquiry-note" className="text-sm text-[color:var(--on-ink-faint)]">
         No fee is taken at this stage. Sending this opens WhatsApp with your details filled in.
       </p>
     </form>
@@ -2380,6 +2402,8 @@ import EnquiryForm from '../components/EnquiryForm'
 import MobileActionBar from '../components/MobileActionBar'
 import { BATCH_LOOP } from '../content/homeSections'
 
+const NEUTRAL_BATCH_OPTION = 'Not sure yet — please advise'
+
 function longDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', {
     day: 'numeric',
@@ -2391,20 +2415,23 @@ function longDate(iso: string): string {
 export default function BatchesPage() {
   const { rows, failed } = useSchedule()
 
-  // Which courses have no batch at all - not which are currently running.
-  // `courseStateFor` answers the latter, so a course with a batch that has yet
-  // to start was listed both with its batch and as "not yet scheduled".
+  // Until the fetch lands, we do not know what is scheduled - and saying
+  // "not yet scheduled" about a running batch would be a false statement in
+  // a message the visitor is about to send us.
   const scheduled = new Set((rows ?? []).map((row) => row.batch.course_name))
 
-  const batchOptions = [
-    ...(rows ?? []).map(
-      (row) => `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
-    ),
-    ...COURSES.filter((course) => !scheduled.has(course.name)).map(
-      (course) => `${course.name} — not yet scheduled`,
-    ),
-    'Not sure yet — please advise',
-  ]
+  const batchOptions = rows
+    ? [
+        ...rows.map(
+          (row) =>
+            `${row.batch.course_name} — ${row.batch.batch_number}, ${longDate(row.batch.start_date)}`,
+        ),
+        ...COURSES.filter((course) => !scheduled.has(course.name)).map(
+          (course) => `${course.name} — not yet scheduled`,
+        ),
+        NEUTRAL_BATCH_OPTION,
+      ]
+    : [NEUTRAL_BATCH_OPTION]
 
   return (
     <>
@@ -2521,7 +2548,10 @@ export default function BatchesPage() {
           </div>
 
           <Reveal delayIndex={1}>
-            <EnquiryForm batchOptions={batchOptions} />
+            <EnquiryForm
+              batchOptions={batchOptions}
+              neutralBatchOption={NEUTRAL_BATCH_OPTION}
+            />
           </Reveal>
         </div>
       </section>
@@ -2535,7 +2565,7 @@ export default function BatchesPage() {
 - [ ] **Step 7: Verify**
 
 Run: `cd web && npx tsc -b --noEmit && npx oxlint src && npx vitest run`
-Expected: all clean, 15 tests passing.
+Expected: all clean, 16 tests passing.
 
 In the browser at `/batches`: the schedule lists real batches. Fill the form and submit — a WhatsApp tab opens with all four lines filled in. Submit with an empty name — the browser blocks it and focuses the field. Stop the backend and reload: the "not loading right now" message appears instead of an empty page.
 
