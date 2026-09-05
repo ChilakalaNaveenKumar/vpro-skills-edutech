@@ -46,7 +46,13 @@ export function useRemoteValue<T>(key: string, load: () => Promise<T>, fallback:
 }
 
 export function useContentList<T>(collection: ContentCollection, fallback: T[]): T[] {
-  return useRemoteValue(`list:${collection}`, () => listContent<T>(collection), fallback)
+  const authored = useRemoteValue(`list:${collection}`, () => listContent<T>(collection), fallback)
+  // An empty collection means nothing has been authored yet, which is exactly
+  // the state of every one of these tables the moment the migration creates
+  // them. Answering with [] would blank the section, so the built-in copy
+  // stands until someone writes real rows. The cost is that a collection
+  // cannot be emptied from the admin - items get edited or deactivated.
+  return authored.length > 0 ? authored : fallback
 }
 
 export function useSiteContent<T>(sectionKey: string, fallback: T): T {
