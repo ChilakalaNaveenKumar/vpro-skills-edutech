@@ -442,6 +442,7 @@ git commit -m "Dark editorial tokens, the three new families, and a /batches rou
 Four small pieces every section depends on. One shared scroll listener, not one per component.
 
 **Files:**
+- Create: `web/src/motion/prefersReducedMotion.ts`
 - Create: `web/src/motion/Reveal.tsx`
 - Create: `web/src/motion/useScrollDriver.ts`
 - Create: `web/src/motion/ScrollProgress.tsx`
@@ -449,17 +450,34 @@ Four small pieces every section depends on. One shared scroll listener, not one 
 
 **Interfaces:**
 - Produces:
+  - `prefersReducedMotion(): boolean`
   - `<Reveal as?: ElementType, delayIndex?: number, className?: string, children>` — fade-up on enter.
   - `useScrollDriver(onScroll: (scrollY: number, maxScroll: number) => void): void` — rAF-throttled, passive.
   - `<ScrollProgress />` — fixed copper bar.
-  - `<Accordion items: AccordionItem[], openIndex: number, onToggle: (i: number) => void, allowAllClosed?: boolean />` where `AccordionItem = { id: string; heading: ReactNode; body: ReactNode }`.
+  - `<Accordion items: AccordionItem[], openIndex: number, onToggle: (i: number) => void, className?: string />` where `AccordionItem = { id: string; heading: ReactNode; body: ReactNode }`.
 
-- [ ] **Step 1: Create `web/src/motion/Reveal.tsx`**
+- [ ] **Step 1: Create `web/src/motion/prefersReducedMotion.ts`**
+
+Every animated component on the site reads this. `Ticker` is the one exception: it uses Tailwind's `motion-reduce:animate-none`, because its animation is pure CSS and never touches JS.
+
+```ts
+/**
+ * Read at effect time rather than cached at module load, so a visitor who
+ * changes the OS setting gets the new behaviour on their next navigation
+ * instead of on a hard reload.
+ */
+export function prefersReducedMotion(): boolean {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+```
+
+- [ ] **Step 2: Create `web/src/motion/Reveal.tsx`**
 
 The 2800ms failsafe is not optional — without it, any IntersectionObserver misfire leaves the page permanently blank.
 
 ```tsx
 import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
+import { prefersReducedMotion } from './prefersReducedMotion'
 
 interface Props {
   as?: ElementType
@@ -473,8 +491,16 @@ export default function Reveal({ as, delayIndex = 0, className = '', children }:
   const Tag = (as ?? 'div') as ElementType
   const ref = useRef<HTMLElement | null>(null)
   const [shown, setShown] = useState(false)
+  const [instant, setInstant] = useState(false)
 
   useEffect(() => {
+    // Reduced motion means the content is simply present - not faded in faster.
+    if (prefersReducedMotion()) {
+      setInstant(true)
+      setShown(true)
+      return
+    }
+
     const node = ref.current
     if (!node || typeof IntersectionObserver === 'undefined') {
       setShown(true)
@@ -513,7 +539,9 @@ export default function Reveal({ as, delayIndex = 0, className = '', children }:
       style={{
         opacity: shown ? 1 : 0,
         transform: shown ? 'none' : 'translateY(20px)',
-        transition: `opacity 720ms var(--ease-reveal) ${delay}ms, transform 720ms var(--ease-reveal) ${delay}ms`,
+        transition: instant
+          ? undefined
+          : `opacity 720ms var(--ease-reveal) ${delay}ms, transform 720ms var(--ease-reveal) ${delay}ms`,
       }}
     >
       {children}
@@ -522,7 +550,7 @@ export default function Reveal({ as, delayIndex = 0, className = '', children }:
 }
 ```
 
-- [ ] **Step 2: Create `web/src/motion/useScrollDriver.ts`**
+- [ ] **Step 3: Create `web/src/motion/useScrollDriver.ts`**
 
 ```ts
 import { useEffect, useRef } from 'react'
@@ -560,7 +588,7 @@ export function useScrollDriver(onScroll: (scrollY: number, maxScroll: number) =
 }
 ```
 
-- [ ] **Step 3: Create `web/src/motion/ScrollProgress.tsx`**
+- [ ] **Step 4: Create `web/src/motion/ScrollProgress.tsx`**
 
 ```tsx
 import { useRef } from 'react'
@@ -584,7 +612,7 @@ export default function ScrollProgress() {
 }
 ```
 
-- [ ] **Step 4: Create `web/src/components/Accordion.tsx`**
+- [ ] **Step 5: Create `web/src/components/Accordion.tsx`**
 
 `grid-template-rows: 0fr → 1fr` animates height without a hardcoded pixel value. The heading is a real `<button>` with `aria-expanded`.
 
@@ -646,15 +674,15 @@ export default function Accordion({ items, openIndex, onToggle, className = '' }
 }
 ```
 
-- [ ] **Step 5: Verify**
+- [ ] **Step 6: Verify**
 
 Run: `cd web && npx tsc --noEmit && npx oxlint src/motion src/components/Accordion.tsx`
 Expected: both clean.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add web/src/motion/Reveal.tsx web/src/motion/useScrollDriver.ts web/src/motion/ScrollProgress.tsx web/src/components/Accordion.tsx
+git add web/src/motion/prefersReducedMotion.ts web/src/motion/Reveal.tsx web/src/motion/useScrollDriver.ts web/src/motion/ScrollProgress.tsx web/src/components/Accordion.tsx
 git commit -m "Reveal, one shared scroll driver, progress bar and accordion"
 ```
 
@@ -676,6 +704,7 @@ Every constant below is taken from the comp and must not be rounded.
 
 ```tsx
 import { useEffect, useRef } from 'react'
+import { prefersReducedMotion } from './prefersReducedMotion'
 
 interface Trace {
   amp: number
@@ -743,8 +772,7 @@ export default function HeroScope({ className = '' }: { className?: string }) {
       })
     }
 
-    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduced) {
+    if (prefersReducedMotion()) {
       draw(0)
       return () => window.removeEventListener('resize', size)
     }
@@ -853,6 +881,11 @@ export const MESSAGES: Record<CtaKey, string> = {
 Now replace `whatsappUrl` (lines 39–43). Today it appends `I am a ${segment}.`, so a *course* passed as the segment produces "I am a Agentic AI." The redesign sends a course name from the shelf, the course page and the schedule, so the two need separate slots:
 
 ```ts
+/** The one place a wa.me URL is built. */
+export function whatsappRawUrl(message: string): string {
+  return `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`
+}
+
 // `segment` is who the visitor is ("working professional"). `course` is what
 // they are asking about. They were one argument, which meant a course name
 // arrived in a sentence reading "I am a Agentic AI."
@@ -860,9 +893,11 @@ export function whatsappUrl(key: CtaKey, segment?: string, course?: string): str
   const parts = [MESSAGES[key]]
   if (course) parts.push(`Course: ${course}.`)
   if (segment) parts.push(`I am a ${segment}.`)
-  return `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(parts.join(' '))}`
+  return whatsappRawUrl(parts.join(' '))
 }
 ```
+
+`whatsappRawUrl` exists for the enquiry form in Task 9, whose message is composed field by field rather than picked from `MESSAGES`. Without it that form would hand-roll a `wa.me` URL at the call site, which the Global Constraints forbid.
 
 - [ ] **Step 2b: Pass `course` through `web/src/components/CtaLink.tsx`**
 
@@ -1414,13 +1449,14 @@ import { useRef } from 'react'
 import { TRAINER } from '../../content/homeSections'
 import Reveal from '../../motion/Reveal'
 import { useScrollDriver } from '../../motion/useScrollDriver'
+import { prefersReducedMotion } from '../../motion/prefersReducedMotion'
 
 export default function Trainer() {
   const ref = useRef<HTMLImageElement | null>(null)
 
   useScrollDriver(() => {
     const node = ref.current
-    if (!node) return
+    if (!node || prefersReducedMotion()) return
     const rect = node.getBoundingClientRect()
     if (rect.bottom <= 0 || rect.top >= window.innerHeight) return
     const centre = (rect.top + rect.height / 2 - window.innerHeight / 2) / window.innerHeight
@@ -1718,12 +1754,16 @@ export default function Join() {
 It duplicates the hero's own buttons, so it stays hidden until the hero is gone.
 
 ```tsx
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import CtaLink from './CtaLink'
 import { useScrollDriver } from '../motion/useScrollDriver'
+import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 
 export default function MobileActionBar() {
   const ref = useRef<HTMLDivElement | null>(null)
+  const [reduced, setReduced] = useState(false)
+
+  useEffect(() => setReduced(prefersReducedMotion()), [])
 
   useScrollDriver((scrollY) => {
     const node = ref.current
@@ -1739,7 +1779,9 @@ export default function MobileActionBar() {
       className="fixed inset-x-0 bottom-0 z-[80] grid grid-cols-2 lg:hidden"
       style={{
         transform: 'translateY(100%)',
-        transition: 'transform 420ms cubic-bezier(0.22,1,0.28,1)',
+        // The bar still appears and hides under reduced motion - it is a
+        // control, not decoration. Only the slide is dropped.
+        transition: reduced ? undefined : 'transform 420ms cubic-bezier(0.22,1,0.28,1)',
       }}
     >
       <CtaLink cta="hero_demo" chapter="mobile_bar" className="btn-primary">
@@ -2119,7 +2161,7 @@ A real `<form>`, so browser validation and Enter-to-submit work. The helper text
 
 ```tsx
 import { useState, type FormEvent } from 'react'
-import { CONTACT } from '../content/contact'
+import { whatsappRawUrl } from '../content/contact'
 import { composeEnquiry } from '../utils/enquiry'
 
 const FIELD =
@@ -2134,8 +2176,7 @@ export default function EnquiryForm({ batchOptions }: { batchOptions: string[] }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const message = composeEnquiry({ name, phone, batch, background })
-    const url = `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`
+    const url = whatsappRawUrl(composeEnquiry({ name, phone, batch, background }))
     window.open(url, '_blank', 'noopener')
   }
 

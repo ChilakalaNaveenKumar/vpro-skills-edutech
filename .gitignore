@@ -49,3 +49,9 @@ pytest-cache-files-*/
 !*.tfvars.example
 crash.log
 crash.*.log
+
+# Scratch space for plan execution: task briefs, implementer reports and
+# review diffs. Regenerable from the plan and git history, so it is never
+# committed - but note the progress ledger lives here too, which is why
+# `git clean -fdx` mid-execution loses your place.
+.superpowers/
