@@ -2586,6 +2586,8 @@ git commit -m "The batches page, and an enquiry form that composes a WhatsApp me
 - Modify: `web/src/pages/AboutPage.tsx`
 - Modify: `web/src/components/FloatingContact.tsx`
 - Modify: `web/src/components/CourseCard.tsx`
+- Modify: `web/src/components/Prose.tsx`
+- Modify: `web/src/index.css`
 
 **Interfaces:**
 - Consumes: `courseStateFor` (Task 1), the button classes from Task 2.
@@ -2638,17 +2640,33 @@ Both files import `SplitWords`, which Task 11 deletes. Remove the import and ren
 
 Same treatment, including the `SplitWords` removal. `Prose` keeps its role; give it `.lede` sizing and `--on-ink-mute`. Its steps list keys off `step.order`, which is unchanged.
 
-- [ ] **Step 5: Verify**
+- [ ] **Step 5: Clear the two utility classes the Task 2 rewrite left dangling**
+
+Task 2 replaced the whole `[data-journey]` block, and two utilities from the outgoing design went with it while their call sites stayed. Neither is a Tailwind class, so both currently do nothing.
+
+`.tnum` was tabular figures, and the two surviving users of it — the step numbers in About's "The loop" and the class times in `LiveClassesPanel` — are columns of numerals that should line up. Restore it next to the other utilities in `web/src/index.css`:
+
+```css
+[data-journey] .tnum {
+  font-variant-numeric: tabular-nums;
+}
+```
+
+`.rise` was the old scroll-reveal hook, superseded by the `Reveal` component. Drop the token from `CoursesPage`'s lede and from `Prose`, leaving the rest of each class string alone. The other files carrying it are deleted wholesale in Task 11.
+
+While removing `SplitWords`, also drop the `aria-label` from both page headings. It existed to hand assistive tech the unbroken string when the text was split into per-word spans; with the text rendered directly it only duplicates the visible heading, and on `CoursesPage` it is a hardcoded copy that would drift the first time someone edits the heading alone.
+
+- [ ] **Step 6: Verify**
 
 Run: `cd web && npx tsc -b --noEmit && npx oxlint src`
 Expected: clean.
 
 Walk `/` → `/courses` → `/courses/agentic-ai` → `/batches` → `/about` in the browser. No page flashes light. The header is identical on all five. Then visit `/login` and `/dashboard`: both still light, unchanged.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add web/src/layouts/PublicLayout.tsx web/src/pages/CoursesPage.tsx web/src/pages/AboutPage.tsx web/src/components/FloatingContact.tsx web/src/components/CourseCard.tsx
+git add web/src/layouts/PublicLayout.tsx web/src/pages/CoursesPage.tsx web/src/pages/AboutPage.tsx web/src/components/FloatingContact.tsx web/src/components/CourseCard.tsx web/src/components/Prose.tsx web/src/index.css
 git commit -m "One dark shell across every public page, and the two retoned pages"
 ```
 
@@ -2706,6 +2724,8 @@ export default function CtaLink({ cta, chapter, segment, course, children, class
 Then check no call site still passes it: `rg -n "magnetic" web/src` should return nothing.
 
 Every other importer of a deleted module — `HomePage`, `CourseDetailPage`, `PublicLayout`, `CoursesPage`, `AboutPage` — was rewritten or retoned in Tasks 5–10. `CoursesPage` and `AboutPage` in particular imported `SplitWords`; if Task 10 left those imports behind, remove them now.
+
+Also drop the `scheduled?: boolean` prop from `CourseCard`'s type. It is already unread — the component renders only the derived `state` — and it survived Task 10 solely to keep `CourseVScroller` type-checking. That file is deleted in Step 1, so the prop's last caller goes with it.
 
 - [ ] **Step 3: Remove the three unused dependencies**
 
