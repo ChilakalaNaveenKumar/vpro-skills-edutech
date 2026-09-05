@@ -4,6 +4,7 @@ export interface LeadCapture {
   cta: CtaKey
   chapter: string
   segment?: string
+  course?: string
   utm_source?: string
   utm_medium?: string
   utm_campaign?: string

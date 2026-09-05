@@ -7,6 +7,7 @@ interface Props {
   cta: CtaKey
   chapter: string
   segment?: string
+  course?: string
   children: ReactNode
   className?: string
   magnetic?: boolean
@@ -14,14 +15,14 @@ interface Props {
 
 // WhatsApp stays the destination and the single tap is unchanged. The lead is
 // logged on the way out, never in front of it.
-export default function CtaLink({ cta, chapter, segment, children, className = '', magnetic = false }: Props) {
+export default function CtaLink({ cta, chapter, segment, course, children, className = '', magnetic = false }: Props) {
   const anchor = (
     <a
-      href={whatsappUrl(cta, segment)}
+      href={whatsappUrl(cta, segment, course)}
       target="_blank"
       rel="noopener noreferrer"
       className={className}
-      onClick={() => captureLead({ cta, chapter, segment })}
+      onClick={() => captureLead({ cta, chapter, segment, course })}
     >
       {children}
     </a>

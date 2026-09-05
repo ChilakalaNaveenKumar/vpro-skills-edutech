@@ -1,39 +1,21 @@
-// What VPro Skills *is*, as distinct from what it currently teaches.
+// What VPro Skills is, stated once and readable the instant the page paints.
 //
-// The previous version of this page sold one course as if it were the whole
-// company. It is a platform: backend/scripts/seed_courses.py carries the
-// organization's standard course list, and the app's real capabilities
-// (ordered topics, one-attempt assessments, instant reviewable results,
-// a student portal, a mobile client) belong to the platform, not to any
-// single course. Nothing here is a claim about market size or outcomes.
+// The previous version cycled four endings through the headline. A visitor
+// scanning for a start date does not wait for a sentence to finish animating,
+// so the sentence is now fixed.
 
 export const PLATFORM = {
   name: 'VPro Skills',
-  eyebrow: 'Live instructor-led training',
-  /** The fixed part of the headline. The rotating part is HERO_ENDINGS. */
-  headline: 'Taught live, so',
-  sub: 'Every course runs as a live batch with a named trainer at a fixed time. Topics come in order, each one ends in an assessment, and your result is there the moment you submit.',
-  proof: [
-    'Live batches',
-    'Topics in order',
-    'An assessment after every topic',
-    'Instant reviewable results',
-  ],
+  eyebrow: 'Live instructor-led batches',
+  /** Rendered with the second clause in <em>, which the .display rule colours copper. */
+  headlineLead: 'Nothing here',
+  headlineEmphasis: 'is a recording.',
+  sub: 'Every session runs live, at a fixed hour, with the trainer in the room. You ask your question while the class is happening.',
 } as const
 
-// The four things a live class does that a recording cannot. Each one is proved
-// somewhere further down the page, so the hero is making promises the rest of
-// the page has to keep - not four interchangeable slogans.
-export const HERO_ENDINGS = [
-  'nothing gets skipped.',
-  'mistakes surface early.',
-  'questions get answered.',
-  'gaps show up.',
+export const HERO_FACTS = [
+  { k: 'Format', v: 'Live, fixed hour' },
+  { k: 'Questions', v: 'Asked in the room' },
+  { k: 'After class', v: 'Live support' },
+  { k: 'Recordings', v: 'Backup, not the course' },
 ] as const
-
-// Stated plainly next to the schedule, because "live" is the word every
-// recorded-video platform also uses.
-export const LIVE_CLASS_MEANING = {
-  heading: 'What a live class means here',
-  body: 'A fixed time, a named trainer, and a batch that moves together. You ask your question while the class is happening, not in a comment box afterwards.',
-} as const

@@ -189,3 +189,8 @@ textarea:focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
