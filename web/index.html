@@ -6,14 +6,20 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Live instructor-led training with structured topics, an assessment after every topic and instant results you can review answer by answer. Current course: AI Engineer - Python, Machine Learning, Deep Learning, Generative AI, Agentic AI, RAG and MCP with real projects, placement support and certification. Ameerpet, Hyderabad." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..400;1,6..72,300..400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <title>VPro Skills | Live Instructor-Led AI &amp; Software Training, Ameerpet Hyderabad</title>
+    <!--
+      No <title> or <meta name="description"> here on purpose. React 19 hoists
+      the ones rendered by src/seo/Seo.tsx into this head, and it appends rather
+      than replaces: with a static description present, the static one came
+      first in the document and was the one crawlers read, so every page
+      described itself as the home page. Every route renders a <Seo>, so
+      removing these leaves no gap - see src/seo/Seo.tsx.
+    -->
   </head>
   <body>
     <div id="root"></div>

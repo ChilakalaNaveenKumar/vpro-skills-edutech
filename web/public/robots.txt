@@ -1,0 +1,15 @@
+# The signed-in and administrative areas hold nothing a search result could
+# usefully point at, and every one of them needs a login. Disallow keeps
+# crawlers from spending their budget there; the pages themselves also send
+# noindex, which is what actually keeps a URL out of the index if it is linked
+# from somewhere else.
+User-agent: *
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /login
+Disallow: /results
+Disallow: /topics
+Allow: /
+
+# Absolute by specification - a relative path here is ignored.
+Sitemap: https://www.vproskills.com/sitemap.xml

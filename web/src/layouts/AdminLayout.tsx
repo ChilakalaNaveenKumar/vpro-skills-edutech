@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import Logo from '../components/Logo'
+import Seo from '../seo/Seo'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500'
 
@@ -32,6 +33,15 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Covers every admin route at once. robots.txt disallows /admin as well,
+          but that only asks a crawler not to fetch the page - it does not stop
+          the URL being indexed if something links to it. noindex does. */}
+      <Seo
+        path="/admin"
+        title="Admin"
+        description="Administration for VPro Skills EduTech."
+        noIndex
+      />
       <a href="#admin-main-content" className="skip-link rounded bg-brand-600 px-3 py-2 text-sm text-white">
         Skip to main content
       </a>

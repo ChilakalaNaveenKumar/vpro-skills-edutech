@@ -3,6 +3,8 @@ import Reveal from '../motion/Reveal'
 import CourseShelf from '../components/CourseShelf'
 import FloatingContact from '../components/FloatingContact'
 import Enquiry from '../sections/home/Enquiry'
+import Seo from '../seo/Seo'
+import { BreadcrumbJsonLd } from '../seo/structuredData'
 
 // The comp has no separate courses index - "Courses" in its header is the shelf
 // on the home page. This route stays reachable (course pages link back to it,
@@ -11,6 +13,12 @@ import Enquiry from '../sections/home/Enquiry'
 export default function CoursesPage() {
   return (
     <>
+      <Seo
+        path="/courses"
+        title="All Courses"
+        description="Agentic AI, Python, Java and .NET full stack, Forward Deployment Engineering and Quantum Computing - every course taught as a live batch at a fixed hour in Ameerpet, Hyderabad and online."
+      />
+      <BreadcrumbJsonLd trail={[{ name: 'Courses', path: '/courses' }]} />
       <ScrollProgress />
 
       <section className="shell pt-[140px]">

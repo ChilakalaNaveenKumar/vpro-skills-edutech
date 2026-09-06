@@ -10,6 +10,8 @@ import FloatingContact from '../components/FloatingContact'
 import { BATCH_LOOP } from '../content/homeSections'
 import { useContentList } from '../hooks/useContent'
 import type { BlockItem } from '../services/contentService'
+import Seo from '../seo/Seo'
+import { BreadcrumbJsonLd } from '../seo/structuredData'
 
 const LOOP_FALLBACK: BlockItem[] = BATCH_LOOP.map((step, index) => ({
   id: -(index + 1),
@@ -112,6 +114,12 @@ export default function BatchesPage() {
 
   return (
     <>
+      <Seo
+        path="/batches"
+        title="Batch Dates & Timings"
+        description="Every batch we are running or opening, with its start date, weekday hour and trainer. Live classes in Ameerpet, Hyderabad and online."
+      />
+      <BreadcrumbJsonLd trail={[{ name: 'Dates & timings', path: '/batches' }]} />
       <ScrollProgress />
 
       <section id="top" className="shell py-24 lg:py-32">
