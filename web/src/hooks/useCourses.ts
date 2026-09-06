@@ -1,4 +1,4 @@
-import { COURSES } from '../content/courses'
+import { COURSES, courseBySlug } from '../content/courses'
 import apiClient from '../services/apiClient'
 import { useRemoteValue } from './useContent'
 
@@ -58,10 +58,18 @@ interface ApiCourse {
   projects: { name: string; description: string }[]
 }
 
-// A course with no slug cannot be linked to, so it is not shown. `hue` falls
-// back to a neutral angle rather than producing `oklch(... null)`.
+// A course with no slug cannot be linked to, so it is not shown.
+//
+// The shelf gives each course its own colour, and that colour is the only thing
+// telling the six spines apart. `hue` is nullable in the database and is only
+// ever written by seed_curriculum, so any course created by the admin, by an
+// older seed, or by a migration that ran without the seed comes back null. A
+// single fallback angle painted every spine the same green. Falling back to the
+// hue this course shipped with keeps the shelf legible until a real value is
+// written, and only a course we have never heard of lands on the neutral angle.
 function normalise(course: ApiCourse): SiteCourse | null {
   if (!course.slug) return null
+  const authoredHue = course.hue ?? courseBySlug(course.slug)?.hue ?? 40
   return {
     id: course.id,
     slug: course.slug,
@@ -73,7 +81,7 @@ function normalise(course: ApiCourse): SiteCourse | null {
     forWhom: course.for_whom ?? [],
     outcomes: course.outcomes ?? [],
     techs: course.techs ?? [],
-    hue: course.hue ?? 40,
+    hue: authoredHue,
     flagship: course.flagship,
     videoUrl: course.video_url,
     modules: [...course.modules]
