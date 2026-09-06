@@ -92,13 +92,15 @@ export default function PublicLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  // The marketing surface: home, the course pages, the batch schedule and the
-  // three legal pages. The legal pages are in here because the dark shell is
-  // what makes a page look like part of this site - left out, they rendered on
-  // the light default and read as though they belonged to a different company.
+  // The marketing surface: home, the public course pages, the batch schedule
+  // and the three legal pages. `/courses/1/topics` is the student portal, not
+  // a marketing page - `startsWith('/courses')` used to pull it into the dark
+  // shell, so a student who opened a course after a white login landed in
+  // the public theme by accident.
   const journey =
     location.pathname === '/' ||
-    location.pathname.startsWith('/courses') ||
+    location.pathname === '/courses' ||
+    (location.pathname.startsWith('/courses/') && !location.pathname.includes('/topics')) ||
     location.pathname === '/batches' ||
     LEGAL_PATHS.has(location.pathname)
 
