@@ -15,10 +15,11 @@ every other module follows.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.assessments.models import AssessmentAnswer, AssessmentAttempt
 from app.auth.dependencies import get_current_user, require_admin
 from app.batches.models import Batch
 from app.batches.schemas import BatchPublic
@@ -26,7 +27,7 @@ from app.core.enums import UserRole
 from app.core.security import hash_password
 from app.database.session import get_db
 from app.users.models import StudentBatch, User
-from app.users.schemas import BatchAssignment, UserCreate, UserPublic, UserUpdate
+from app.users.schemas import BatchAssignment, UserCreate, UserErasure, UserPublic, UserUpdate
 
 router = APIRouter(prefix="/api/users", dependencies=[Depends(require_admin)], tags=["Users"])
 me_router = APIRouter(
@@ -79,6 +80,66 @@ def update_user_account(user_id: int, payload: UserUpdate, db: Session = Depends
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.delete("/{user_id:int}", response_model=UserErasure)
+def erase_user_account(
+    user_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> UserErasure:
+    """Permanently erase an account and everything hanging off it.
+
+    This exists so the /data-deletion page describes something real. Setting
+    `is_active=false` keeps the row, the email and the password hash, which
+    answers "this student left" but does not answer "delete my data" - the
+    right the DPDP Act and PIPEDA both give people.
+
+    The deletion itself is one statement. `assessment_attempts.student_id` and
+    `student_batches.student_id` are both ON DELETE CASCADE, and answers
+    cascade from attempts, so the database removes the whole tree. Counts are
+    read first because after the commit there is nothing left to count.
+
+    One guard: you cannot erase yourself. That would revoke the very token
+    authorising the request halfway through it, and it is also what keeps the
+    site administrable - the caller is necessarily an active admin, so
+    refusing self-erasure means an active admin always survives. A separate
+    "last admin" check would be unreachable for that reason.
+    """
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot erase your own account. Ask another admin to do it.",
+        )
+
+    attempt_ids = list(
+        db.scalars(select(AssessmentAttempt.id).where(AssessmentAttempt.student_id == user.id)).all()
+    )
+    answers = 0
+    if attempt_ids:
+        answers = db.scalar(
+            select(func.count())
+            .select_from(AssessmentAnswer)
+            .where(AssessmentAnswer.attempt_id.in_(attempt_ids))
+        )
+    enrollments = db.scalar(
+        select(func.count()).select_from(StudentBatch).where(StudentBatch.student_id == user.id)
+    )
+    receipt = UserErasure(
+        deleted_user_id=user.id,
+        email=user.email,
+        enrollments_deleted=enrollments or 0,
+        attempts_deleted=len(attempt_ids),
+        answers_deleted=answers or 0,
+    )
+
+    db.delete(user)
+    db.commit()
+    return receipt
 
 
 @router.get("/{user_id:int}/batches", response_model=list[BatchPublic])

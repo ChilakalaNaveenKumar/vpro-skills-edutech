@@ -45,13 +45,32 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     """All fields optional - the router applies only what's set
     (`exclude_unset`), same pattern as every other module's update schema.
-    No email/password/role change in this phase - deactivation
-    (`is_active=false`) is this app's substitute for hard delete, matching
-    courses/batches, and is the only status-like field here.
+    No email/password/role change here.
+
+    `is_active=false` deactivates: the account can no longer log in, but the
+    row, the email and the password hash all remain. That is the right tool
+    for "this student has left". It is *not* erasure, and it does not answer
+    a data deletion request - DELETE /api/users/{id} does. See docs/RUNBOOK.md.
     """
 
     full_name: str | None = Field(default=None, min_length=1, max_length=150)
     is_active: bool | None = None
+
+
+class UserErasure(BaseModel):
+    """Receipt for an irreversible deletion.
+
+    Every other DELETE in this app answers 204. This one returns a body on
+    purpose: it is the only endpoint that destroys a person's records with no
+    way back, and whoever ran it needs to be able to say what went, both to
+    the person who asked and to anyone auditing the request later.
+    """
+
+    deleted_user_id: int
+    email: str
+    enrollments_deleted: int
+    attempts_deleted: int
+    answers_deleted: int
 
 
 class BatchAssignment(BaseModel):
