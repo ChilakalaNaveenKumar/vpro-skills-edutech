@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Date, ForeignKey, String, Time, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.enums import BatchProgressStatus, EntityStatus
+from app.core.enums import BatchProgressStatus, EntityStatus, Origin
 from app.database.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
@@ -46,6 +46,9 @@ class Batch(Base, TimestampMixin):
     # schema (BatchCreate) requires it for every *new* batch; only batches
     # created before this migration can have a null value here.
     trainer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Which storefront this batch belongs to. Defaults to VPRO so every batch
+    # that existed before this column stays on VPro's own site, unchanged.
+    origin: Mapped[Origin] = mapped_column(default=Origin.VPRO, nullable=False, index=True)
     status: Mapped[EntityStatus] = mapped_column(default=EntityStatus.ACTIVE, nullable=False)
     # Training progress, separate from `status` above (see
     # BatchProgressStatus's own docstring) - defaults to IN_PROGRESS for

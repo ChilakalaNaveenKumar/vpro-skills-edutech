@@ -2,6 +2,7 @@
 # Fetches the backend's two secrets (JWT_SECRET, DATABASE_URL) plus
 # CORS_ORIGINS from AWS Systems Manager Parameter Store and writes them
 # to backend/.env, ready for `docker compose -f docker-compose.aws.yml up`.
+# PARTNER_API_KEY comes along too where it exists - see `optional` below.
 #
 # Authenticated by whatever AWS identity is already available in the
 # environment this runs in (the EC2 instance's IAM role when run from
@@ -43,7 +44,14 @@ name_map = {
     "jwt_secret": "JWT_SECRET",
     "database_url": "DATABASE_URL",
     "cors_origins": "CORS_ORIGINS",
+    "partner_api_key": "PARTNER_API_KEY",
 }
+
+# Fetched when present, but its absence is not an error: a deployment with no
+# partner storefront has no such parameter, and the app treats an unset key as
+# "the partner API is switched off" rather than as a misconfiguration. Every
+# other name above is required, and a missing one should stop the deploy.
+optional = {"PARTNER_API_KEY"}
 
 lines = []
 for p in params:
@@ -53,7 +61,7 @@ for p in params:
         lines.append(f"{env_name}={p['Value']}")
 
 found = {line.split("=", 1)[0] for line in lines}
-missing = set(name_map.values()) - found
+missing = set(name_map.values()) - found - optional
 if missing:
     sys.exit(
         f"fetch-secrets.sh: missing expected SSM parameters under {path_prefix}: {sorted(missing)} "

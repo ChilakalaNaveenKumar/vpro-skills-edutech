@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.core.enums import UserRole
+from app.core.enums import Origin, UserRole
 
 
 class UserPublic(BaseModel):
@@ -19,6 +19,9 @@ class UserPublic(BaseModel):
     email: EmailStr
     role: UserRole
     is_active: bool
+    # Which storefront enrolled this student. Both are taught in the same
+    # room, so the admin list needs to say whose customer each one is.
+    origin: Origin
 
 
 class UserCreate(BaseModel):
@@ -32,6 +35,11 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     role: UserRole = UserRole.STUDENT
+    # Defaulted for the same reason BatchCreate.origin is: a caller that
+    # predates storefronts is enrolling a VPro student, which is what the
+    # column already assumed. Without it the row took the model default and
+    # nothing could record that a student came in through the partner.
+    origin: Origin = Origin.VPRO
 
 
 class UserUpdate(BaseModel):
