@@ -29,3 +29,20 @@ class BatchProgressStatus(str, Enum):
 
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
+
+
+class Origin(str, Enum):
+    """Which storefront a batch or student belongs to.
+
+    VPro Skills and Digi-Setu sell the same teaching to different markets at
+    different prices, but there is only ONE database. A batch is authored once,
+    in this table, and the two sites filter on this column - VPro's public site
+    shows only VPRO, the Digi-Setu store only DIGI_SETU. Admin sees both,
+    because the same trainer teaches both.
+
+    Deliberately not two databases and not a sync job: a copied schedule drifts
+    the first time a class moves, and there is no way to notice that it has.
+    """
+
+    VPRO = "VPRO"
+    DIGI_SETU = "DIGI_SETU"

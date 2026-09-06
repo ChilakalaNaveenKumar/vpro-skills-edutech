@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.auth.dependencies import get_current_user_optional, require_admin
 from app.batches.models import Batch
 from app.batches.schemas import BatchCreate, BatchPublic, BatchUpdate
-from app.core.enums import EntityStatus, UserRole
+from app.core.enums import EntityStatus, Origin, UserRole
 from app.courses.models import Course
 from app.database.session import get_db
 from app.users.models import User
@@ -60,7 +60,11 @@ def list_batches(
 ) -> list[BatchPublic]:
     stmt = select(Batch).options(selectinload(Batch.course))
     if not _is_admin(current_user):
-        stmt = stmt.where(Batch.status == EntityStatus.ACTIVE)
+        # VPro's own storefront. A partner's batches are theirs to show, on
+        # their own site, at their own price - they must never appear here.
+        # Admins are exempt: the same trainer teaches both, so the admin panel
+        # is the one place the full schedule is visible.
+        stmt = stmt.where(Batch.status == EntityStatus.ACTIVE, Batch.origin == Origin.VPRO)
     stmt = stmt.order_by(Batch.start_date)
     batches = db.scalars(stmt).all()
     return [BatchPublic.from_model(b) for b in batches]
@@ -73,7 +77,10 @@ def get_batch(
     db: Session = Depends(get_db),
 ) -> BatchPublic:
     batch = db.scalar(select(Batch).options(selectinload(Batch.course)).where(Batch.id == batch_id))
-    if batch is None or (not _is_admin(current_user) and batch.status != EntityStatus.ACTIVE):
+    if batch is None or (
+        not _is_admin(current_user)
+        and (batch.status != EntityStatus.ACTIVE or batch.origin != Origin.VPRO)
+    ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found")
     return BatchPublic.from_model(batch)
 

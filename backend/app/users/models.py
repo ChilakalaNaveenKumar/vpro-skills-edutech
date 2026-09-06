@@ -10,7 +10,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.enums import UserRole
+from app.core.enums import Origin, UserRole
 from app.database.base import Base, TimestampMixin
 
 
@@ -23,6 +23,9 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    # Which storefront enrolled this student. Digi-Setu students are taught
+    # alongside VPro's, but they are Digi-Setu's customers.
+    origin: Mapped[Origin] = mapped_column(default=Origin.VPRO, nullable=False, index=True)
 
     student_batches: Mapped[list["StudentBatch"]] = relationship(
         back_populates="student", cascade="all, delete-orphan"

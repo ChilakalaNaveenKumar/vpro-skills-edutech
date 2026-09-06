@@ -52,6 +52,7 @@ def create_user_account(payload: UserCreate, db: Session = Depends(get_db)) -> U
         email=payload.email.lower(),
         password_hash=hash_password(payload.password),
         role=payload.role,
+        origin=payload.origin,
         is_active=True,
     )
     db.add(user)

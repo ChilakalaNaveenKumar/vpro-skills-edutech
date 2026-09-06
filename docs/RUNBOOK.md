@@ -157,6 +157,45 @@ gitignored. The repo root also has a `.env` holding `GOOGLE_API_KEY`, left
 from experimenting with Gemini - nothing reads it yet. Give it the treatment
 above when the Gemini work lands, or delete it.
 
+### The partner API key
+
+`PARTNER_API_KEY` is the one secret that is deliberately optional, and it is
+worth understanding why before deploying the DIGI SETU storefront.
+
+It authenticates `/api/partner/*`, which that storefront reads its batches and
+course copy from. Server to server, so there is no user and no session - one
+long random key in an `X-Partner-Key` header, compared with
+`secrets.compare_digest` so it cannot be learned a character at a time from
+response timings.
+
+Unset, every route under `/api/partner` answers `503`. That is the correct
+state for a deployment with no partner, and it is why `fetch-secrets.sh`
+treats this parameter as optional while still failing the deploy on any other
+missing one. It also means a blank key can never be matched by a blank header.
+
+To turn the partner surface on:
+
+```
+aws ssm put-parameter --type SecureString --overwrite \
+    --name /vpro-skills/production/partner_api_key \
+    --value "$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+```
+
+Then re-run `docker/fetch-secrets.sh` and restart the backend - `Settings` is
+`@lru_cache`'d and read once at import, so the value is not picked up by a
+running process. Give the same key to the storefront out of band; it is never
+sent to a browser, so it must not appear in any frontend build.
+
+To rotate it, put the new value, restart the backend and update the storefront
+in the same window - there is one key, so the two are briefly out of step. To
+switch the partner off, delete the parameter and restart; the routes go back
+to `503` and no partner batch is reachable from anywhere.
+
+Turning the key on does not expose anything on its own. A partner sees only
+rows whose `origin` says they are theirs, and batches are created against a
+storefront in the admin panel, so a new deployment starts with an empty
+partner schedule until somebody deliberately puts a batch on it.
+
 ## Database backups
 
 ```

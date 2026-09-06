@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-from app.core.enums import BatchProgressStatus, EntityStatus
+from app.core.enums import BatchProgressStatus, EntityStatus, Origin
 
 if TYPE_CHECKING:
     from app.batches.models import Batch
@@ -22,6 +22,13 @@ class BatchCreate(BaseModel):
     trainer_email: EmailStr
     seats_note: str | None = Field(default=None, max_length=80)
     days_of_week: str | None = Field(default=None, max_length=120)
+    # Which storefront the batch belongs to. Defaulted rather than required so
+    # an existing caller that never heard of storefronts keeps creating VPro's
+    # own batches, which is what it meant. Without this field on the schema
+    # there was no way to create a partner batch at all: the router builds the
+    # row straight from this payload, so every batch the admin panel made took
+    # the model default and the partner API had nothing to return.
+    origin: Origin = Origin.VPRO
     status: EntityStatus = EntityStatus.ACTIVE
     progress_status: BatchProgressStatus = BatchProgressStatus.IN_PROGRESS
 
@@ -44,6 +51,10 @@ class BatchUpdate(BaseModel):
     trainer_email: EmailStr | None = None
     seats_note: str | None = Field(default=None, max_length=80)
     days_of_week: str | None = Field(default=None, max_length=120)
+    # Moving a batch between storefronts is a correction an admin has to be
+    # able to make - a batch created against the wrong one is otherwise stuck
+    # on a site it does not belong to, visible to the wrong customers.
+    origin: Origin | None = None
     status: EntityStatus | None = None
     progress_status: BatchProgressStatus | None = None
 
@@ -78,6 +89,11 @@ class BatchPublic(BaseModel):
     trainer_email: EmailStr | None
     seats_note: str | None
     days_of_week: str | None
+    # Read by the admin list, which is the one view showing both storefronts
+    # at once and so the one place a row is ambiguous without it. The public
+    # route filters to VPRO before serialising, so this only ever says "VPRO"
+    # to a visitor - it tells them a field exists, not what is behind it.
+    origin: Origin
     status: EntityStatus
     progress_status: BatchProgressStatus
 
@@ -101,6 +117,7 @@ class BatchPublic(BaseModel):
             trainer_email=batch.trainer_email,
             seats_note=batch.seats_note,
             days_of_week=batch.days_of_week,
+            origin=batch.origin,
             status=batch.status,
             progress_status=batch.progress_status,
         )
