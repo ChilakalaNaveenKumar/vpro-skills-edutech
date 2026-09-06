@@ -27,6 +27,17 @@ export const TITLE_SUFFIX = 'VPro Skills'
 export const OG_IMAGE = '/og-default.png'
 export const OG_IMAGE_WIDTH = 1200
 export const OG_IMAGE_HEIGHT = 630
+/** Spoken by screen readers and used as og:image:alt. Must describe the card, not the page. */
+export const OG_IMAGE_ALT = 'VPro Skills EduTech — live online instructor-led training'
+
+/**
+ * Optional HTML-tag proof for Google Search Console. Empty until someone pastes
+ * the token from Search Console > Settings > Ownership verification. DNS
+ * verification is better (it survives a redesign); this exists so the first
+ * deploy can be claimed from the page itself if DNS is not ready.
+ */
+export const GOOGLE_SITE_VERIFICATION =
+  (import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string | undefined)?.trim() || ''
 
 /** Absolute URL for a site-relative path. Metadata tags may not use relative ones. */
 export function absoluteUrl(path: string): string {
@@ -35,12 +46,10 @@ export function absoluteUrl(path: string): string {
 }
 
 /**
- * Both structured-data blocks and the footer describe the same business, so
- * the address lives here in the shape schema.org wants and is derived from the
- * same CONTACT constant the footer prints. A mismatch between the two is the
- * classic reason a local business fails to rank: search engines compare the
- * name, address and phone number they find and discount all of them if they
- * disagree.
+ * The registered office, not a classroom. Both structured-data blocks and the
+ * footer print this address, so it lives here in the shape schema.org wants
+ * and is derived from the same CONTACT constant. A mismatch between the two is
+ * the classic reason a listing gets discounted.
  */
 export const POSTAL_ADDRESS = {
   '@type': 'PostalAddress',

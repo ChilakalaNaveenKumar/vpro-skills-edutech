@@ -1,5 +1,7 @@
 import {
+  GOOGLE_SITE_VERIFICATION,
   OG_IMAGE,
+  OG_IMAGE_ALT,
   OG_IMAGE_HEIGHT,
   OG_IMAGE_WIDTH,
   SITE_NAME,
@@ -51,6 +53,9 @@ export default function Seo({
       <meta name="description" content={description} />
       <link rel="canonical" href={url} />
       {noIndex && <meta name="robots" content="noindex, follow" />}
+      {GOOGLE_SITE_VERIFICATION && (
+        <meta name="google-site-verification" content={GOOGLE_SITE_VERIFICATION} />
+      )}
 
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={SITE_NAME} />
@@ -58,6 +63,7 @@ export default function Seo({
       <meta property="og:description" content={description} />
       <meta property="og:url" content={url} />
       <meta property="og:image" content={imageUrl} />
+      <meta property="og:image:alt" content={OG_IMAGE_ALT} />
       <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
       <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
       <meta property="og:locale" content="en_IN" />
@@ -66,6 +72,7 @@ export default function Seo({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={imageUrl} />
+      <meta name="twitter:image:alt" content={OG_IMAGE_ALT} />
     </>
   )
 }

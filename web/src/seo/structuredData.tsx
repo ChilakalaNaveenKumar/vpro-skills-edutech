@@ -1,4 +1,5 @@
 import { CONTACT, HOURS_DISPLAY } from '../content/contact'
+import { MENTOR } from '../content/mentor'
 import { GEO, POSTAL_ADDRESS, SITE_NAME, SITE_URL, TELEPHONE, absoluteUrl } from './site'
 
 /**
@@ -46,21 +47,65 @@ export function OrganizationJsonLd() {
         logo: absoluteUrl('/logo-square-512.png'),
         image: absoluteUrl('/og-default.png'),
         description:
-          'Live instructor-led training in AI engineering and full-stack software development, taught in Ameerpet, Hyderabad and online.',
+          'Live instructor-led training in AI engineering and full-stack software development, taught online at a fixed hour.',
         telephone: TELEPHONE,
         address: POSTAL_ADDRESS,
         areaServed: 'IN',
         knowsLanguage: ['en', 'te', 'hi'],
+        employee: { '@id': `${SITE_URL}/#trainer` },
       }}
     />
   )
 }
 
 /**
- * The physical training centre. Separate from the organisation because it is a
- * different claim - one is "this company exists", the other is "you can walk
- * into this address at these hours" - and it is the one that feeds the map
- * pack for searches like "python training ameerpet".
+ * The site as a thing Google can name in sitelinks. No SearchAction: there is
+ * no on-site search, and inventing one is the kind of structured-data lie that
+ * costs rich results rather than winning them.
+ */
+export function WebsiteJsonLd() {
+  return (
+    <JsonLd
+      data={{
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        name: SITE_NAME,
+        alternateName: 'VPro Skills',
+        url: SITE_URL,
+        inLanguage: 'en',
+        publisher: { '@id': `${SITE_URL}/#organization` },
+      }}
+    />
+  )
+}
+
+/**
+ * The trainer, so a search for the name can land on the page that shows the
+ * photograph and the quote. The image URL has to be the file the page actually
+ * renders - a second, nicer portrait that is not on the site is a mismatch.
+ */
+export function TrainerJsonLd() {
+  return (
+    <JsonLd
+      data={{
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        '@id': `${SITE_URL}/#trainer`,
+        name: MENTOR.name,
+        jobTitle: MENTOR.roles.join(', '),
+        image: absoluteUrl(MENTOR.photo.webp),
+        worksFor: { '@id': `${SITE_URL}/#organization` },
+        description: MENTOR.bio,
+      }}
+    />
+  )
+}
+
+/**
+ * The office, not a classroom. Separate from the organisation because one is
+ * "this company exists" and the other is the postal address search engines
+ * match against a Google Business Profile. Classes themselves are online.
  */
 export function LocalBusinessJsonLd() {
   return (
@@ -92,7 +137,7 @@ export function LocalBusinessJsonLd() {
           },
         ],
         // Printed in the footer in the same words, so the two agree.
-        description: `Live instructor-led technology training in ${CONTACT.location}. Open ${HOURS_DISPLAY}.`,
+        description: `Live instructor-led technology training, taught online. Office in ${CONTACT.location}. Open ${HOURS_DISPLAY}.`,
       }}
     />
   )
@@ -129,14 +174,11 @@ export function CourseJsonLd({
         inLanguage: 'en',
         hasCourseInstance: {
           '@type': 'CourseInstance',
-          // Both, and truthfully: the same session is taught in the room and
-          // streamed, which is exactly what "blended" means here.
-          courseMode: 'Blended',
+          courseMode: 'Online',
           courseWorkload: 'PT1H30M',
           location: {
-            '@type': 'Place',
-            name: `${SITE_NAME}, ${CONTACT.location}`,
-            address: POSTAL_ADDRESS,
+            '@type': 'VirtualLocation',
+            url: SITE_URL,
           },
           courseSchedule: {
             '@type': 'Schedule',

@@ -36,7 +36,7 @@ export const BATCH_LOOP = [
   {
     n: '01',
     title: 'The topic, live',
-    body: 'A fixed hour with the trainer in the room. Topics arrive in order, so the thing you need next is the thing being taught.',
+    body: 'A fixed hour with the trainer live on the call. Topics arrive in order, so the thing you need next is the thing being taught.',
   },
   {
     n: '02',
@@ -70,7 +70,7 @@ export const FAQS = [
   },
   {
     q: 'Is this online or classroom?',
-    a: 'Both work. Sessions run live at a fixed hour and you can attend from Ameerpet or join online — the same class either way.',
+    a: 'Online only. Every session is live at a fixed hour — not a recording, and not a classroom you travel to.',
   },
   {
     q: 'Do you guarantee placement?',

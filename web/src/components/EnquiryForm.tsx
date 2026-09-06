@@ -10,8 +10,8 @@ const LABEL = 'mono text-[color:var(--on-ink-faint)]'
 
 // The field took a bare number with no dialling code, so a number typed by
 // anyone outside India arrived unreachable and an Indian number arrived in a
-// form WhatsApp cannot open directly. India leads because that is where the
-// classroom is; the rest are where students message us from.
+// form WhatsApp cannot open directly. India leads because that is where most
+// students are; the rest are where people message us from.
 const DIAL_CODES = [
   { dial: '+91', country: 'India' },
   { dial: '+1', country: 'USA / Canada' },
