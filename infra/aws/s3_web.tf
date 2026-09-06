@@ -42,6 +42,18 @@ resource "aws_cloudfront_origin_access_control" "web" {
   signing_protocol                  = "sigv4"
 }
 
+# Rewrites /courses to /courses/index.html so the prerendered files are the
+# ones actually served. Without it, every clean URL falls through to the SPA
+# shell and the per-page metadata the prerender produced is never seen by a
+# crawler or a share scraper. See cloudfront-rewrite.js for the full reasoning.
+resource "aws_cloudfront_function" "web_rewrite" {
+  name    = "vpro-skills-directory-index"
+  runtime = "cloudfront-js-2.0"
+  comment = "Append index.html to extensionless paths so prerendered pages are served"
+  publish = true
+  code    = file("${path.module}/cloudfront-rewrite.js")
+}
+
 resource "aws_cloudfront_distribution" "web" {
   enabled             = true
   default_root_object = "index.html"
@@ -109,6 +121,13 @@ resource "aws_cloudfront_distribution" "web" {
     target_origin_id        = "s3-web"
     viewer_protocol_policy   = "redirect-to-https"
     compress                 = true
+
+    # Only on this behaviour - /api/* has its own above and must reach the
+    # backend with its path untouched.
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.web_rewrite.arn
+    }
 
     forwarded_values {
       query_string = false
