@@ -16,7 +16,7 @@ export default function CoursesPage() {
       <Seo
         path="/courses"
         title="All Courses"
-        description="Agentic AI, Python, Java and .NET full stack, Forward Deployment Engineering and Quantum Computing - every course taught as a live batch at a fixed hour in Ameerpet, Hyderabad and online."
+        description="Agentic AI, Python, Java and .NET full stack, Forward Deployment Engineering and Quantum Computing - every course taught as a live online batch at a fixed hour."
       />
       <BreadcrumbJsonLd trail={[{ name: 'Courses', path: '/courses' }]} />
       <ScrollProgress />
@@ -32,8 +32,8 @@ export default function CoursesPage() {
         </Reveal>
         <Reveal delayIndex={2}>
           <p className="mb-14 max-w-[46ch] text-base leading-[1.6] text-[color:var(--on-ink-faint)]">
-            Every course runs as a live batch at a fixed hour, with a named trainer. Open one for
-            its full curriculum.
+            Every course runs as a live online batch at a fixed hour, with a named trainer. Open
+            one for its full curriculum.
           </p>
         </Reveal>
 

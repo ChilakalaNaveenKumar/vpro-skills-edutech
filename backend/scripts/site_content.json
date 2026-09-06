@@ -31,7 +31,7 @@
     {
       "n": "01",
       "title": "The topic, live",
-      "body": "A fixed hour with the trainer in the room. Topics arrive in order, so the thing you need next is the thing being taught."
+      "body": "A fixed hour with the trainer live on the call. Topics arrive in order, so the thing you need next is the thing being taught."
     },
     {
       "n": "02",
@@ -64,7 +64,7 @@
     },
     {
       "q": "Is this online or classroom?",
-      "a": "Both work. Sessions run live at a fixed hour and you can attend from Ameerpet or join online — the same class either way."
+      "a": "Online only. Every session is live at a fixed hour — not a recording, and not a classroom you travel to."
     },
     {
       "q": "Do you guarantee placement?",
@@ -148,7 +148,7 @@
     "eyebrow": "Live instructor-led batches",
     "headlineLead": "Nothing here",
     "headlineEmphasis": "is a recording.",
-    "sub": "Every session is taught live at a fixed hour. Ask your question while the class is happening."
+    "sub": "Every session is taught live, online, at a fixed hour. Ask your question while the class is happening."
   },
   "HERO_FACTS": [
     {
@@ -157,15 +157,15 @@
     },
     {
       "k": "Questions",
-      "v": "Asked in the room"
+      "v": "Asked live"
     },
     {
       "k": "After class",
       "v": "Live support"
     },
     {
-      "k": "Recordings",
-      "v": "Backup, not the course"
+      "k": "Where",
+      "v": "Online"
     }
   ]
 }

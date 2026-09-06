@@ -44,10 +44,9 @@ export default function TermsPage() {
 
       <Section n={2} title="What we provide">
         <P>
-          Live instructor-led classes at a scheduled hour, taught in English, which you can attend
-          in person at {CONTACT.location} or online. Alongside the classes you get the course
-          curriculum, project work, an assessment after each topic with your results, and a
-          certificate of completion at the end.
+          Live instructor-led classes at a scheduled hour, taught in English, online. Alongside
+          the classes you get the course curriculum, project work, an assessment after each topic
+          with your results, and a certificate of completion at the end.
         </P>
         <P>
           Course content evolves as the technology does. We may update the curriculum, and we may

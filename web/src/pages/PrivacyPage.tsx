@@ -31,8 +31,8 @@ export default function PrivacyPage() {
       <Section n={1} title="Who we are">
         <P>
           <Fact value={LEGAL.entityName} /> (<Fact value={LEGAL.entityType} />), trading as VPro
-          Skills EduTech, runs live instructor-led technology training from{' '}
-          {CONTACT.location}. Our registered office is <Fact value={LEGAL.registeredAddress} />.
+          Skills EduTech, runs live instructor-led technology training online. Our registered
+          office is <Fact value={LEGAL.registeredAddress} />.
         </P>
         <P>
           We are the data fiduciary for the information described below. For any question about

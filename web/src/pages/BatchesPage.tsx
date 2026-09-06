@@ -117,7 +117,7 @@ export default function BatchesPage() {
       <Seo
         path="/batches"
         title="Batch Dates & Timings"
-        description="Every batch we are running or opening, with its start date, weekday hour and trainer. Live classes in Ameerpet, Hyderabad and online."
+        description="Every batch we are running or opening, with its start date, weekday hour and trainer. Live online classes at a fixed hour."
       />
       <BreadcrumbJsonLd trail={[{ name: 'Dates & timings', path: '/batches' }]} />
       <ScrollProgress />
@@ -131,8 +131,8 @@ export default function BatchesPage() {
         </Reveal>
         <Reveal delayIndex={2}>
           <p className="lede mt-6 max-w-[48ch]">
-            Every batch we are running or opening, with its hour. Pick one and message us, or send
-            your details and we will come back to you.
+            Every batch we are running or opening, live and online, with its hour.
+            Pick one and message us, or send your details and we will come back to you.
           </p>
         </Reveal>
       </section>

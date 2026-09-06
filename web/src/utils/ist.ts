@@ -1,4 +1,4 @@
-// Every batch time the backend stores is a wall-clock time in Ameerpet, so
+// Every batch time the backend stores is a wall-clock time in IST, so
 // "is this class live right now?" has to be answered in IST regardless of where
 // the visitor is sitting - and this site is deliberately aimed at people abroad
 // as well as in Hyderabad.

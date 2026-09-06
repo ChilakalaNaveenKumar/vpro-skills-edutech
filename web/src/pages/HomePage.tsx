@@ -21,6 +21,8 @@ import {
   FaqJsonLd,
   LocalBusinessJsonLd,
   OrganizationJsonLd,
+  TrainerJsonLd,
+  WebsiteJsonLd,
 } from '../seo/structuredData'
 import { courseBySlug } from '../content/courses'
 import { FAQS } from '../content/homeSections'
@@ -46,11 +48,13 @@ function HomeSeo() {
     <>
       <Seo
         path="/"
-        title="Live AI & Software Training in Ameerpet, Hyderabad | VPro Skills"
-        description="Live instructor-led batches in Agentic AI, Python, Java and .NET full stack, taught at a fixed hour in Ameerpet or online. Sit in on three classes before you pay anything."
+        title="Live Online AI & Software Training | VPro Skills"
+        description="Live instructor-led batches in Agentic AI, Python, Java and .NET full stack, taught online at a fixed hour. Sit in on three classes before you pay anything."
       />
       <OrganizationJsonLd />
+      <WebsiteJsonLd />
       <LocalBusinessJsonLd />
+      <TrainerJsonLd />
       <FaqJsonLd items={FAQS.map((faq) => ({ question: faq.q, answer: faq.a }))} />
     </>
   )
@@ -77,7 +81,7 @@ function CourseSeo({ slug }: { slug: string }) {
       <Seo
         path={path}
         title={`${course.name} Course`}
-        description={`${course.summary} Live instructor-led batches in Ameerpet, Hyderabad and online.`.slice(
+        description={`${course.summary} Live instructor-led batches, taught online at a fixed hour.`.slice(
           0,
           300,
         )}

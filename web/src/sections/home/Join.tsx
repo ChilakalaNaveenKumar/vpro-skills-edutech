@@ -18,7 +18,8 @@ export default function Join() {
         <Reveal delayIndex={2}>
           <p className="max-w-[38ch] font-[Newsreader,Georgia,serif] text-[clamp(19px,2vw,26px)] leading-[1.44] text-[color:var(--on-ink-mute)]">
             You attend a real session, not a sales presentation. Ask questions, watch something
-            break and get fixed, and decide afterwards. Nothing is charged before that.
+            break and get fixed, and decide afterwards. Nothing is charged before that. Every
+            class is live and online.
           </p>
         </Reveal>
         <Reveal delayIndex={0} className="flex flex-wrap gap-[14px]">

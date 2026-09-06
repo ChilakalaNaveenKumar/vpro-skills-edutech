@@ -8,6 +8,7 @@ export const CONTACT = {
   // Live site used tel:9010001847 (no country code) - broken for roaming/NRI visitors.
   phoneDial: '+919010001847',
   phoneDisplay: '+91 90100 01847',
+  // Office / registered address. Classes are online — this is not a classroom.
   location: 'Ameerpet, Hyderabad',
   addressLines: ['VPro Skills EduTech', 'Ameerpet, Hyderabad', 'Telangana 500016, India'],
   timezone: 'Asia/Kolkata',
