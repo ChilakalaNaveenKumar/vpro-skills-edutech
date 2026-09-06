@@ -6,6 +6,25 @@ const FIELD =
   'w-full min-h-[48px] bg-[color:var(--ink)] px-4 py-3.5 text-base text-[color:var(--on-ink)] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.24)]'
 const LABEL = 'mono text-[color:var(--on-ink-faint)]'
 
+// The field took a bare number with no dialling code, so a number typed by
+// anyone outside India arrived unreachable and an Indian number arrived in a
+// form WhatsApp cannot open directly. India leads because that is where the
+// classroom is; the rest are where students message us from.
+const DIAL_CODES = [
+  { dial: '+91', country: 'India' },
+  { dial: '+1', country: 'USA / Canada' },
+  { dial: '+44', country: 'UK' },
+  { dial: '+971', country: 'UAE' },
+  { dial: '+61', country: 'Australia' },
+  { dial: '+65', country: 'Singapore' },
+  { dial: '+49', country: 'Germany' },
+  { dial: '+353', country: 'Ireland' },
+  { dial: '+64', country: 'New Zealand' },
+  { dial: '+966', country: 'Saudi Arabia' },
+  { dial: '+974', country: 'Qatar' },
+  { dial: '+60', country: 'Malaysia' },
+]
+
 export default function EnquiryForm({
   batchOptions,
   neutralBatchOption,
@@ -14,6 +33,7 @@ export default function EnquiryForm({
   neutralBatchOption: string
 }) {
   const [name, setName] = useState('')
+  const [dialCode, setDialCode] = useState(DIAL_CODES[0].dial)
   const [phone, setPhone] = useState('')
   const [batch, setBatch] = useState(neutralBatchOption)
   const [background, setBackground] = useState('')
@@ -21,8 +41,14 @@ export default function EnquiryForm({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const local = phone.trim()
     const url = whatsappRawUrl(
-      composeEnquiry({ name, phone, batch: selectedBatch, background }),
+      composeEnquiry({
+        name,
+        phone: local ? `${dialCode} ${local}` : '',
+        batch: selectedBatch,
+        background,
+      }),
     )
     window.open(url, '_blank', 'noopener')
   }
@@ -45,17 +71,36 @@ export default function EnquiryForm({
         />
       </label>
 
-      <label className="grid gap-2">
-        <span className={LABEL}>Phone</span>
-        <input
-          type="tel"
-          required
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          placeholder="Mobile number"
-          className={FIELD}
-        />
-      </label>
+      <div className="grid gap-2">
+        <span className={LABEL} id="enquiry-phone-label">
+          Phone
+        </span>
+        <div className="grid grid-cols-[9.5rem_minmax(0,1fr)] gap-2 max-[420px]:grid-cols-1">
+          <select
+            aria-label="Country dialling code"
+            value={dialCode}
+            onChange={(event) => setDialCode(event.target.value)}
+            className={FIELD}
+          >
+            {DIAL_CODES.map((entry) => (
+              <option key={entry.dial} value={entry.dial}>
+                {entry.dial} {entry.country}
+              </option>
+            ))}
+          </select>
+          <input
+            type="tel"
+            required
+            inputMode="tel"
+            autoComplete="tel-national"
+            aria-labelledby="enquiry-phone-label"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            placeholder="Mobile number"
+            className={FIELD}
+          />
+        </div>
+      </div>
 
       <label className="grid gap-2">
         <span className={LABEL}>Which batch</span>
