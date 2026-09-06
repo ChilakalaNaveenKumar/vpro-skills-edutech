@@ -14,6 +14,16 @@ import Join from '../sections/home/Join'
 import CourseDetailPage from './CourseDetailPage'
 import { CourseDetailContext } from '../contexts/CourseDetailContext'
 import { prefersReducedMotion } from '../motion/prefersReducedMotion'
+import Seo from '../seo/Seo'
+import {
+  BreadcrumbJsonLd,
+  CourseJsonLd,
+  FaqJsonLd,
+  LocalBusinessJsonLd,
+  OrganizationJsonLd,
+} from '../seo/structuredData'
+import { courseBySlug } from '../content/courses'
+import { FAQS } from '../content/homeSections'
 
 // One question per section, in the order a visitor actually asks them:
 //
@@ -31,6 +41,58 @@ import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 // recedes, the course rises in, and the URL is pushed so the link is still
 // shareable and Back still closes it. Nothing unmounts, which is what makes it
 // read as this page extending rather than a different page arriving.
+function HomeSeo() {
+  return (
+    <>
+      <Seo
+        path="/"
+        title="Live AI & Software Training in Ameerpet, Hyderabad | VPro Skills"
+        description="Live instructor-led batches in Agentic AI, Python, Java and .NET full stack, taught at a fixed hour in Ameerpet or online. Sit in on three classes before you pay anything."
+      />
+      <OrganizationJsonLd />
+      <LocalBusinessJsonLd />
+      <FaqJsonLd items={FAQS.map((faq) => ({ question: faq.q, answer: faq.a }))} />
+    </>
+  )
+}
+
+function CourseSeo({ slug }: { slug: string }) {
+  const course = courseBySlug(slug)
+  // An unknown slug renders the shelf's "course not found" state, and a page
+  // that says nothing exists should not be offering itself to the index.
+  if (!course) {
+    return (
+      <Seo
+        path={`/courses/${slug}`}
+        title="Course not found"
+        description="This course is not on our current schedule."
+        noIndex
+      />
+    )
+  }
+
+  const path = `/courses/${course.slug}`
+  return (
+    <>
+      <Seo
+        path={path}
+        title={`${course.name} Course`}
+        description={`${course.summary} Live instructor-led batches in Ameerpet, Hyderabad and online.`.slice(
+          0,
+          300,
+        )}
+      />
+      <CourseJsonLd name={course.name} description={course.summary} path={path} />
+      <BreadcrumbJsonLd
+        trail={[
+          { name: 'Courses', path: '/courses' },
+          { name: course.name, path },
+        ]}
+      />
+    </>
+  )
+}
+
 export default function HomePage() {
   const navigate = useNavigate()
   // The route is the state. Nothing is mirrored into a ref or a local copy, so
@@ -73,6 +135,14 @@ export default function HomePage() {
 
   return (
     <CourseDetailContext.Provider value={openCourse}>
+      {/* This one component serves two routes, so it owns two sets of metadata.
+          A course opened here is a real, indexable page at its own URL - it just
+          happens to render inside the home page rather than replacing it - so it
+          gets the course's title, description and canonical, not the home
+          page's. Taken from the static curriculum rather than the API so the
+          prerender does not depend on the backend being up at build time. */}
+      {open ? <CourseSeo slug={slug} /> : <HomeSeo />}
+
       <div className={`${open ? 'mode-detail' : ''} ${opening ? 'is-opening' : ''}`}>
         <ScrollProgress />
 

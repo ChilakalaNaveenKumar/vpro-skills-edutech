@@ -1,0 +1,90 @@
+<!doctype html>
+<!--
+  Source for public/og-default.png, the social share card.
+
+  Kept in the repo so the card can be regenerated when the wording changes:
+  serve web/public, open this at a 1200x630 viewport and screenshot it. It is
+  prefixed with an underscore and excluded from the sitemap and prerender so it
+  never ships as a page of its own.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Reachable at /_og-source.html but not a page of the site. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..400;1,6..72,300..400&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1200px; height: 630px; overflow: hidden; }
+      body {
+        background: #14161c;
+        color: #ede7de;
+        font-family: 'Newsreader', Georgia, serif;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 68px 76px;
+      }
+      /* The same warm bloom the hero has, so the card reads as this site. */
+      .glow {
+        position: absolute;
+        width: 780px; height: 780px;
+        right: -230px; top: -300px;
+        background: radial-gradient(circle, rgba(200,112,70,0.20) 0%, rgba(200,112,70,0) 66%);
+        pointer-events: none;
+      }
+      .mono {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 15px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      .eyebrow { color: #c87046; }
+      h1 {
+        font-size: 84px;
+        font-weight: 300;
+        line-height: 1.0;
+        letter-spacing: -0.035em;
+        max-width: 17ch;
+      }
+      em { font-style: italic; color: #c87046; }
+      .lede {
+        font-size: 25px;
+        line-height: 1.45;
+        color: rgba(237, 231, 222, 0.72);
+        max-width: 46ch;
+        margin-top: 26px;
+      }
+      footer {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        border-top: 1px solid rgba(237, 231, 222, 0.14);
+        padding-top: 24px;
+      }
+      .wordmark { font-size: 30px; letter-spacing: -0.01em; }
+      .place { color: rgba(237, 231, 222, 0.62); }
+    </style>
+  </head>
+  <body>
+    <div class="glow"></div>
+    <div>
+      <p class="mono eyebrow">Live instructor-led batches</p>
+      <h1 style="margin-top: 30px">Nothing here is <em>a recording.</em></h1>
+      <p class="lede">
+        Agentic AI, Python, Java and .NET full stack — taught live at a fixed hour in Ameerpet,
+        Hyderabad and online.
+      </p>
+    </div>
+    <footer>
+      <span class="wordmark">VPro Skills EduTech</span>
+      <span class="mono place">Ameerpet, Hyderabad</span>
+    </footer>
+  </body>
+</html>

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../contexts/AuthContext'
+import Seo from '../seo/Seo'
 
 export default function LoginPage() {
   const { user, login } = useAuth()
@@ -41,6 +42,12 @@ export default function LoginPage() {
 
   return (
     <div className="p-8 max-w-sm mx-auto">
+      <Seo
+        path="/login"
+        title="Student Login"
+        description="Sign in to your VPro Skills EduTech account."
+        noIndex
+      />
       <h1 className="text-xl font-semibold">Student Login</h1>
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
