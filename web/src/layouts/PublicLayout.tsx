@@ -6,6 +6,8 @@ import CtaLink from '../components/CtaLink'
 import DigiSetuMark from '../components/DigiSetuMark'
 import { prefersReducedMotion } from '../motion/prefersReducedMotion'
 import { CONTACT, HOURS_DISPLAY } from '../content/contact'
+import ConsentNotice from '../components/ConsentNotice'
+import { trackPageview } from '../analytics/tags'
 
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600'
 
@@ -27,6 +29,10 @@ const LEGAL_LINKS = [
   { to: '/terms', label: 'Terms & Conditions' },
   { to: '/data-deletion', label: 'Data Deletion' },
 ]
+
+// Derived from the links rather than written out again, so adding a legal page
+// to the footer cannot leave it rendering on the light default shell.
+const LEGAL_PATHS = new Set(LEGAL_LINKS.map((link) => link.to))
 
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -86,11 +92,15 @@ export default function PublicLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  // The marketing surface: home, the course pages and the batch schedule.
+  // The marketing surface: home, the course pages, the batch schedule and the
+  // three legal pages. The legal pages are in here because the dark shell is
+  // what makes a page look like part of this site - left out, they rendered on
+  // the light default and read as though they belonged to a different company.
   const journey =
     location.pathname === '/' ||
     location.pathname.startsWith('/courses') ||
-    location.pathname === '/batches'
+    location.pathname === '/batches' ||
+    LEGAL_PATHS.has(location.pathname)
 
   // React Router does not scroll to a hash target, and three header links are
   // home-page sections. Runs after paint so the section exists when we look.
@@ -112,6 +122,14 @@ export default function PublicLayout() {
     if (location.hash) return
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [location.pathname, location.hash])
+
+  // Routing is client-side, so the tags only ever see the first URL loaded.
+  // Every navigation after that has to be reported by hand or the whole site
+  // looks like one page in the reports. Runs after the route has committed, so
+  // document.title is already the new page's.
+  useEffect(() => {
+    trackPageview(location.pathname + location.search)
+  }, [location.pathname, location.search])
 
   function handleLogout() {
     logout()
@@ -471,6 +489,8 @@ export default function PublicLayout() {
           </div>
         </footer>
       )}
+
+      <ConsentNotice />
     </div>
   )
 }
