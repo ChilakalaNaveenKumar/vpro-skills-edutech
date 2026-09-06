@@ -206,11 +206,12 @@ pipeline {
                         # which is why they are plain Jenkins global environment
                         # variables and not credentials.
                         #
-                        # The four measurement IDs are optional. Unset, no tag
-                        # loads and the consent notice stays hidden, which is the
-                        # right behaviour until the ad accounts exist. Set them
-                        # in Manage Jenkins > System > Global properties, same
-                        # place as CLOUDFRONT_DOMAIN.
+                        # The measurement IDs and the Search Console token are
+                        # optional. Unset, no tag loads and the consent notice
+                        # stays hidden, which is the right behaviour until the
+                        # ad accounts exist. Set them in Manage Jenkins >
+                        # System > Global properties, same place as
+                        # CLOUDFRONT_DOMAIN.
                         {
                             echo "VITE_API_BASE_URL=https://${CLOUDFRONT_DOMAIN}"
                             echo "VITE_SITE_URL=${SITE_URL:-https://${CLOUDFRONT_DOMAIN}}"
@@ -218,6 +219,7 @@ pipeline {
                             echo "VITE_GOOGLE_ADS_ID=${GOOGLE_ADS_ID:-}"
                             echo "VITE_GOOGLE_ADS_CONVERSION_LABEL=${GOOGLE_ADS_CONVERSION_LABEL:-}"
                             echo "VITE_META_PIXEL_ID=${META_PIXEL_ID:-}"
+                            echo "VITE_GOOGLE_SITE_VERIFICATION=${GOOGLE_SITE_VERIFICATION:-}"
                         } > .env
 
                         # `npm run build` ends by prerendering one HTML file per

@@ -18,8 +18,15 @@ A CloudFront Function (`infra/aws/cloudfront-rewrite.js`) maps clean URLs onto
 those files.
 
 **Search engines are told what the pages are.** `robots.txt`, a `sitemap.xml`
-generated from the routes actually built, and JSON-LD describing the
-organisation, the training centre, each course, the FAQ and the breadcrumbs.
+generated from the routes actually built (including the pictures each page
+renders, so Google Images can find the logo and the trainer), and JSON-LD
+describing the organisation, the site, the trainer, the office, each course,
+the FAQ and the breadcrumbs.
+
+**The icon Google puts next to a result is a real file.** `/favicon.ico` is
+declared first because Google fetches that path whether you mention it or not.
+The unused studio photographs and the 200KB logo that used to ship with every
+page are gone; the remaining pictures have width, height and an alt.
 
 **Conversions are reported where they happen.** Every route to contacting this
 business ends at a WhatsApp link rendered by `CtaLink`, plus the enquiry form.
@@ -51,6 +58,7 @@ From `web/`, `npm run check:legal` lists what is outstanding.
 | `GOOGLE_ADS_ID` | Google Ads > Tools > Conversions > the tag ID (`AW-…`) |
 | `GOOGLE_ADS_CONVERSION_LABEL` | The half after the slash in `AW-000000000/AbC-D_efGh` |
 | `META_PIXEL_ID` | Meta Events Manager > Data sources > Pixel ID |
+| `GOOGLE_SITE_VERIFICATION` | Search Console > Settings > Ownership verification > HTML tag, the `content=` value only. Optional if you verify by DNS instead. |
 
 Set them in **Manage Jenkins > System > Global properties**, alongside
 `CLOUDFRONT_DOMAIN`. They are not secrets - every one is inlined into the
@@ -86,13 +94,16 @@ Full reasoning in docs/LEGAL_HANDOVER.md.
 
 Once the first deploy with a real domain is out:
 
-- **Google Search Console** - add the property, verify by DNS, submit
-  `https://<domain>/sitemap.xml`.
+- **Google Search Console** - add the URL-prefix property for the live
+  origin, verify by DNS (or paste the HTML-tag token into
+  `GOOGLE_SITE_VERIFICATION` and redeploy), then submit
+  `https://<domain>/sitemap.xml`. Until this is done, Google has no reason to
+  look at the site, no matter how complete the tags are.
 - **Bing Webmaster Tools** - can import the Search Console setup wholesale.
-- **Google Business Profile** - the biggest single lever for "training in
-  Ameerpet" searches, and the structured data on the site is already written to
-  match. The name, address and phone number must match `web/src/content/contact.ts`
-  exactly; search engines compare them and discount all of them if they differ.
+- **Google Business Profile** - the office address and phone in the profile
+  must match `web/src/content/contact.ts` exactly. Do not list a classroom or
+  walk-in hours: every class is online. Search engines compare the name,
+  address and phone they find and discount all of them if they disagree.
 
 ### 5. Check it worked
 
