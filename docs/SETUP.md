@@ -46,11 +46,40 @@ PostgreSQL but not run against a live server in development, so this is the
 first real execution - if it fails, check `DATABASE_URL` in `.env` first.
 
 Then create the first admin account (there is no self-registration -
-see docs/ARCHITECTURE.md's "Authentication" section) and start the API:
+see docs/ARCHITECTURE.md's "Authentication" section):
 
 ```
 python -m scripts.create_user --email admin@vproskills.com \
   --password "change-me" --full-name "Admin" --role ADMIN
+```
+
+### Seed the site content
+
+The migration creates the tables but leaves them empty. Until they are
+seeded the public site falls back to the copy compiled into the frontend,
+so it looks correct but nothing is editable from the admin panel, and the
+course shelf has no per-course colours. Run both seeds once:
+
+```
+python -m scripts.seed_curriculum      # courses, modules, projects, hues
+python -m scripts.seed_site_content    # testimonials, FAQs, tenets, hero copy
+```
+
+Both refuse to run if the tables already hold rows, and exit non-zero
+saying so. That guard is deliberate: they delete before they insert, so on
+a database someone has edited through the admin panel they would silently
+discard that work. Pass `--force` only when you actually intend to throw
+the current content away and reload from the file.
+
+`seed_curriculum` is the only thing that writes `courses.hue`, the colour
+each spine on the course shelf is drawn in. Skip it and every course comes
+back with a null hue; the frontend then falls back to the colour that
+course shipped with, so the shelf still reads correctly, but nothing in
+the database is authoritative and the admin panel cannot change it.
+
+Now start the API:
+
+```
 uvicorn app.main:app --reload
 ```
 
