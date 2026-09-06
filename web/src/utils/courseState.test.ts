@@ -41,8 +41,12 @@ describe('courseStateFor', () => {
     expect(courseStateFor('Agentic AI', [row('today')])).toBe('In session')
   })
 
-  it('is Gathering interest when the only batch has not started yet', () => {
-    expect(courseStateFor('Agentic AI', [row('upcoming')])).toBe('Gathering interest')
+  it('is Starting soon when the only batch is dated but has not begun', () => {
+    expect(courseStateFor('Agentic AI', [row('upcoming')])).toBe('Starting soon')
+  })
+
+  it('prefers In session over Starting soon when the course has both', () => {
+    expect(courseStateFor('Agentic AI', [row('upcoming'), row('live')])).toBe('In session')
   })
 
   it('is Gathering interest when the course has no batches at all', () => {
@@ -76,8 +80,16 @@ describe('courseBatches', () => {
         hour: '7:30 \u2013 9:00 PM',
         note: 'Batch A-04, started 4 Aug',
         line: 'Batch A-04, 7:30 \u2013 9:00 PM, 4 Aug to 2 Nov',
+        started: true,
       },
     ])
+  })
+
+  it('includes a dated batch that has not begun, worded as starts not started', () => {
+    const found = courseBatches('Agentic AI', [row('upcoming')])
+    expect(found).toHaveLength(1)
+    expect(found[0].note).toBe('Batch A-04, starts 4 Aug')
+    expect(found[0].started).toBe(false)
   })
 
   it('returns every cohort running at once, not just the first', () => {
@@ -96,8 +108,11 @@ describe('courseBatches', () => {
     ])
   })
 
-  it('is empty when nothing is running', () => {
-    expect(courseBatches('Agentic AI', [row('upcoming')])).toEqual([])
+  it('is empty when the course has nothing scheduled at all', () => {
+    expect(courseBatches('Quantum Computing', [row('running')])).toEqual([])
+    expect(courseBatches('Agentic AI', [row('running', { progress_status: 'COMPLETED' })])).toEqual(
+      [],
+    )
     expect(courseBatches('Agentic AI', null)).toEqual([])
   })
 })
