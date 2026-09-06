@@ -69,17 +69,28 @@ Then take a backup anyway (`./backup.sh`) and deploy normally - the
 entrypoint applies the migrations. Then load the content, once:
 
 ```
-docker compose -f docker-compose.prod.yml exec backend python -m scripts.seed_site_content
-docker compose -f docker-compose.prod.yml exec backend python -m scripts.seed_curriculum
+docker compose -f docker-compose.prod.yml exec backend \
+    python -m scripts.seed_site_content --allow-production
+docker compose -f docker-compose.prod.yml exec backend \
+    python -m scripts.seed_curriculum --allow-production
 ```
 
 Both scripts replace their tables wholesale, so a second run would throw away
-whatever the admin has written since the first. They refuse to run against
-tables that already hold content for that reason, and exit non-zero; pass
-`--force` only when you genuinely mean to discard the live copy and reload
-from the JSON files. **Never** add either script to `docker-entrypoint.sh` -
-it runs on every container start, and that would reset the site's content on
-every restart.
+whatever the admin has written since the first. Three separate things stand in
+the way of that, and it is worth knowing which one you are arguing with:
+
+- They print the database they are about to write to, every time. If that line
+  does not say what you expect, stop there.
+- They refuse outright when `ENVIRONMENT=production`, which this compose file
+  sets. `--allow-production` is how you say you meant it - hence the flag on
+  the commands above. Nothing on a developer's machine sets that variable, so
+  the guard never appears during local work.
+- They refuse to run against tables that already hold content, and exit
+  non-zero. `--force` overrides that, and only that. Pass it when you genuinely
+  mean to discard the live copy and reload from the JSON files, after a backup.
+
+**Never** add either script to `docker-entrypoint.sh` - it runs on every
+container start, and that would reset the site's content on every restart.
 
 Until they are run the public pages are not broken: each section falls back
 to the copy compiled into the frontend, and an empty collection from the API

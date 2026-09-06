@@ -71,6 +71,35 @@ a database someone has edited through the admin panel they would silently
 discard that work. Pass `--force` only when you actually intend to throw
 the current content away and reload from the file.
 
+### Which database am I about to write to?
+
+Nothing about these scripts is local by nature. They connect to whatever
+`DATABASE_URL` in `backend/.env` points at, exactly like the API does, so
+the only thing making them safe on your machine is that the copied
+`.env.example` points at the Postgres in your own Docker.
+
+Each run therefore says where it is going before it writes anything:
+
+```
+seed_curriculum: writing to vpro_skills on localhost:5433 (environment=development)
+```
+
+Read that line. `localhost` is your machine. Anything else is not, and you
+should stop and check `DATABASE_URL` rather than let it continue.
+
+As a second guard, both scripts refuse outright when `ENVIRONMENT` is
+`production` - which `docker-compose.prod.yml` and `docker-compose.aws.yml`
+set, and which nothing on a development machine sets. Getting past that
+needs `--allow-production` typed into the command, so the live site cannot
+be reseeded by someone who thought they were on their laptop.
+
+If you want to be certain you cannot touch anything shared, point the
+scripts at a throwaway file for the run without editing `.env` at all:
+
+```
+DATABASE_URL="sqlite:///./scratch.db" python -m scripts.seed_curriculum --force
+```
+
 `seed_curriculum` is the only thing that writes `courses.hue`, the colour
 each spine on the course shelf is drawn in. Skip it and every course comes
 back with a null hue; the frontend then falls back to the colour that

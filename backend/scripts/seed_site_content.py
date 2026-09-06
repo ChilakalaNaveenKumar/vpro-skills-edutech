@@ -30,6 +30,7 @@ from app.database.session import SessionLocal
 from app.questions import models as _questions_models  # noqa: F401
 from app.topics import models as _topics_models  # noqa: F401
 from app.users import models as _users_models  # noqa: F401
+from scripts.seed_guard import add_arguments, confirm_target
 
 DATA = Path(__file__).with_name("site_content.json")
 
@@ -60,7 +61,8 @@ def _occupied(db) -> dict[str, int]:
     return {name: db.query(model).count() for name, model in tables.items()}
 
 
-def seed(force: bool = False) -> None:
+def seed(force: bool = False, allow_production: bool = False) -> None:
+    confirm_target("seed_site_content", allow_production=allow_production)
     data = json.loads(DATA.read_text(encoding="utf-8"))
     db = SessionLocal()
     try:
@@ -138,9 +140,6 @@ def seed(force: bool = False) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="reload the file over content that already exists, discarding edits",
-    )
-    seed(force=parser.parse_args().force)
+    add_arguments(parser)
+    args = parser.parse_args()
+    seed(force=args.force, allow_production=args.allow_production)
