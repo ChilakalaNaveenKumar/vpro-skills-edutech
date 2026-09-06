@@ -291,6 +291,37 @@ See `docs/SETUP.md`'s "Deploying the web app" section - the web app is a
 static build (`web/dist`), not a Docker container; this repo doesn't
 commit to a specific static host.
 
+`npm run build` now ends by prerendering one HTML file per public route in
+headless Chromium, so the build agent needs it:
+
+```bash
+npx playwright install chromium
+```
+
+The step fails the build rather than skipping if Chromium is missing. That is
+deliberate: without prerendering, every link shared from the site - including
+every ad - shows the home page's title and description regardless of which page
+it points at, and the build would otherwise look successful.
+
+`npm run build:spa` is the same build without prerendering, for when you only
+need to know the code compiles.
+
+## SEO and advertising
+
+See `docs/SEO_AND_ADS.md` for what the site does on its own and the five things
+a person still has to do: filling in the legal pages, setting the four
+measurement IDs in Jenkins, excluding Quebec from ad targeting, submitting the
+sitemap, and verifying with the sharing debuggers.
+
+Two things there are easy to get wrong later:
+
+- `SITE_URL` must be the real public origin. It defaults to
+  `https://www.vproskills.com`; if that is wrong, every canonical URL and the
+  whole sitemap point somewhere else.
+- The measurement IDs are optional and safe to leave unset. Unset, no tag loads
+  and the consent notice does not appear, which is the correct state before the
+  ad accounts exist.
+
 ## Operating the AWS deployment
 
 Everything above describes the self-contained Docker deployment

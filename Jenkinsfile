@@ -65,14 +65,20 @@ pipeline {
             }
         }
 
-        stage('Web: install, typecheck & build') {
+        stage('Web: install, typecheck & test') {
             steps {
                 dir('web') {
+                    // `build:spa` rather than `build`: this stage only needs to
+                    // prove the code compiles. `build` also prerenders, which
+                    // needs Chromium and the real site URL, and that belongs in
+                    // the deploy stage where those exist - doing it twice would
+                    // just double the slowest part of the pipeline.
                     sh '''
                         set -e
                         npm ci
                         npm run lint
-                        npm run build
+                        npm test
+                        npm run build:spa
                     '''
                 }
             }
@@ -192,7 +198,41 @@ pipeline {
                     sh '''
                         set -e
                         npm ci
-                        echo "VITE_API_BASE_URL=https://${CLOUDFRONT_DOMAIN}" > .env
+
+                        # Every VITE_ variable is inlined into the bundle at
+                        # build time, so they have to be present now rather than
+                        # at run time. None of them is a secret - they are all
+                        # public identifiers that ship in the JavaScript anyway -
+                        # which is why they are plain Jenkins global environment
+                        # variables and not credentials.
+                        #
+                        # The four measurement IDs are optional. Unset, no tag
+                        # loads and the consent notice stays hidden, which is the
+                        # right behaviour until the ad accounts exist. Set them
+                        # in Manage Jenkins > System > Global properties, same
+                        # place as CLOUDFRONT_DOMAIN.
+                        {
+                            echo "VITE_API_BASE_URL=https://${CLOUDFRONT_DOMAIN}"
+                            echo "VITE_SITE_URL=${SITE_URL:-https://${CLOUDFRONT_DOMAIN}}"
+                            echo "VITE_GA4_MEASUREMENT_ID=${GA4_MEASUREMENT_ID:-}"
+                            echo "VITE_GOOGLE_ADS_ID=${GOOGLE_ADS_ID:-}"
+                            echo "VITE_GOOGLE_ADS_CONVERSION_LABEL=${GOOGLE_ADS_CONVERSION_LABEL:-}"
+                            echo "VITE_META_PIXEL_ID=${META_PIXEL_ID:-}"
+                        } > .env
+
+                        # `npm run build` ends by prerendering one HTML file per
+                        # public route (web/scripts/prerender.mjs). Chromium has
+                        # to be present for that, and the script fails the build
+                        # rather than skipping if it is not: publishing
+                        # un-prerendered HTML would leave every shared link and
+                        # every ad showing the home page's title and description,
+                        # which is the whole problem prerendering solves.
+                        #
+                        # Cached in the workspace between builds, so this is a
+                        # download on the first run only.
+                        export PLAYWRIGHT_BROWSERS_PATH="${WORKSPACE}/.playwright"
+                        npx playwright install chromium
+
                         npm run build
                         # Two-pass sync so index.html (which points at the
                         # current hashed bundle) is never cached by browsers:

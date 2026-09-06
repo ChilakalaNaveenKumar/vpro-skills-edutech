@@ -332,3 +332,28 @@ textarea:focus-visible {
     animation: none;
   }
 }
+
+/* The consent notice is fixed to the bottom of the viewport, exactly where the
+   WhatsApp and call buttons live. Lifting them clear while it is showing keeps
+   the site's primary action reachable during the one interaction that is
+   guaranteed to cover it. Both the notice and the buttons animate, so the
+   transition matches rather than snapping. */
+.floating-contact {
+  transition: transform 260ms var(--ease-state);
+}
+
+body.has-consent-notice .floating-contact {
+  transform: translateY(calc(-1 * var(--consent-notice-height, 132px)));
+}
+
+@media (min-width: 901px) {
+  body.has-consent-notice .floating-contact {
+    transform: translateY(calc(-1 * var(--consent-notice-height, 84px)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-contact {
+    transition: none;
+  }
+}

@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { whatsappRawUrl } from '../content/contact'
 import { composeEnquiry } from '../utils/enquiry'
+import { captureLead } from '../services/leadsService'
+import { trackLead } from '../analytics/tags'
 
 const FIELD =
   'w-full min-h-[48px] bg-[color:var(--ink)] px-4 py-3.5 text-base text-[color:var(--on-ink)] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.24)]'
@@ -50,6 +52,17 @@ export default function EnquiryForm({
         background,
       }),
     )
+
+    // This form reported nothing at all until now, while every button on the
+    // site reported through CtaLink. It is the most deliberate action a visitor
+    // takes here - they filled in four fields - so leaving it uncounted meant
+    // the ad platforms were optimising towards the casual taps and ignoring
+    // the considered ones. Neither call is awaited or allowed to throw: a
+    // measurement failure must never cost the enquiry.
+    const chosenBatch = selectedBatch === neutralBatchOption ? undefined : selectedBatch
+    captureLead({ cta: 'batch_enquiry', chapter: 'enquiry_form', course: chosenBatch })
+    trackLead({ cta: 'batch_enquiry', chapter: 'enquiry_form', course: chosenBatch })
+
     window.open(url, '_blank', 'noopener')
   }
 

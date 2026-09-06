@@ -10,7 +10,10 @@ const CIRCLE =
 // them - and it offered the same two actions they already do.
 export default function FloatingContact() {
   return (
-    <div className="fixed bottom-5 right-4 z-[79] flex flex-col gap-3 min-[901px]:bottom-6 min-[901px]:right-6">
+    // `floating-contact` only carries the lift applied while the consent notice
+    // is on screen - see index.css. Without it these sit underneath the notice,
+    // which is the one moment they most need to stay reachable.
+    <div className="floating-contact fixed bottom-5 right-4 z-[79] flex flex-col gap-3 min-[901px]:bottom-6 min-[901px]:right-6">
       <CtaLink
         cta="course_interest"
         chapter="floating"
