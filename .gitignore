@@ -58,3 +58,8 @@ crash.*.log
 # committed - but note the progress ledger lives here too, which is why
 # `git clean -fdx` mid-execution loses your place.
 .superpowers/
+
+# Chromium for the prerender step. The CI job caches it in the workspace
+# (PLAYWRIGHT_BROWSERS_PATH in the Jenkinsfile) so it downloads once rather
+# than on every build; locally it lives in ~/.cache and never appears here.
+.playwright/
