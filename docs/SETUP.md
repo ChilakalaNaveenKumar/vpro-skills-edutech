@@ -77,6 +77,29 @@ back with a null hue; the frontend then falls back to the colour that
 course shipped with, so the shelf still reads correctly, but nothing in
 the database is authoritative and the admin panel cannot change it.
 
+### Batches are not seeded - create them in the admin panel
+
+Nothing in `scripts/` creates a batch, and there is deliberately no batch
+fixture: a batch is a real cohort with a real trainer and a real hour, so
+inventing one in a seed file would put a class on the public schedule that
+nobody is teaching.
+
+The consequence is worth expecting rather than debugging. On a freshly
+seeded database the public site is *correct but empty of dates*: the
+schedule page has no rows, the hero panel shows nothing to reserve, every
+course reads "Dates not announced yet", and every button says "Tell me
+when it opens" instead of "Reserve my seat". That is the right output for
+a site with no batches, not a broken install.
+
+Create one at `http://localhost:5173/admin/batches` (log in with the admin
+account made above), which posts to `/api/admin/batches/`. A batch needs a
+course, a batch number, a start and end date, days of the week, a start
+and end time, and a trainer name. Give it a start date in the future and
+the course flips to "Starting soon"; give it one in the past with an end
+date ahead and it reads "In session". A course may have several batches
+at once - the shelf card, the course page and the schedule all handle that
+and give each batch its own button.
+
 Now start the API:
 
 ```
@@ -122,11 +145,24 @@ section for what's covered and how the isolation works.
 ```
 cd web
 npm install
-cp .env.example .env             # points at the backend, defaults to :8000
+cp .env.example .env
 npm run dev
 ```
 
 Visit `http://localhost:5173`.
+
+`web/.env.example` sets `VITE_API_BASE_URL=http://localhost:8001`, which is
+the port the backend is published on **when it runs in Docker** (step 5).
+If you started it with `uvicorn` in step 2 it is on `8000` instead, and the
+copied default will leave every request failing against a port with nothing
+behind it - the pages render from their compiled-in fallback copy, so the
+site looks fine while no live data reaches it. Running uvicorn directly:
+
+```
+echo "VITE_API_BASE_URL=http://localhost:8000" > .env
+```
+
+Vite reads `.env` at startup, so restart `npm run dev` after changing it.
 
 ## 4. Mobile app (Expo + TypeScript)
 
