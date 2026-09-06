@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ScrollProgress from '../motion/ScrollProgress'
-import MobileActionBar from '../components/MobileActionBar'
 import FloatingContact from '../components/FloatingContact'
 import Hero from '../sections/home/Hero'
 import Batches from '../sections/home/Batches'
@@ -122,7 +121,6 @@ export default function HomePage() {
           </div>
         )}
 
-        <MobileActionBar />
         <FloatingContact />
       </div>
     </CourseDetailContext.Provider>

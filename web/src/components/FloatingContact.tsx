@@ -2,13 +2,15 @@ import CtaLink from './CtaLink'
 import { CONTACT } from '../content/contact'
 
 const CIRCLE =
-  'flex h-14 w-14 items-center justify-center rounded-[50%] shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-transform duration-200 ease-[var(--ease-state)] hover:scale-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--on-ink)] motion-reduce:transform-none motion-reduce:transition-none'
+  'flex h-[52px] w-[52px] min-[901px]:h-14 min-[901px]:w-14 items-center justify-center rounded-[50%] shadow-[0_2px_8px_rgba(0,0,0,0.4)] transition-transform duration-200 ease-[var(--ease-state)] hover:scale-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--on-ink)] motion-reduce:transform-none motion-reduce:transition-none'
 
-// Shown from 901px, the width at which .shell starts yielding a right gutter for
-// it. Below that the mobile action bar owns the same space.
+// Present at every width. This used to start at 901px and hand the space to a
+// fixed bar on narrower screens, but the two hid at different breakpoints, so
+// between 901px and 1024px the bar rendered on top of these buttons and covered
+// them - and it offered the same two actions they already do.
 export default function FloatingContact() {
   return (
-    <div className="fixed bottom-6 right-6 z-[79] hidden flex-col gap-3 min-[901px]:flex">
+    <div className="fixed bottom-5 right-4 z-[79] flex flex-col gap-3 min-[901px]:bottom-6 min-[901px]:right-6">
       <CtaLink
         cta="course_interest"
         chapter="floating"
