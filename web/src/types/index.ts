@@ -12,6 +12,16 @@ export type EntityStatus = 'ACTIVE' | 'INACTIVE'
 // Mirrors backend/app/core/enums.py's BatchProgressStatus.
 export type BatchProgressStatus = 'IN_PROGRESS' | 'COMPLETED'
 
+/** Mirrors backend/app/core/enums.py's Origin - which storefront a batch or
+    student belongs to. One database, two sites: VPro's public pages serve
+    VPRO only, the partner API serves DIGI_SETU, and admin sees both. */
+export type Origin = 'VPRO' | 'DIGI_SETU'
+
+export const ORIGIN_LABELS: Record<Origin, string> = {
+  VPRO: 'VPro Skills',
+  DIGI_SETU: 'DIGI SETU',
+}
+
 // Mirrors backend/app/courses/schemas.py's CoursePublic.
 export interface Course {
   id: number
@@ -62,6 +72,9 @@ export interface Batch {
   seats_note: string | null
   /** "Weekdays", "Sat & Sun". Null means the hour is shown without days. */
   days_of_week: string | null
+  /** Which storefront sells this batch. The public list only ever returns
+      VPRO; the admin list is the one place both appear together. */
+  origin: Origin
   status: EntityStatus
   progress_status: BatchProgressStatus
 }
@@ -223,6 +236,8 @@ export interface BatchCreate {
   end_time: string
   trainer_name: string
   trainer_email: string
+  /** Omitted means VPRO, matching the backend default. */
+  origin?: Origin
   status?: EntityStatus
   progress_status?: BatchProgressStatus
 }
@@ -235,6 +250,7 @@ export interface BatchUpdate {
   end_time?: string
   trainer_name?: string
   trainer_email?: string
+  origin?: Origin
   status?: EntityStatus
   progress_status?: BatchProgressStatus
 }
