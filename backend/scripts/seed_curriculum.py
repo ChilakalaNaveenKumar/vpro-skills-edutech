@@ -39,11 +39,13 @@ from app.core.enums import EntityStatus
 from app.courses.models import Course, CourseProject
 from app.database.session import SessionLocal
 from app.topics.models import Topic
+from scripts.seed_guard import add_arguments, confirm_target
 
 DATA = Path(__file__).with_name("curriculum.json")
 
 
-def seed(force: bool = False) -> None:
+def seed(force: bool = False, allow_production: bool = False) -> None:
+    confirm_target("seed_curriculum", allow_production=allow_production)
     payload = json.loads(DATA.read_text(encoding="utf-8"))
     db = SessionLocal()
     try:
@@ -152,9 +154,6 @@ def seed(force: bool = False) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="reload the file over a curriculum that already exists, discarding edits",
-    )
-    seed(force=parser.parse_args().force)
+    add_arguments(parser)
+    args = parser.parse_args()
+    seed(force=args.force, allow_production=args.allow_production)
