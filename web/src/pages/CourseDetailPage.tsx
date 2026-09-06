@@ -1,7 +1,7 @@
 import { useParams, Navigate, Link } from 'react-router-dom'
 import { findBySlug, useCourses } from '../hooks/useCourses'
 import { courseBatches, courseStateFor } from '../utils/courseState'
-import { hourRange } from '../utils/hours'
+import { localHourRange } from '../utils/hours'
 import { useSchedule } from '../utils/schedule'
 import ScrollProgress from '../motion/ScrollProgress'
 import Reveal from '../motion/Reveal'
@@ -407,8 +407,8 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
                 </p>
                 <p className="mb-1.5 text-[15px] leading-[1.55] text-[color:rgb(237_231_222_/_0.68)]">
                   {row.batch.days_of_week
-                    ? `${row.batch.days_of_week}, ${hourRange(row.batch.start_time, row.batch.end_time)}`
-                    : hourRange(row.batch.start_time, row.batch.end_time)}
+                    ? `${row.batch.days_of_week}, ${localHourRange(row.batch.start_time, row.batch.end_time, row.batch.start_date)}`
+                    : localHourRange(row.batch.start_time, row.batch.end_time, row.batch.start_date)}
                 </p>
                 {row.batch.seats_note && (
                   <p className="text-[15px] text-[color:var(--tan)]">{row.batch.seats_note}</p>

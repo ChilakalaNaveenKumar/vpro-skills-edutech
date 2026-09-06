@@ -1,4 +1,4 @@
-import { hourRange } from './hours'
+import { localHourRange } from './hours'
 import type { ScheduleRow } from './schedule'
 
 export type CourseState = 'In session' | 'Starting soon' | 'Gathering interest'
@@ -9,9 +9,9 @@ export interface CourseBatch {
   number: string
   /** "Weekdays", or empty when the batch does not say. */
   days: string
-  /** "19:30 – 21:00 IST" */
+  /** "10:00 – 11:30 AM EDT" in the visitor's timezone */
   hour: string
-  /** "Weekdays 19:30 – 21:00 IST", or just the hour when days are unset. */
+  /** "Weekdays 10:00 – 11:30 AM EDT", or just the hour when days are unset. */
   daysHour: string
   /** "started 6 Aug" - or "starts 27 Sep" if it has not begun. */
   when: string
@@ -66,7 +66,7 @@ export function courseBatches(courseName: string, rows: ScheduleRow[] | null): C
       // The comp says "Weekdays 7:30 - 9:00 PM"; `Batch` carries no day-of-week
       // field, so the window is rendered without inventing which days it falls
       // on.
-      const hour = hourRange(row.batch.start_time, row.batch.end_time)
+      const hour = localHourRange(row.batch.start_time, row.batch.end_time, row.batch.start_date)
       const days = row.batch.days_of_week ?? ''
       const started = isRunning(row)
       const when = `${started ? 'started' : 'starts'} ${shortDate(row.batch.start_date)}`

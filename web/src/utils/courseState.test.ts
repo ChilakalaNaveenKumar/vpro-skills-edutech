@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { courseBatches, courseStateFor } from './courseState'
 import type { ScheduleRow } from './schedule'
 import type { Batch } from '../types'
+import { localHourRange } from './hours'
 
 function batch(overrides: Partial<Batch> = {}): Batch {
   return {
@@ -73,15 +74,16 @@ describe('courseStateFor', () => {
 
 describe('courseBatches', () => {
   it('carries the hour, the note and the message line for a running batch', () => {
+    const hour = localHourRange('19:30:00', '21:00:00', '2026-08-04')
     expect(courseBatches('Agentic AI', [row('running')])).toEqual([
       {
         number: 'Batch A-04',
         days: '',
-        daysHour: '7:30 \u2013 9:00 PM',
-        hour: '7:30 \u2013 9:00 PM',
+        daysHour: hour,
+        hour,
         when: 'started 4 Aug',
         note: 'Batch A-04, started 4 Aug',
-        line: 'Batch A-04, 7:30 \u2013 9:00 PM, 4 Aug to 2 Nov',
+        line: `Batch A-04, ${hour}, 4 Aug to 2 Nov`,
         started: true,
       },
     ])

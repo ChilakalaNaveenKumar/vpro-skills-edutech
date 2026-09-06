@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import CtaLink from './CtaLink'
 import SeatsNote from './SeatsNote'
 import { findByName, useCourses } from '../hooks/useCourses'
-import { hourRange } from '../utils/hours'
+import { localHourRange } from '../utils/hours'
 import { istTodayIso, useSchedule } from '../utils/schedule'
 import type { ScheduleRow } from '../utils/schedule'
 
@@ -14,7 +14,7 @@ function longDate(iso: string): string {
 }
 
 function hourWindow(row: ScheduleRow): string {
-  const window = hourRange(row.batch.start_time, row.batch.end_time)
+  const window = localHourRange(row.batch.start_time, row.batch.end_time, row.batch.start_date)
   // Only says "Weekdays" when a batch actually carries the field - the comp's
   // wording, without inventing which days an unset batch runs on.
   return row.batch.days_of_week ? `${row.batch.days_of_week}, ${window}` : window
