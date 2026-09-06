@@ -21,6 +21,9 @@ import AdminStudentsPage from './pages/AdminStudentsPage'
 import AdminStudentEnrollmentsPage from './pages/AdminStudentEnrollmentsPage'
 import AdminResultsPage from './pages/AdminResultsPage'
 import AdminContentPage from './pages/AdminContentPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
+import DataDeletionPage from './pages/DataDeletionPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -31,6 +34,12 @@ function App() {
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:slug" element={<HomePage />} />
         <Route path="/batches" element={<BatchesPage />} />
+        {/* Linked from the footer since it shipped; until now all three fell
+            through to the catch-all and rendered a 404. Meta will not approve
+            an ad account without a reachable privacy and data-deletion URL. */}
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
