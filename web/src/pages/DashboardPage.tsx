@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getMyBatches } from '../services/enrollmentService'
+import { localHourRange } from '../utils/hours'
 import type { Batch, BatchProgressStatus } from '../types'
 
 const PROGRESS_LABEL: Record<BatchProgressStatus, string> = {
@@ -190,7 +191,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <ClockIcon />
                     <span>
-                      {batch.start_time} - {batch.end_time}
+                      {localHourRange(batch.start_time, batch.end_time, batch.start_date)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

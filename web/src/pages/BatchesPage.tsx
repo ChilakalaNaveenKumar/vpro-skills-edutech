@@ -1,4 +1,4 @@
-import { hourRange } from '../utils/hours'
+import { localHourRange } from '../utils/hours'
 import { istTodayIso, isUpcoming, useSchedule } from '../utils/schedule'
 import type { ScheduleRow } from '../utils/schedule'
 import SeatsNote from '../components/SeatsNote'
@@ -81,7 +81,7 @@ function ScheduleGroup({
               <div>
                 <p className={COL_LABEL}>Hours</p>
                 <p className="text-[0.95rem] leading-[1.5] text-[color:var(--on-ink-mute)]">
-                  {hourRange(row.batch.start_time, row.batch.end_time)}
+                  {localHourRange(row.batch.start_time, row.batch.end_time, row.batch.start_date)}
                   <span className="block text-[color:var(--on-ink-faint)]">
                     {row.batch.trainer_name}
                   </span>
