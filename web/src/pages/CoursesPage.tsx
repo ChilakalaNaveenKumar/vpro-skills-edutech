@@ -24,8 +24,8 @@ export default function CoursesPage() {
         </Reveal>
         <Reveal delayIndex={2}>
           <p className="mb-14 max-w-[46ch] text-base leading-[1.6] text-[color:var(--on-ink-faint)]">
-            Each one runs as a live batch with a named trainer at a fixed hour, topics in order, and
-            an assessment after each. Open a course for its full curriculum.
+            Every course runs as a live batch at a fixed hour, with a named trainer. Open one for
+            its full curriculum.
           </p>
         </Reveal>
 

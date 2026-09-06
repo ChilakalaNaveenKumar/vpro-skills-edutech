@@ -162,7 +162,7 @@ const PYTHON_FULL_STACK: CourseContent = {
       name: 'Django',
       summary: 'The batteries-included path: models, views, templates, admin and auth, using the framework the way its authors intended.',
       builds: 'A multi-user Django application with an admin panel',
-      topics: ['Models & Migrations', 'Views & Templates', 'Django Admin', 'Authentication', 'Forms & Validation'],
+      topics: ['Models & Migrations', 'Views & Templates', 'Django Admin', 'Authentication', 'Django Forms & Validation'],
     },
     {
       order: 4,
@@ -176,7 +176,7 @@ const PYTHON_FULL_STACK: CourseContent = {
       name: 'Frontend',
       summary: 'Enough modern frontend to build the interface your API deserves - components, state, forms and calling your own endpoints.',
       builds: 'A React interface talking to your API',
-      topics: ['HTML & CSS Layout', 'JavaScript Essentials', 'React Components & State', 'Forms & Validation', 'Calling REST APIs'],
+      topics: ['HTML & CSS Layout', 'JavaScript Essentials', 'React Components & State', 'React Forms & Validation', 'Calling REST APIs'],
     },
     {
       order: 6,

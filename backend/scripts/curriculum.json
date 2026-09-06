@@ -207,7 +207,7 @@
           "Views & Templates",
           "Django Admin",
           "Authentication",
-          "Forms & Validation"
+          "Django Forms & Validation"
         ]
       },
       {
@@ -232,7 +232,7 @@
           "HTML & CSS Layout",
           "JavaScript Essentials",
           "React Components & State",
-          "Forms & Validation",
+          "React Forms & Validation",
           "Calling REST APIs"
         ]
       },

@@ -10,7 +10,7 @@ export const PLATFORM = {
   /** Rendered with the second clause in <em>, which the .display rule colours copper. */
   headlineLead: 'Nothing here',
   headlineEmphasis: 'is a recording.',
-  sub: 'Every session runs live, at a fixed hour, with the trainer in the room. You ask your question while the class is happening.',
+  sub: 'Every session is taught live at a fixed hour. Ask your question while the class is happening.',
 } as const
 
 export const HERO_FACTS = [

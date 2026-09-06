@@ -16,7 +16,7 @@ const FOOTER_LINK = `text-[14px] leading-[1.5] text-[color:var(--on-ink)] transi
 // trap the header nav already had to be rescued from.
 const FOOTER_LINKS = [
   { to: '/courses', label: 'All courses' },
-  { to: '/batches', label: 'Batch schedule' },
+  { to: '/batches', label: 'Dates & timings' },
   { to: '/#loop', label: 'How a batch runs' },
   { to: '/#trainer', label: 'The trainer' },
   { to: '/#faq', label: 'Questions' },
@@ -56,9 +56,12 @@ function getGreeting(): string {
 // The comp's header. Three of these are sections of the home page rather than
 // routes; they carry the leading "/" so they still resolve from a course page
 // or /batches, where paid traffic often lands directly.
+// "Batch schedule" told a visitor nothing - it names an internal artefact, not
+// the thing they want, which is the dates and hours of every batch we are
+// currently running.
 const ROUTES = [
   { to: '/#batches', label: 'Courses' },
-  { to: '/batches', label: 'Batch schedule' },
+  { to: '/batches', label: 'Dates & timings' },
   { to: '/#loop', label: 'How it runs' },
   { to: '/#trainer', label: 'Trainer' },
   { to: '/#faq', label: 'FAQ' },

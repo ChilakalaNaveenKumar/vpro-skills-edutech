@@ -12,7 +12,8 @@ const openBg = (hue: number) => `oklch(0.44 0.086 ${hue})`
 const closedBg = (hue: number) => `oklch(0.288 0.045 ${hue})`
 const hoverBg = (hue: number) => `oklch(0.335 0.052 ${hue})`
 
-const FACT_LABEL = 'mono mb-1 text-[9.5px] text-[color:rgb(237_231_222_/_0.7)]'
+const LABEL = 'mono text-[9.5px] text-[color:rgb(237_231_222_/_0.72)]'
+const FACT_LABEL = `${LABEL} mb-1`
 const FACT_VALUE = 'text-[15px] text-[color:var(--on-ink)]'
 
 // The phone layout is this same shelf turned on its side - spines stack, labels
@@ -29,16 +30,25 @@ const SHELF_CSS = `
 .course-shelf-label { writing-mode: vertical-rl; text-orientation: mixed; rotate: 180deg; white-space: nowrap; }
 
 .course-shelf-panel { position: absolute; inset: 0; flex-direction: column; justify-content: flex-end; padding: clamp(26px, 2.6vw, 40px) clamp(24px, 2.8vw, 42px); }
-.course-shelf-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(20,22,28,0) 18%, rgba(20,22,28,0.72) 52%, rgba(20,22,28,0.94) 100%); }
-.course-shelf-body { position: relative; display: flex; flex-direction: column; gap: clamp(14px, 1.4vw, 20px); }
-.course-shelf-state { position: absolute; left: clamp(24px, 2.8vw, 42px); top: clamp(26px, 2.6vw, 40px); }
 
-/* Module names, ruled apart rather than punctuated. */
-.course-shelf-modules { display: flex; flex-wrap: wrap; gap: 8px 0; }
-.course-shelf-modules > span { padding: 0 14px; box-shadow: inset 1px 0 0 0 rgb(237 231 222 / 0.28); }
-.course-shelf-modules > span:first-child { padding-left: 0; box-shadow: none; }
+/* The panel's text used to sit on the middle of a colour gradient, where the
+   contrast depended on which hue the course happened to have. The scrim now
+   reaches near-solid ink well above the first line, so every course reads the
+   same and the colour does its identifying from the upper third and the closed
+   spines beside it. */
+.course-shelf-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(20,22,28,0) 0%, rgba(20,22,28,0.30) 26%, rgba(20,22,28,0.86) 52%, rgba(20,22,28,0.97) 74%, rgba(20,22,28,0.99) 100%); }
 
-.course-shelf-facts { display: flex; flex-wrap: wrap; gap: 10px clamp(28px, 3vw, 46px); }
+.course-shelf-body { position: relative; display: flex; flex-direction: column; gap: clamp(16px, 1.6vw, 22px); }
+.course-shelf-state { position: absolute; left: clamp(24px, 2.8vw, 42px); top: clamp(26px, 2.6vw, 40px); display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; background: rgb(20 22 28 / 0.55); backdrop-filter: blur(6px); box-shadow: inset 0 0 0 1px rgb(237 231 222 / 0.26); }
+.course-shelf-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Identity above, facts below - the rule is what stops the name, the hours and
+   the module list reading as one undifferentiated block. */
+.course-shelf-rule { height: 1px; background: rgb(237 231 222 / 0.22); }
+
+.course-shelf-modules { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+
+.course-shelf-facts { display: flex; flex-wrap: wrap; gap: 14px clamp(28px, 3vw, 46px); }
 
 @media (max-width: 900px) {
   .course-shelf { flex-direction: column; height: auto; }
@@ -75,7 +85,10 @@ export default function CourseShelf() {
           // interest" on absent data would state as fact something we do not know.
           const state = rows ? courseStateFor(course.name, rows) : null
           const batches = courseBatches(course.name, rows)
-          const inSession = state === 'In session'
+          // A seat exists as soon as a batch is on the schedule, running or not.
+          // Asking a visitor to "register interest" in a course whose next batch
+          // has a printed start date reads as though nothing is planned.
+          const hasSeat = batches.length > 0
 
           const background = isOpen
             ? openBg(course.hue)
@@ -132,23 +145,45 @@ export default function CourseShelf() {
 
                 {state && (
                   <p className="course-shelf-state mono z-[1] whitespace-nowrap text-[10.5px] text-[color:var(--on-ink)]">
+                    <span
+                      aria-hidden="true"
+                      className="course-shelf-dot"
+                      style={{ color: state === 'In session' ? 'var(--signal)' : undefined }}
+                    />
                     {state}
                   </p>
                 )}
 
                 <div className="course-shelf-body">
-                  <h3 className="display max-w-[20ch] text-[clamp(28px,3.2vw,50px)] leading-[1.02] tracking-[-0.035em]">
-                    {course.name}
-                  </h3>
-                  <p className="max-w-[46ch] text-[clamp(15px,1.15vw,17px)] leading-[1.5] text-[color:var(--on-ink)]">
-                    {course.tagline}
-                  </p>
-
-                  <div className="course-shelf-modules mono text-[10.5px] normal-case tracking-[0.08em] text-[color:rgb(237_231_222_/_0.82)]">
-                    {course.modules.map((module) => (
-                      <span key={module.id}>{module.name}</span>
-                    ))}
+                  <div className="flex flex-col gap-[10px]">
+                    <h3 className="display max-w-[20ch] text-[clamp(28px,3.2vw,50px)] leading-[1.02] tracking-[-0.035em]">
+                      {course.name}
+                    </h3>
+                    <p className="max-w-[46ch] text-[clamp(15px,1.15vw,17px)] leading-[1.5] text-[color:var(--on-ink)]">
+                      {course.tagline}
+                    </p>
                   </div>
+
+                  {course.modules.length > 0 && (
+                    <div className="flex flex-col gap-[9px]">
+                      <span className={LABEL}>{`${course.modules.length} modules, in order`}</span>
+                      {/* Chips rather than hairline-separated text: the old rule
+                          was drawn per item, so a wrapped second line opened with
+                          a stray divider bar hanging off nothing. */}
+                      <div className="course-shelf-modules">
+                        {course.modules.map((module) => (
+                          <span
+                            key={module.id}
+                            className="mono px-[9px] py-[4px] text-[10px] normal-case tracking-[0.06em] text-[color:var(--on-ink)] shadow-[inset_0_0_0_1px_rgb(237_231_222_/_0.2)]"
+                          >
+                            {module.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="course-shelf-rule" />
 
                   {/* Labelled pairs rather than a run-on line - the hour is the
                       fact a visitor opened the panel for. */}
@@ -156,8 +191,8 @@ export default function CourseShelf() {
                     <dl className="course-shelf-facts">
                       {batches.length === 0 && (
                         <div>
-                          <dt className={FACT_LABEL}>Hours</dt>
-                          <dd className={FACT_VALUE}>Not scheduled</dd>
+                          <dt className={FACT_LABEL}>Next batch</dt>
+                          <dd className={FACT_VALUE}>Dates not announced yet</dd>
                         </div>
                       )}
 
@@ -213,13 +248,13 @@ export default function CourseShelf() {
                       View curriculum
                     </Link>
                     <CtaLink
-                      cta={inSession ? 'reserve_seat' : 'course_waitlist'}
+                      cta={hasSeat ? 'reserve_seat' : 'course_waitlist'}
                       chapter="shelf"
                       course={course.name}
                       batch={batches.map((entry) => entry.line).join('; ') || undefined}
                       className="btn-primary"
                     >
-                      {inSession ? 'Reserve my seat' : 'Register interest'}
+                      {hasSeat ? 'Reserve my seat' : 'Tell me when it opens'}
                     </CtaLink>
                   </div>
                 </div>

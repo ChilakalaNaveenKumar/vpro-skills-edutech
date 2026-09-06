@@ -48,6 +48,8 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
   const state = rows ? courseStateFor(course.name, rows) : null
   const batches = courseBatches(course.name, rows)
   const inSession = state === 'In session'
+  // A dated batch is a seat someone can take, whether or not it has begun.
+  const hasSeat = batches.length > 0
   const running = batches[0]
 
   const today = istTodayIso()
@@ -77,14 +79,25 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
     ...(trainer ? [{ k: 'Trainer', v: trainer }] : []),
   ].filter((fact) => fact.v.trim().length > 0)
 
-  const primaryCta = inSession ? 'Reserve my seat' : 'Register interest'
-  const enrolEyebrow = inSession ? 'Free demo class · no fee to attend' : 'Not yet scheduled'
+  // Three states, not two. A course whose next batch has a printed start date
+  // used to share its wording with a course that has nothing scheduled, so the
+  // page told a visitor to register interest in a batch already on the schedule.
+  const primaryCta = hasSeat ? 'Reserve my seat' : 'Tell me when it opens'
+  const enrolEyebrow = inSession
+    ? 'Free demo class · no fee to attend'
+    : hasSeat
+      ? `Next batch · ${running.note} · ${running.hour}`
+      : 'No batch scheduled yet'
   const enrolHeading = inSession
     ? 'Attend a free demo class before you enrol.'
-    : 'Tell us you want this and we open the batch.'
+    : hasSeat
+      ? 'Take a seat in the next batch.'
+      : 'Tell us you want this and we open the batch.'
   const enrolBody = inSession
     ? 'You attend a real session, not a sales presentation. Ask questions, watch something break and get fixed, and decide afterwards. Nothing is charged before that.'
-    : 'This course runs as a live batch, so it opens once enough people can hold the same hour. Register and you hear from us the moment a date and time are fixed — no fee, no commitment until then.'
+    : hasSeat
+      ? 'Seats are held in the order people ask. Message us and we confirm yours, answer anything you want to know first, and send the joining details before the batch begins.'
+      : 'This course runs as a live batch, so it opens once enough people can hold the same hour. Ask and you hear from us the moment a date and time are fixed — no fee, no commitment until then.'
 
   return (
     <>
@@ -349,7 +362,7 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
         <Reveal delayIndex={3}>
           <div className="flex flex-wrap gap-[14px]">
             <CtaLink
-              cta={inSession ? 'reserve_seat' : 'course_waitlist'}
+              cta={hasSeat ? 'reserve_seat' : 'course_waitlist'}
               chapter="course_enrol"
               course={course.name}
               batch={running?.line}
