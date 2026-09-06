@@ -17,6 +17,7 @@ function batch(overrides: Partial<Batch> = {}): Batch {
     trainer_email: 'trainer@example.com',
     seats_note: null,
     days_of_week: null,
+    origin: 'VPRO',
     status: 'ACTIVE',
     progress_status: 'IN_PROGRESS',
     ...overrides,

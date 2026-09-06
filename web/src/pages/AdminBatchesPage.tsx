@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { createBatch, listBatches, updateBatch } from '../services/batchesService'
 import { listCourses } from '../services/coursesService'
-import type { Batch, BatchProgressStatus, Course } from '../types'
+import type { Batch, BatchProgressStatus, Course, Origin } from '../types'
+import { ORIGIN_LABELS } from '../types'
 
 function emptyForm() {
   return {
@@ -15,6 +16,9 @@ function emptyForm() {
     end_time: '',
     trainer_name: '',
     trainer_email: '',
+    // VPro's own storefront is the common case and the backend default; a
+    // partner batch is the deliberate choice.
+    origin: 'VPRO' as Origin,
     progress_status: 'IN_PROGRESS' as BatchProgressStatus,
   }
 }
@@ -167,6 +171,7 @@ export default function AdminBatchesPage() {
         end_time: createForm.end_time,
         trainer_name: createForm.trainer_name.trim(),
         trainer_email: createForm.trainer_email.trim(),
+        origin: createForm.origin,
         progress_status: createForm.progress_status,
       })
       setCreateForm(emptyForm())
@@ -190,6 +195,7 @@ export default function AdminBatchesPage() {
       end_time: batch.end_time,
       trainer_name: batch.trainer_name,
       trainer_email: batch.trainer_email ?? '',
+      origin: batch.origin,
       progress_status: batch.progress_status,
     })
     setEditError(null)
@@ -246,6 +252,7 @@ export default function AdminBatchesPage() {
         // (e.g. just to change its status) without being forced to add
         // one right now - the field is required only at creation time.
         trainer_email: trimmedEmail || undefined,
+        origin: editForm.origin,
         progress_status: editForm.progress_status,
       })
       setEditingId(null)
@@ -371,6 +378,22 @@ export default function AdminBatchesPage() {
             </div>
           </div>
           <div>
+            <label htmlFor="create-batch-origin" className="block text-sm font-medium">Storefront</label>
+            <select
+              id="create-batch-origin"
+              value={createForm.origin}
+              onChange={(e) => setCreateForm({ ...createForm, origin: e.target.value as Origin })}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="VPRO">{ORIGIN_LABELS.VPRO}</option>
+              <option value="DIGI_SETU">{ORIGIN_LABELS.DIGI_SETU}</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              Which site sells this batch. VPro Skills batches appear on vproskills.com; DIGI SETU
+              batches are served only to their storefront over the partner API. You see both here.
+            </p>
+          </div>
+          <div>
             <label htmlFor="create-batch-status" className="block text-sm font-medium">Status</label>
             <select
               id="create-batch-status"
@@ -468,6 +491,15 @@ export default function AdminBatchesPage() {
                     />
                   </div>
                   <select
+                    aria-label="Storefront"
+                    value={editForm.origin}
+                    onChange={(e) => setEditForm({ ...editForm, origin: e.target.value as Origin })}
+                    className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm"
+                  >
+                    <option value="VPRO">{ORIGIN_LABELS.VPRO}</option>
+                    <option value="DIGI_SETU">{ORIGIN_LABELS.DIGI_SETU}</option>
+                  </select>
+                  <select
                     aria-label="Status"
                     value={editForm.progress_status}
                     onChange={(e) =>
@@ -526,6 +558,15 @@ export default function AdminBatchesPage() {
                     >
                       {PROGRESS_LABEL[batch.progress_status]}
                     </span>
+                    {/* Only the partner's batches are labelled, the same way
+                        only a deactivated one is: this list is mostly VPro's
+                        own, and badging every card with that says nothing.
+                        What an admin needs to spot is the exception. */}
+                    {batch.origin !== 'VPRO' && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        {ORIGIN_LABELS[batch.origin]}
+                      </span>
+                    )}
                     {batch.status === 'INACTIVE' && (
                       <span className="text-xs text-gray-400">(deactivated)</span>
                     )}
