@@ -1,0 +1,22 @@
+{
+  "name": "VPro Skills EduTech",
+  "short_name": "VPro Skills",
+  "description": "Live instructor-led AI and software training, taught online.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "background_color": "#14161C",
+  "theme_color": "#14161C",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-square-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

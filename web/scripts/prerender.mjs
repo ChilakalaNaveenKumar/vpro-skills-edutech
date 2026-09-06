@@ -181,7 +181,74 @@ async function main() {
     // opening a course hides the whole browse layer, heading and all, so
     // waiting for visibility here would time out on every course.
     await page.waitForSelector('h1', { state: 'attached', timeout: 15_000 })
-    return page.content()
+    await dropHiddenLayers()
+    return { html: await page.content(), images: await collectImages() }
+  }
+
+  /**
+   * The images this page actually renders, read back off the page rather than
+   * listed here, so the image sitemap cannot describe a set of pictures the
+   * site stopped using.
+   *
+   * Read after dropHiddenLayers, so a course page reports the pictures on the
+   * course and not the ones on the home page it was carrying.
+   */
+  async function collectImages() {
+    return page.evaluate(() => {
+      const seen = new Set()
+      const collected = []
+      for (const img of document.images) {
+        const raw = img.currentSrc || img.src
+        if (!raw || raw.startsWith('data:')) continue
+        let pathname
+        try {
+          pathname = new URL(raw, location.href).pathname
+        } catch {
+          continue
+        }
+        if (seen.has(pathname)) continue
+        seen.add(pathname)
+        collected.push({ path: pathname, title: (img.alt || '').trim() })
+      }
+      return collected
+    })
+  }
+
+  /**
+   * Deletes anything the document itself marked `hidden` before the HTML is
+   * captured.
+   *
+   * A course URL renders the course *and* the entire home page, with the home
+   * page carrying the `hidden` attribute - that is how closing a course returns
+   * you to where you were without a remount. On screen it is invisible and
+   * costs nothing. In the prerendered file it was two thirds of the bytes: each
+   * course page repeated the hero, the tenets, the testimonials and the FAQ, so
+   * six course pages were near-identical to each other and to the home page,
+   * and each carried a second <h1> that came first in the document. Google
+   * picks one page out of a near-duplicate set; that is the opposite of what
+   * prerendering these pages was for.
+   *
+   * `hidden` is the right thing to key on rather than the class name. The
+   * attribute means "not currently relevant to this document", which is exactly
+   * the content a crawler should not be shown, so a future hidden layer is
+   * handled without anyone editing this script.
+   *
+   * Deliberately not touched: the shelf panels and accordion bodies, which are
+   * collapsed with CSS rather than `hidden`. Those genuinely are this page's
+   * content - all six course descriptions belong on /courses - and a visitor
+   * reaches them with one click. Stripping those would remove real content
+   * instead of a duplicate.
+   *
+   * Safe because the client never sees this DOM: main.tsx calls createRoot, not
+   * hydrateRoot, so React discards the prerendered markup and rebuilds from
+   * scratch on mount. These files exist for crawlers and scrapers only.
+   */
+  async function dropHiddenLayers() {
+    return page.evaluate(() => {
+      const hidden = document.querySelectorAll('[hidden]')
+      hidden.forEach((el) => el.remove())
+      return hidden.length
+    })
   }
 
   // Rendered first, written afterwards. Nothing this script produces can end
@@ -190,7 +257,7 @@ async function main() {
 
   try {
     for (const route of STATIC_ROUTES) {
-      rendered.push({ ...route, html: await render(route.path) })
+      rendered.push({ ...route, ...(await render(route.path)) })
       console.log(`prerender: ${route.path}`)
     }
 
@@ -206,7 +273,7 @@ async function main() {
         path,
         priority: '0.8',
         changefreq: 'weekly',
-        html: await render(path),
+        ...(await render(path)),
       })
       console.log(`prerender: ${path}`)
     }
@@ -242,12 +309,32 @@ async function main() {
     process.exit(1)
   }
 
+  // The same failure in the body. Two <h1>s means a hidden layer survived, and
+  // the one a crawler reads first is whichever the layout happened to mount
+  // first - on a course page that was the home page's headline, on every course.
+  const manyHeadings = rendered.filter(
+    (route) => (stripComments(route.html).match(/<h1[\s>]/gi) ?? []).length !== 1,
+  )
+  if (manyHeadings.length > 0) {
+    console.error(
+      `prerender: ${manyHeadings.length} page(s) do not have exactly one <h1>: ` +
+        `${manyHeadings.map((route) => route.path).join(', ')}.\n` +
+        '  Check whether a layer that should be hidden is being rendered, or a\n' +
+        '  hidden one is no longer marked with the hidden attribute.',
+    )
+    process.exit(1)
+  }
+
   const written = rendered
 
   const today = new Date().toISOString().slice(0, 10)
+  // The image namespace is what gets these pictures considered for Google
+  // Images, which is a search surface of its own - someone looking for the
+  // trainer by name, or for the logo, arrives on the page carrying it.
   const sitemap = [
     '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+    '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
     ...written.map((route) =>
       [
         '  <url>',
@@ -255,6 +342,16 @@ async function main() {
         `    <lastmod>${today}</lastmod>`,
         `    <changefreq>${route.changefreq}</changefreq>`,
         `    <priority>${route.priority}</priority>`,
+        ...(route.images ?? []).map((image) => {
+          const loc = `    <image:image><image:loc>${SITE_URL}${image.path}</image:loc>`
+          const title = image.title
+            ? `<image:title>${image.title
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')}</image:title>`
+            : ''
+          return `${loc}${title}</image:image>`
+        }),
         '  </url>',
       ].join('\n'),
     ),
@@ -263,7 +360,10 @@ async function main() {
   ].join('\n')
 
   await writeFile(join(DIST, 'sitemap.xml'), sitemap, 'utf8')
-  console.log(`prerender: sitemap.xml with ${written.length} URLs, origin ${SITE_URL}`)
+  const imageCount = new Set(written.flatMap((route) => route.images.map((image) => image.path))).size
+  console.log(
+    `prerender: sitemap.xml with ${written.length} URLs and ${imageCount} images, origin ${SITE_URL}`,
+  )
 }
 
 main().catch((error) => {

@@ -272,9 +272,9 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
                 <p className="display mb-[14px] text-[clamp(48px,5.6vw,84px)] font-light leading-[0.86] tracking-[-0.05em] text-[color:var(--signal)]">
                   {String(module.order).padStart(2, '0')}
                 </p>
-                <p className="display-sm text-[clamp(24px,2.6vw,34px)] leading-[1.1] tracking-[-0.03em] text-[color:var(--on-ink)]">
+                <h3 className="display-sm text-[clamp(24px,2.6vw,34px)] leading-[1.1] tracking-[-0.03em] text-[color:var(--on-ink)]">
                   {module.name}
-                </p>
+                </h3>
               </div>
 
               <div className="min-w-0">
@@ -328,9 +328,9 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
                 delayIndex={index}
                 className="bg-[color:var(--ink)] px-[30px] pb-[30px] pt-8 transition-[background] duration-300 ease-[var(--ease-state)] hover:bg-[#1C1F27] motion-reduce:transition-none"
               >
-                <p className="display-sm mb-[10px] text-[24px] leading-[1.16] tracking-[-0.02em] text-[color:var(--on-ink)]">
+                <h3 className="display-sm mb-[10px] text-[24px] leading-[1.16] tracking-[-0.02em] text-[color:var(--on-ink)]">
                   {project.name}
-                </p>
+                </h3>
                 <p className="text-[15px] leading-[1.58] text-[color:rgb(237_231_222_/_0.68)]">
                   {project.description}
                 </p>
@@ -345,7 +345,7 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
           <div className="grid items-start gap-[clamp(32px,5vw,88px)] min-[901px]:grid-cols-2">
             {course.outcomes.length > 0 && (
               <Reveal className="min-w-0">
-                <p className="eyebrow mb-[26px]">What you leave with</p>
+                <h2 className="eyebrow mb-[26px]">What you leave with</h2>
                 {course.outcomes.map((outcome) => (
                   <p
                     key={outcome}
@@ -359,7 +359,7 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
 
             {course.forWhom.length > 0 && (
               <Reveal delayIndex={1} className="min-w-0">
-                <p className="eyebrow mb-[26px]">Who it is for</p>
+                <h2 className="eyebrow mb-[26px]">Who it is for</h2>
                 {course.forWhom.map((who) => (
                   <p
                     key={who}
