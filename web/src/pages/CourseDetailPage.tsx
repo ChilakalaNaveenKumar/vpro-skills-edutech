@@ -2,7 +2,7 @@ import { useParams, Navigate, Link } from 'react-router-dom'
 import { findBySlug, useCourses } from '../hooks/useCourses'
 import { courseBatches, courseStateFor } from '../utils/courseState'
 import { hourRange } from '../utils/hours'
-import { istTodayIso, isUpcoming, useSchedule } from '../utils/schedule'
+import { useSchedule } from '../utils/schedule'
 import ScrollProgress from '../motion/ScrollProgress'
 import Reveal from '../motion/Reveal'
 import CtaLink from '../components/CtaLink'
@@ -50,43 +50,64 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
   const inSession = state === 'In session'
   // A dated batch is a seat someone can take, whether or not it has begun.
   const hasSeat = batches.length > 0
-  const running = batches[0]
-
-  const today = istTodayIso()
-  const upcoming = (rows ?? []).filter(
-    (row) => row.batch.course_name === course.name && isUpcoming(row, today),
-  )
+  // The batch this page headlines. `courseBatches` puts the not-yet-started
+  // cohorts first, so this is the soonest one someone can join from its first
+  // topic - it is not necessarily the one teaching.
+  const lead = batches[0]
+  // With a choice of cohorts each one needs its own button, so what reaches
+  // WhatsApp is the batch the person picked rather than a list of all of them.
+  const multiBatch = batches.length > 1
+  // Every dated cohort gets a card, in the same order the rest of the page
+  // lists them. This used to keep only the batches that had yet to begin, so a
+  // course teaching one batch and opening another showed a single card and the
+  // page quietly offered fewer seats than the shelf did. Pairing each card with
+  // its entry also gives the button the exact batch it is printed under.
+  const batchCards = batches.flatMap((entry) => {
+    const row = (rows ?? []).find(
+      (candidate) =>
+        candidate.batch.course_name === course.name &&
+        candidate.batch.batch_number === entry.number,
+    )
+    return row ? [{ entry, row }] : []
+  })
 
   // The batch data carries the real trainer. A hardcoded name here would keep
   // claiming a trainer after the person teaching a course changed.
   const trainer = rows?.find((row) => row.batch.course_name === course.name)?.batch.trainer_name
 
-  const eyebrow = [state, running?.number, running?.daysHour].filter(Boolean).join(' · ')
+  // With two cohorts the eyebrow named only the first, so the page announced one
+  // hour while the batch list underneath offered two.
+  const eyebrow = [
+    state,
+    batches.length > 1 ? `${batches.length} batches` : lead?.number,
+    batches.length > 1 ? undefined : lead?.daysHour,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   const facts = [
     { k: 'Level', v: course.level },
     { k: 'Prerequisites', v: course.prerequisites },
-    ...(state
-      ? [
-          {
-            k: 'Format',
-            v: running
-              ? `Live, ${running.days ? `${running.days.toLowerCase()} ` : ''}${running.hour}`
-              : 'Live, hour fixed when the batch opens',
-          },
-        ]
-      : []),
+    // Only when there is no batch to print: the hours otherwise come from the
+    // batch list, which can hold more than one of them.
+    ...(state && !hasSeat ? [{ k: 'Format', v: 'Live, hour fixed when the batch opens' }] : []),
     ...(trainer ? [{ k: 'Trainer', v: trainer }] : []),
   ].filter((fact) => fact.v.trim().length > 0)
 
   // Three states, not two. A course whose next batch has a printed start date
   // used to share its wording with a course that has nothing scheduled, so the
   // page told a visitor to register interest in a batch already on the schedule.
-  const primaryCta = hasSeat ? 'Reserve my seat' : 'Tell me when it opens'
+  const primaryCta = !hasSeat
+    ? 'Tell me when it opens'
+    : multiBatch
+      ? 'Help me pick a batch'
+      : 'Reserve my seat'
   const enrolEyebrow = inSession
     ? 'Free demo class · no fee to attend'
     : hasSeat
-      ? `Next batch · ${running.note} · ${running.hour}`
+      ? batches.length > 1
+        ? `${batches.length} batches open · pick the hour that suits you`
+        : `Next batch · ${lead.note} · ${lead.hour}`
       : 'No batch scheduled yet'
   const enrolHeading = inSession
     ? 'Attend a free demo class before you enrol.'
@@ -130,6 +151,46 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
 
           <div className="min-w-0">
             <dl>
+              {/* Every cohort, not just the one the page headlines. A course
+                  with a morning and an evening batch used to print one hour
+                  here, so half the offer was invisible on its own page. */}
+              {hasSeat && (
+                <div className="py-[18px] shadow-[inset_0_-1px_0_0_var(--rule)]">
+                  <dt className="mono mb-2 text-[10.5px] text-[color:var(--on-ink-faint)]">
+                    {batches.length === 1 ? 'Batch' : `${batches.length} batches to choose from`}
+                  </dt>
+                  <div className="flex flex-col gap-[14px]">
+                    {batches.map((batch) => (
+                      <dd key={batch.number} className="flex flex-col gap-[7px]">
+                        <span className="flex flex-wrap items-baseline gap-x-[10px] gap-y-[2px]">
+                          <span className="mono text-[10px] tracking-[0.1em] text-[color:var(--tan)]">
+                            {batch.number}
+                          </span>
+                          <span className="tnum text-[16px] leading-[1.5] text-[color:var(--on-ink)]">
+                            {batch.daysHour}
+                          </span>
+                          <span className="text-[13.5px] text-[color:var(--on-ink-faint)]">
+                            {batch.when}
+                          </span>
+                        </span>
+                        {/* Booking lives in the enrol block, where each of these
+                            batches has its own button. Repeating them up here,
+                            above the curriculum, would ask before the page has
+                            said what the course is. */}
+                        {multiBatch && (
+                          <a
+                            href="#enrol"
+                            className="btn-secondary btn-compact self-start"
+                          >
+                            {`Take ${batch.number}`}
+                          </a>
+                        )}
+                      </dd>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {facts.map((fact) => (
                 <div key={fact.k} className="py-[18px] shadow-[inset_0_-1px_0_0_var(--rule)]">
                   <dt className="mono mb-2 text-[10.5px] text-[color:var(--on-ink-faint)]">
@@ -327,15 +388,19 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
           </h2>
         </Reveal>
 
-        {upcoming.length > 0 && (
+        {batchCards.length > 0 && (
           <div className="mb-12 grid gap-px bg-[color:var(--rule)] min-[901px]:grid-cols-2">
-            {upcoming.map((row) => (
+            {batchCards.map(({ entry, row }) => (
               <Reveal
                 key={row.batch.id}
                 className="bg-[color:var(--ink)] px-[30px] py-[34px]"
               >
-                <p className="mono mb-[14px] text-[10.5px] text-[color:var(--on-ink-faint)]">
-                  {row.batch.batch_number}
+                <p className="mono mb-[14px] flex flex-wrap gap-x-[10px] text-[10.5px] text-[color:var(--on-ink-faint)]">
+                  <span>{row.batch.batch_number}</span>
+                  {/* A date on its own does not say whether it is behind you. */}
+                  <span className="text-[color:var(--tan)]">
+                    {entry.started ? 'Teaching now' : 'Not started yet'}
+                  </span>
                 </p>
                 <p className="display mb-3 text-[clamp(28px,3.2vw,42px)] font-normal leading-[1.04] tracking-[-0.035em]">
                   {longDate(row.batch.start_date)}
@@ -348,6 +413,18 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
                 {row.batch.seats_note && (
                   <p className="text-[15px] text-[color:var(--tan)]">{row.batch.seats_note}</p>
                 )}
+                {/* The card described a batch but had no way to take it, so the
+                    only route out was the page-level button below, which could
+                    not know which of these cards you had been reading. */}
+                <CtaLink
+                  cta="reserve_seat"
+                  chapter="course_enrol"
+                  course={course.name}
+                  batch={entry.line}
+                  className="btn-primary btn-compact mt-6 inline-flex"
+                >
+                  {`Reserve ${row.batch.batch_number}`}
+                </CtaLink>
               </Reveal>
             ))}
           </div>
@@ -361,11 +438,14 @@ export default function CourseDetailPage({ slug: slugProp, onClose }: Props = {}
 
         <Reveal delayIndex={3}>
           <div className="flex flex-wrap gap-[14px]">
+            {/* Each batch above carries its own button now, so this one is the
+                "none of those / help me pick" route and deliberately names no
+                batch rather than sending all of them at once. */}
             <CtaLink
               cta={hasSeat ? 'reserve_seat' : 'course_waitlist'}
               chapter="course_enrol"
               course={course.name}
-              batch={running?.line}
+              batch={multiBatch ? undefined : lead?.line}
               className="btn-primary btn-lg"
             >
               {primaryCta}

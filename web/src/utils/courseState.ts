@@ -13,6 +13,8 @@ export interface CourseBatch {
   hour: string
   /** "Weekdays 19:30 – 21:00 IST", or just the hour when days are unset. */
   daysHour: string
+  /** "started 6 Aug" - or "starts 27 Sep" if it has not begun. */
+  when: string
   /** "Batch A-04, started 6 Aug" - or "starts 27 Sep" if it has not begun. */
   note: string
   /** Everything a WhatsApp reply needs: number, hour and both dates. */
@@ -51,25 +53,34 @@ function shortDate(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-/** Every batch of this course that is teaching or about to, in schedule order. */
+/** Every batch of this course that is teaching or about to.
+ *
+ * Batches that have not begun come first, matching the schedule page: a cohort
+ * you can join from its first topic is the better offer, and one already three
+ * weeks in is the fallback. */
 export function courseBatches(courseName: string, rows: ScheduleRow[] | null): CourseBatch[] {
-  return scheduledRows(courseName, rows).map((row) => {
-    // The comp says "Weekdays 7:30 - 9:00 PM"; `Batch` carries no day-of-week
-    // field, so the window is rendered without inventing which days it falls on.
-    const hour = hourRange(row.batch.start_time, row.batch.end_time)
-    const days = row.batch.days_of_week ?? ''
-    const started = isRunning(row)
-    const when = `${started ? 'started' : 'starts'} ${shortDate(row.batch.start_date)}`
-    return {
-      number: row.batch.batch_number,
-      days,
-      hour,
-      daysHour: days ? `${days} ${hour}` : hour,
-      note: `${row.batch.batch_number}, ${when}`,
-      line: `${row.batch.batch_number}, ${hour}, ${shortDate(row.batch.start_date)} to ${shortDate(row.batch.end_date)}`,
-      started,
-    }
-  })
+  return scheduledRows(courseName, rows)
+    .slice()
+    .sort((a, b) => Number(isRunning(a)) - Number(isRunning(b)))
+    .map((row) => {
+      // The comp says "Weekdays 7:30 - 9:00 PM"; `Batch` carries no day-of-week
+      // field, so the window is rendered without inventing which days it falls
+      // on.
+      const hour = hourRange(row.batch.start_time, row.batch.end_time)
+      const days = row.batch.days_of_week ?? ''
+      const started = isRunning(row)
+      const when = `${started ? 'started' : 'starts'} ${shortDate(row.batch.start_date)}`
+      return {
+        number: row.batch.batch_number,
+        days,
+        hour,
+        daysHour: days ? `${days} ${hour}` : hour,
+        when,
+        note: `${row.batch.batch_number}, ${when}`,
+        line: `${row.batch.batch_number}, ${hour}, ${shortDate(row.batch.start_date)} to ${shortDate(row.batch.end_date)}`,
+        started,
+      }
+    })
 }
 
 // Derived, never stored. A `state` column on courses.ts would drift the moment

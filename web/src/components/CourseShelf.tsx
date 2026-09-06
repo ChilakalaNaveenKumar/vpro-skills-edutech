@@ -8,9 +8,26 @@ import CtaLink from './CtaLink'
 
 // One lightness family across all six, so the shelf reads as one object rather
 // than six unrelated colours. Hue comes from each course's own `hue` field.
-const openBg = (hue: number) => `oklch(0.44 0.086 ${hue})`
-const closedBg = (hue: number) => `oklch(0.288 0.045 ${hue})`
-const hoverBg = (hue: number) => `oklch(0.335 0.052 ${hue})`
+//
+// The open panel used to be a much lighter, more saturated fill (0.44 / 0.086)
+// under a long gradient down to near-black. The two together read as a smear
+// rather than a surface, and the copper primary button - which is itself a warm
+// mid-tone - sat almost invisibly on the warmer courses. It is now one flat
+// tone, dark enough that both button fills and all the text keep their contrast
+// whatever the hue, with the colour doing its identifying quietly.
+// The open panel carries every word on this shelf, so it is a plain neutral
+// surface - the same one for all six courses - sitting a clear step above the
+// page ground. Colour behind text was the whole complaint, and lowering it in
+// stages only ever made it a dimmer version of the same problem: on a dark
+// ground simultaneous contrast amplifies chroma, so any tint large enough to
+// identify a course is also large enough to fight the text on top of it.
+//
+// The course's colour goes where nothing is printed over it - the closed
+// spines, which hold only a name, and a bar along the open card's top edge.
+const OPEN_BG = '#1e222b'
+const closedBg = (hue: number) => `oklch(0.243 0.05 ${hue})`
+const hoverBg = (hue: number) => `oklch(0.285 0.058 ${hue})`
+const accentBar = (hue: number) => `oklch(0.63 0.125 ${hue})`
 
 const LABEL = 'mono text-[9.5px] text-[color:rgb(237_231_222_/_0.72)]'
 const FACT_LABEL = `${LABEL} mb-1`
@@ -18,10 +35,6 @@ const FACT_VALUE = 'text-[15px] text-[color:var(--on-ink)]'
 
 // The phone layout is this same shelf turned on its side - spines stack, labels
 // come off their side, the open panel takes flow height instead of the frame.
-//
-// The panel's lower half carries a scrim down to the page ground. Without it the
-// two button fills sat on a mid-lightness chroma field they were never designed
-// for and neither one was readable; on the scrim they are back on ink.
 const SHELF_CSS = `
 .course-shelf { display: flex; align-items: stretch; gap: 6px; height: clamp(460px, 58vh, 560px); }
 .course-shelf-spine { position: relative; min-width: 0; overflow: hidden; cursor: pointer; }
@@ -31,15 +44,15 @@ const SHELF_CSS = `
 
 .course-shelf-panel { position: absolute; inset: 0; flex-direction: column; justify-content: flex-end; padding: clamp(26px, 2.6vw, 40px) clamp(24px, 2.8vw, 42px); }
 
-/* The panel's text used to sit on the middle of a colour gradient, where the
-   contrast depended on which hue the course happened to have. The scrim now
-   reaches near-solid ink well above the first line, so every course reads the
-   same and the colour does its identifying from the upper third and the closed
-   spines beside it. */
-.course-shelf-scrim { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(20,22,28,0) 0%, rgba(20,22,28,0.30) 26%, rgba(20,22,28,0.86) 52%, rgba(20,22,28,0.97) 74%, rgba(20,22,28,0.99) 100%); }
+/* The course's colour, at full strength, on the one strip of the open card with
+   no text over it. */
+.course-shelf-accent { position: absolute; inset: 0 0 auto 0; height: 3px; }
 
 .course-shelf-body { position: relative; display: flex; flex-direction: column; gap: clamp(16px, 1.6vw, 22px); }
-.course-shelf-state { position: absolute; left: clamp(24px, 2.8vw, 42px); top: clamp(26px, 2.6vw, 40px); display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; background: rgb(20 22 28 / 0.55); backdrop-filter: blur(6px); box-shadow: inset 0 0 0 1px rgb(237 231 222 / 0.26); }
+/* In the flow directly above the name. Pinned to the panel's top corner it left
+   a tall empty band between itself and the first line of content, which read as
+   a hole rather than as breathing room. */
+.course-shelf-state { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; margin-bottom: clamp(14px, 1.4vw, 18px); padding: 7px 13px; background: rgb(20 22 28 / 0.5); box-shadow: inset 0 0 0 1px rgb(237 231 222 / 0.26); }
 .course-shelf-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* Identity above, facts below - the rule is what stops the name, the hours and
@@ -50,15 +63,21 @@ const SHELF_CSS = `
 
 .course-shelf-facts { display: flex; flex-wrap: wrap; gap: 14px clamp(28px, 3vw, 46px); }
 
+/* Both fills are printed on a coloured card, so neither can separate on its own
+   colour: measured against the warm hues the navy secondary lands at 1.01:1 and
+   the copper at 1.77:1, and the cool hues are worse for the navy. A translucent
+   ink underlay makes the separation come from darkening the card itself, which
+   holds at every hue instead of at the one the button was picked against. */
+.course-shelf-panel .btn-secondary { background: rgb(16 18 24 / 0.74); box-shadow: inset 0 0 0 1px rgb(237 231 222 / 0.34); }
+.course-shelf-panel .btn-secondary:hover { background: rgb(16 18 24 / 0.88); }
+.course-shelf-panel .btn-primary { box-shadow: inset 0 0 0 1px rgb(255 236 224 / 0.22); }
+
 @media (max-width: 900px) {
   .course-shelf { flex-direction: column; height: auto; }
   .course-shelf-spine { flex: none !important; min-height: 88px; }
   .course-shelf-face { align-items: center; justify-content: flex-start; padding: 0 24px; }
   .course-shelf-label { writing-mode: horizontal-tb; rotate: none; }
   .course-shelf-panel { position: relative; padding: 26px 24px 28px; }
-  /* Back into the flow, above the heading rather than over it. */
-  .course-shelf-state { position: relative; left: auto; top: auto; margin-bottom: 16px; }
-  .course-shelf-scrim { background: linear-gradient(180deg, rgba(20,22,28,0.34) 0%, rgba(20,22,28,0.9) 100%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -91,7 +110,7 @@ export default function CourseShelf() {
           const hasSeat = batches.length > 0
 
           const background = isOpen
-            ? openBg(course.hue)
+            ? OPEN_BG
             : hovered === index
               ? hoverBg(course.hue)
               : closedBg(course.hue)
@@ -141,7 +160,11 @@ export default function CourseShelf() {
                   animation: isOpen ? 'fadeIn 520ms var(--ease-state) 200ms both' : 'none',
                 }}
               >
-                <span className="course-shelf-scrim" aria-hidden="true" />
+                <span
+                  aria-hidden="true"
+                  className="course-shelf-accent"
+                  style={{ background: accentBar(course.hue) }}
+                />
 
                 {state && (
                   <p className="course-shelf-state mono z-[1] whitespace-nowrap text-[10.5px] text-[color:var(--on-ink)]">
@@ -209,17 +232,25 @@ export default function CourseShelf() {
                         </>
                       )}
 
-                      {/* Two cohorts of one course is normal - a morning batch and
-                          an evening one. Each gets its own line rather than the
-                          first one standing in for all of them. */}
+                      {/* Two cohorts of one course is normal - a morning batch
+                          and an evening one. The card only has room to name the
+                          soonest one it can send us accurate details for; the
+                          rest are one click away on the course page, where each
+                          gets its own button. */}
                       {batches.length > 1 && (
-                        <div>
-                          <dt className={FACT_LABEL}>{`${batches.length} batches running`}</dt>
-                          {batches.map((batch) => (
-                            <dd key={batch.line} className={`tnum ${FACT_VALUE} mt-0.5`}>
-                              {batch.line}
-                            </dd>
-                          ))}
+                        <div className="w-full">
+                          <dt className={FACT_LABEL}>{`${batches.length} batches to choose from`}</dt>
+                          <dd className="flex flex-wrap items-baseline gap-x-[10px] gap-y-[2px]">
+                            <span className="mono text-[10px] tracking-[0.1em] text-[color:var(--tan)]">
+                              {batches[0].number}
+                            </span>
+                            <span className="tnum text-[14.5px] text-[color:var(--on-ink)]">
+                              {batches[0].daysHour}
+                            </span>
+                            <span className="text-[13px] text-[color:var(--on-ink-faint)]">
+                              {batches[0].when}
+                            </span>
+                          </dd>
                         </div>
                       )}
                     </dl>
@@ -247,16 +278,51 @@ export default function CourseShelf() {
                     >
                       View curriculum
                     </Link>
+                    {/* Named when there is a choice to disambiguate. Every
+                        batch number concatenated into one message told us
+                        nothing about which hour the person actually wanted. */}
                     <CtaLink
                       cta={hasSeat ? 'reserve_seat' : 'course_waitlist'}
                       chapter="shelf"
                       course={course.name}
-                      batch={batches.map((entry) => entry.line).join('; ') || undefined}
+                      batch={batches[0]?.line}
                       className="btn-primary"
                     >
-                      {hasSeat ? 'Reserve my seat' : 'Tell me when it opens'}
+                      {!hasSeat
+                        ? 'Tell me when it opens'
+                        : batches.length > 1
+                          ? `Reserve ${batches[0].number}`
+                          : 'Reserve my seat'}
                     </CtaLink>
                   </div>
+
+                  {batches.length > 1 && (
+                    <Link
+                      to={`/courses/${course.slug}`}
+                      className="group inline-flex items-center gap-2.5 self-start text-[13px] text-[color:var(--on-ink)] transition-colors duration-[240ms] ease-[var(--ease-state)] hover:text-[color:var(--signal)]"
+                      onClick={(event) => {
+                        if (
+                          !openInPlace ||
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.altKey ||
+                          event.button !== 0
+                        )
+                          return
+                        event.preventDefault()
+                        openInPlace(course.slug)
+                      }}
+                    >
+                      {`View all ${batches.length} batches and book one`}
+                      <span
+                        aria-hidden="true"
+                        className="transition-transform duration-[240ms] ease-[var(--ease-state)] group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+                      >
+                        →
+                      </span>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

@@ -78,6 +78,7 @@ describe('courseBatches', () => {
         days: '',
         daysHour: '7:30 \u2013 9:00 PM',
         hour: '7:30 \u2013 9:00 PM',
+        when: 'started 4 Aug',
         note: 'Batch A-04, started 4 Aug',
         line: 'Batch A-04, 7:30 \u2013 9:00 PM, 4 Aug to 2 Nov',
         started: true,
@@ -105,6 +106,15 @@ describe('courseBatches', () => {
     expect(found.map((entry) => entry.note)).toEqual([
       'Batch A-04, started 4 Aug',
       'Batch A-05, started 4 Aug',
+    ])
+  })
+
+  it('puts a batch that has not started ahead of one already teaching', () => {
+    const teaching = row('running')
+    const opening = row('upcoming', { id: 2, batch_number: 'Batch A-05' })
+    expect(courseBatches('Agentic AI', [teaching, opening]).map((entry) => entry.number)).toEqual([
+      'Batch A-05',
+      'Batch A-04',
     ])
   })
 
