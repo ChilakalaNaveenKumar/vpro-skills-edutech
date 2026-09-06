@@ -128,7 +128,9 @@ textarea:focus-visible {
 
 /* The floating contact stack lives in the page's right margin. Between 901px and
    1699px the 1560px column leaves no margin, so the column gives up the width
-   rather than letting the buttons land on top of its own content. */
+   rather than letting the buttons land on top of its own content. The footer
+   sets its own padding and so reserves the same width itself - a rule here
+   would sit in @layer components and lose to the utility already on it. */
 @media (min-width: 901px) and (max-width: 1699px) {
   [data-journey] .shell {
     padding-right: 108px;

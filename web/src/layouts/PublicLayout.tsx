@@ -351,7 +351,11 @@ export default function PublicLayout() {
 
       {journey ? (
         <footer className="relative z-10 mt-[clamp(72px,9vw,132px)] shadow-[inset_0_1px_0_0_var(--rule)]">
-          <div className="mx-auto w-full max-w-[1560px] px-[44px] pt-[clamp(52px,5.5vw,80px)] max-md:px-[var(--gutter)]">
+          {/* Same right-hand reserve .shell takes between 901px and 1699px, for
+              the same reason: below 1700px there is no page margin for the
+              floating call and WhatsApp buttons, and without it they sat on top
+              of the legal links in this corner. */}
+          <div className="mx-auto w-full max-w-[1560px] px-[44px] pt-[clamp(52px,5.5vw,80px)] max-md:px-[var(--gutter)] min-[901px]:max-[1699px]:pr-[108px]">
             {/* The brand column carries more than the others - a logo plate, an
                 address and the partner mark - so it gets half again the width
                 rather than an equal quarter, which left it wrapping while the
@@ -413,10 +417,11 @@ export default function PublicLayout() {
               </FooterColumn>
             </div>
 
-            {/* Padded well clear of the bottom on small screens: the mobile
-                action bar is fixed over this corner and was covering the legal
-                row outright. */}
-            <div className="mt-[clamp(48px,5vw,72px)] flex flex-wrap items-center justify-between gap-x-8 gap-y-3 pt-7 pb-[clamp(32px,4vw,56px)] text-[13px] text-[color:var(--on-ink-faint)] shadow-[inset_0_1px_0_0_var(--rule)] max-md:pb-[104px]">
+            {/* Below 901px nothing reserves the right-hand gutter, so the
+                floating call and WhatsApp buttons hang over this corner. The
+                last row is padded past the height of that stack rather than
+                being left to scroll underneath it. */}
+            <div className="mt-[clamp(48px,5vw,72px)] flex flex-wrap items-center justify-between gap-x-8 gap-y-3 pt-7 pb-[clamp(32px,4vw,56px)] text-[13px] text-[color:var(--on-ink-faint)] shadow-[inset_0_1px_0_0_var(--rule)] max-[900px]:pb-[150px]">
               <span>© {new Date().getFullYear()} VPro Skills EduTech</span>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                 {LEGAL_LINKS.map((link) => (
