@@ -104,6 +104,15 @@ export default function PublicLayout() {
     })
   }, [location.pathname, location.hash])
 
+  // Nor does it reset the scroll position on a plain navigation: the browser
+  // keeps the offset you were already at, so following a link from far down one
+  // page dropped you into the middle of the next one. Following the batch link
+  // from the shelf landed on "Four steps to a seat" rather than the schedule.
+  useEffect(() => {
+    if (location.hash) return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [location.pathname, location.hash])
+
   function handleLogout() {
     logout()
     setIsMenuOpen(false)
