@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage'
 import CoursesPage from './pages/CoursesPage'
 import BatchesPage from './pages/BatchesPage'
 import LoginPage from './pages/LoginPage'
+import SetPasswordPage from './pages/SetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import TopicsPage from './pages/TopicsPage'
 import AssessmentPage from './pages/AssessmentPage'
@@ -41,6 +42,10 @@ function App() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/login" element={<LoginPage />} />
+        {/* Reached from the one-time link in a partner student's welcome
+            email, so it sits outside ProtectedRoute - they have no
+            session yet, which is the whole point. */}
+        <Route path="/set-password" element={<SetPasswordPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/courses/:courseId/topics" element={<TopicsPage />} />

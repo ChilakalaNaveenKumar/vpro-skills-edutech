@@ -11,7 +11,7 @@ from app.courses.router import admin_router as courses_admin_router, router as c
 from app.content.router import router as content_router
 from app.content.router import admin_router as content_admin_router
 from app.leads.router import router as leads_router
-from app.partner.router import router as partner_router
+from app.partner.router import public_router as partner_public_router, router as partner_router
 from app.leads.router import admin_router as leads_admin_router
 from app.questions.router import admin_router as questions_admin_router
 from app.results.router import admin_router as results_admin_router, router as results_router
@@ -47,6 +47,7 @@ app.add_middleware(
 for module_router in (
     auth_router,
     partner_router,
+    partner_public_router,
     users_router,
     users_me_router,
     courses_router,

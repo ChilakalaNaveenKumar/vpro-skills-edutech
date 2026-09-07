@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # caller who guesses the URL.
     partner_api_key: str = ""
 
+    # Absolute origin of the student-facing web app, used to build the
+    # set-password link. A relative link is useless in an email.
+    public_web_url: str = "http://localhost:5173"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
