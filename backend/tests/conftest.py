@@ -24,7 +24,7 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.enums import EntityStatus, UserRole
+from app.core.enums import EntityStatus, UserRole, Origin
 from app.core.security import hash_password
 from app.database.base import Base
 from app.database.session import get_db
@@ -102,13 +102,24 @@ def client(db_session):
 
 @pytest.fixture()
 def make_user(db_session):
-    def _make(*, full_name: str, email: str, role: UserRole, password: str = DEFAULT_PASSWORD, is_active: bool = True) -> User:
+    def _make(
+        *,
+        full_name: str,
+        email: str,
+        role: UserRole,
+        password: str = DEFAULT_PASSWORD,
+        is_active: bool = True,
+        # Defaulted so every existing caller keeps building a VPro student,
+        # which is what they already assumed before storefronts existed.
+        origin: Origin = Origin.VPRO,
+    ) -> User:
         user = User(
             full_name=full_name,
             email=email,
             password_hash=hash_password(password),
             role=role,
             is_active=is_active,
+            origin=origin,
         )
         db_session.add(user)
         db_session.commit()

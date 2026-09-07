@@ -299,3 +299,285 @@ def test_partner_lead_lands_in_the_same_inbox(client, partner_key, headers, db_s
     assert response.status_code == 202, response.text
     leads = db_session.query(Lead).all()
     assert [(lead.cta, lead.chapter) for lead in leads] == [("reserve_seat", "digi_setu_hero")]
+
+
+# --- Provisioning a student ------------------------------------------
+#
+# This is the only partner route that WRITES, and the only one that creates a
+# login. Two things it must never do: reach a batch that is not the calling
+# partner's, and enrol the same person twice when a payment webhook retries.
+
+
+def test_provisioning_creates_a_student_scoped_to_the_partner(
+    client, partner_key, headers, make_course, make_batch
+):
+    partner_key()
+    course = make_course()
+    batch = make_batch(course=course, origin=Origin.DIGI_SETU)
+
+    response = client.post(
+        "/api/partner/students",
+        headers=headers,
+        json={
+            "full_name": "Paid Student",
+            "email": "Paid.Student@Example.com",
+            "batch_id": batch.id,
+            "external_ref": "order-1",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["created"] is True
+    assert body["batch_id"] == batch.id
+    # Normalised, so a second purchase from "Paid.Student@..." is the same person.
+    assert body["email"] == "paid.student@example.com"
+    # A student who never chose a password gets a link, not a password.
+    assert body["set_password_url"] and "token=" in body["set_password_url"]
+
+
+def test_provisioning_refuses_a_batch_belonging_to_vpro(
+    client, partner_key, headers, make_course, make_batch
+):
+    """The boundary. A partner key must not put a student into VPro's cohort.
+
+    404 rather than 403 on purpose: a partner should not be able to tell the
+    difference between "not yours" and "does not exist", or batch ids become
+    enumerable.
+    """
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.VPRO)
+
+    response = client.post(
+        "/api/partner/students",
+        headers=headers,
+        json={
+            "full_name": "Intruder",
+            "email": "intruder@example.com",
+            "batch_id": batch.id,
+            "external_ref": "order-2",
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_provisioning_refuses_a_batch_that_does_not_exist(client, partner_key, headers):
+    partner_key()
+    response = client.post(
+        "/api/partner/students",
+        headers=headers,
+        json={
+            "full_name": "Nobody",
+            "email": "nobody@example.com",
+            "batch_id": 999_999,
+            "external_ref": "order-3",
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_provisioning_needs_a_key(client, partner_key, make_course, make_batch):
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    response = client.post(
+        "/api/partner/students",
+        json={
+            "full_name": "No Key",
+            "email": "nokey@example.com",
+            "batch_id": batch.id,
+            "external_ref": "order-4",
+        },
+    )
+    assert response.status_code == 401
+
+
+def test_provisioning_is_idempotent_for_a_webhook_retry(
+    client, partner_key, headers, make_course, make_batch, db_session
+):
+    """A payment webhook retries. That must not create a second account, a
+    second enrolment, or a second set-password token."""
+    from app.users.models import StudentBatch, User
+
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    payload = {
+        "full_name": "Retry Student",
+        "email": "retry@example.com",
+        "batch_id": batch.id,
+        "external_ref": "order-5",
+    }
+
+    first = client.post("/api/partner/students", headers=headers, json=payload)
+    second = client.post("/api/partner/students", headers=headers, json=payload)
+
+    assert first.json()["created"] is True
+    assert second.json()["created"] is False
+    # No second link: the first one is still the live one.
+    assert second.json()["set_password_url"] is None
+    assert first.json()["user_id"] == second.json()["user_id"]
+
+    user_id = first.json()["user_id"]
+    assert db_session.query(User).filter(User.email == "retry@example.com").count() == 1
+    assert (
+        db_session.query(StudentBatch)
+        .filter(StudentBatch.student_id == user_id, StudentBatch.batch_id == batch.id)
+        .count()
+        == 1
+    )
+
+
+def test_provisioning_refuses_an_email_already_used_by_a_vpro_student(
+    client, partner_key, headers, make_course, make_batch, make_user
+):
+    """The same person may already be a VPro student. Silently moving their
+    account between storefronts would be worse than refusing."""
+    partner_key()
+    make_user(
+        full_name="Shared Person",
+        email="shared@example.com",
+        role=UserRole.STUDENT,
+        origin=Origin.VPRO,
+    )
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+
+    response = client.post(
+        "/api/partner/students",
+        headers=headers,
+        json={
+            "full_name": "Shared",
+            "email": "shared@example.com",
+            "batch_id": batch.id,
+            "external_ref": "order-6",
+        },
+    )
+    assert response.status_code == 409
+
+
+# --- Redeeming a set-password token ----------------------------------
+#
+# This route is PUBLIC by design: the student has no partner key and no session
+# yet, and the token is the credential. That makes it the one place a partner
+# student's account can be taken over, so the tests below are about what must
+# NOT work as much as what must.
+
+
+def _provision(client, headers, batch_id: int, email: str, ref: str = "order-t") -> str:
+    """Provision a student and return the raw token from their link."""
+    response = client.post(
+        "/api/partner/students",
+        headers=headers,
+        json={
+            "full_name": "Token Student",
+            "email": email,
+            "batch_id": batch_id,
+            "external_ref": ref,
+        },
+    )
+    assert response.status_code == 201
+    return response.json()["set_password_url"].split("token=")[1]
+
+
+def test_a_provisioned_student_cannot_log_in_until_they_set_a_password(
+    client, partner_key, headers, make_course, make_batch
+):
+    """The account is created with a hash of a random secret nobody holds, so
+    there is no password that works until the token is redeemed."""
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    _provision(client, headers, batch.id, "nologin@example.com")
+
+    response = client.post(
+        "/api/auth/login",
+        json={"email": "nologin@example.com", "password": "anything-at-all"},
+    )
+    assert response.status_code == 401
+
+
+def test_redeeming_a_token_sets_the_password_and_allows_login(
+    client, partner_key, headers, make_course, make_batch
+):
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    token = _provision(client, headers, batch.id, "redeem@example.com")
+
+    assert (
+        client.post("/api/set-password", json={"token": token, "password": "ChosenPass1"}).status_code
+        == 204
+    )
+    login = client.post(
+        "/api/auth/login", json={"email": "redeem@example.com", "password": "ChosenPass1"}
+    )
+    assert login.status_code == 200
+    assert login.json()["access_token"]
+
+
+def test_a_token_works_only_once(client, partner_key, headers, make_course, make_batch):
+    """A welcome email can be forwarded, or sit in a shared inbox. Once the
+    student has used the link it must stop working for anyone else."""
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    token = _provision(client, headers, batch.id, "once@example.com")
+
+    assert client.post("/api/set-password", json={"token": token, "password": "FirstPass1"}).status_code == 204
+    assert client.post("/api/set-password", json={"token": token, "password": "SecondPass1"}).status_code == 400
+    # The first password still works, so the second attempt changed nothing.
+    assert (
+        client.post("/api/auth/login", json={"email": "once@example.com", "password": "FirstPass1"}).status_code
+        == 200
+    )
+
+
+def test_a_wrong_token_is_refused(client, partner_key, headers, make_course, make_batch):
+    partner_key()
+    make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    response = client.post(
+        "/api/set-password", json={"token": "not-a-real-token-value", "password": "Whatever1"}
+    )
+    assert response.status_code == 400
+    # One generic message, so a caller cannot tell a wrong token from an
+    # expired or already-used one and probe for live ones.
+    assert "no longer valid" in response.json()["detail"]
+
+
+def test_an_expired_token_is_refused(
+    client, partner_key, headers, make_course, make_batch, db_session
+):
+    from datetime import datetime, timedelta, timezone
+
+    from app.partner.models import PasswordSetupToken
+
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    token = _provision(client, headers, batch.id, "expired@example.com")
+
+    row = db_session.query(PasswordSetupToken).one()
+    row.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+    db_session.commit()
+
+    assert client.post("/api/set-password", json={"token": token, "password": "TooLate1"}).status_code == 400
+
+
+def test_the_raw_token_is_never_stored(
+    client, partner_key, headers, make_course, make_batch, db_session
+):
+    """Only a hash is kept, so a leaked table yields no working links - the
+    same reason users.password_hash exists."""
+    from app.partner.models import PasswordSetupToken
+
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    token = _provision(client, headers, batch.id, "hashed@example.com")
+
+    stored = db_session.query(PasswordSetupToken).one().token_hash
+    assert token not in stored
+    assert stored.startswith("$2")  # bcrypt
+
+
+def test_a_short_password_is_refused(client, partner_key, headers, make_course, make_batch):
+    """Same 8-character floor the admin creation path enforces, so there is one
+    rule rather than one per entry point."""
+    partner_key()
+    batch = make_batch(course=make_course(), origin=Origin.DIGI_SETU)
+    token = _provision(client, headers, batch.id, "short@example.com")
+
+    assert client.post("/api/set-password", json={"token": token, "password": "short"}).status_code == 422
